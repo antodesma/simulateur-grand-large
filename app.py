@@ -79,6 +79,17 @@ st.markdown(
     footer {{ visibility: hidden; }}
     [data-testid="stToolbar"] {{ visibility: hidden; }}
     [data-testid="stDecoration"] {{ display: none; }}
+    /* La barre d'en-tête Streamlit (au-dessus du bandeau et de la sidebar) ne
+       sert ici qu'à replier la barre latérale : on la rend transparente et
+       fine plutôt que de laisser une bande vide visible. */
+    [data-testid="stHeader"] {{
+        background: transparent;
+        box-shadow: none;
+        height: 2.75rem;
+    }}
+    [data-testid="stSidebarCollapseButton"] button {{
+        color: {NAVY};
+    }}
 
     .block-container {{ padding-top: 2rem; max-width: 1150px; }}
 
@@ -271,10 +282,13 @@ st.markdown(
 )
 
 
-def fmt_euro(montant):
-    """Formate un montant en euros à la française : espace comme séparateur
-    de milliers (40 288 €), pas de virgule anglo-saxonne (40,288 €)."""
-    return f"{montant:,.0f} €".replace(",", " ")
+def fmt_euro(montant, signe=False):
+    """Formate un montant en euros à la française : espace fine insécable
+    comme séparateur de milliers (40 288 €), pas de virgule anglo-saxonne
+    (40,288 €). signe=True ajoute un + explicite devant un montant positif
+    (+3 787 €)."""
+    gabarit = "{:+,.0f} €" if signe else "{:,.0f} €"
+    return gabarit.format(montant).replace(",", " ")
 
 
 def carte_kpi(label, valeur, couleur, sous_texte=""):
@@ -376,6 +390,16 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+with st.expander("Comment utiliser ce simulateur (à lire en premier)", expanded=True):
+    etapes_numerotees([
+        "Choisissez un profil client dans la barre latérale, ou laissez « Personnalisé » pour saisir vos propres montants.",
+        "Onglet « Rémunération annuelle » : pour une année donnée, salaire ou dividende — lequel laisse le plus net en poche au dirigeant ?",
+        "Onglet « Trajectoire pluriannuelle » : sur plusieurs années, vaut-il mieux sortir l'argent chaque année ou le laisser capitaliser dans une holding ? Avec l'incertitude du rendement (fourchette P10-P90), pas un chiffre unique.",
+        "Onglet « Démembrement de propriété » : pour transmettre un bien aux enfants, comparez donation en pleine propriété et donation de la seule nue-propriété.",
+        "Onglet « Note Grand Large » : les chiffres de marché et seuils réglementaires utilisés ailleurs dans l'outil, sourcés et datés.",
+        "Dans chaque onglet, les montants se modifient librement — aucun résultat n'est figé, tout se recalcule en direct.",
+    ])
+
 tab1, tab2, tab3, tab4 = st.tabs(
     ["Rémunération annuelle", "Trajectoire pluriannuelle", "Démembrement de propriété", "Note Grand Large"]
 )
@@ -389,8 +413,8 @@ def _mise_en_forme_graphique(fig, titre, y_titre):
         plot_bgcolor=SURFACE_CARTE,
         paper_bgcolor=SURFACE_CARTE,
         font=dict(color=ENCRE_SECONDAIRE, size=13),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, font=dict(color=ENCRE_SECONDAIRE)),
-        margin=dict(t=70, l=10, r=10, b=10),
+        legend=dict(orientation="h", yanchor="bottom", y=1.1, xanchor="left", x=0, font=dict(color=ENCRE_SECONDAIRE)),
+        margin=dict(t=95, l=10, r=10, b=10),
         hovermode="x unified",
         separators=". ",  # convention française : point décimal, espace pour les milliers
     )
@@ -570,9 +594,9 @@ with tab2:
         fig2.add_vline(
             x=resultat_det["annee_croisement"],
             line=dict(color=ENCRE_MUTED, width=1.4, dash="dot"),
-            annotation_text=f"  Croisement (scénario central) : année {resultat_det['annee_croisement']}",
-            annotation_position="top",
-            annotation=dict(font=dict(size=11, color=ENCRE_SECONDAIRE)),
+            annotation_text=f"  Croisement : année {resultat_det['annee_croisement']}",
+            annotation_position="top right" if resultat_det["annee_croisement"] <= horizon / 2 else "top left",
+            annotation=dict(font=dict(size=11, color=ENCRE_SECONDAIRE), yshift=-6),
         )
 
     st.plotly_chart(fig2, width="stretch", config=CONFIG_GRAPHIQUE)
@@ -593,7 +617,7 @@ with tab2:
     with col2:
         carte_kpi(
             "Écart médian en fin d'horizon",
-            f"{ecart_mediane_final:+,.0f} €",
+            fmt_euro(ecart_mediane_final, signe=True),
             COULEUR_DIVIDENDE if ecart_mediane_final > 0 else COULEUR_SALAIRE,
             f"en faveur de {'la holding' if ecart_mediane_final > 0 else 'la détention directe'} — jamais garanti (voir P10-P90)",
         )
