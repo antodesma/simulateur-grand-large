@@ -23,7 +23,7 @@ from fiscalite import (
 )
 from simulation import PROFILS, simulation_comparaison
 from trajectoire import comparer
-from demembrement import comparer_transmission
+from demembrement import comparer_transmission, pourcentage_usufruit
 from veille import (
     CHECKLIST_RAFRAICHISSEMENT,
     DATE_MISE_A_JOUR,
@@ -89,6 +89,15 @@ st.markdown(
         margin-bottom: 1.6rem;
         color: #ffffff;
         border-bottom: 2px solid rgba(255,255,255,0.15);
+        position: relative;
+        overflow: hidden;
+    }}
+    .bandeau .motif-voile {{
+        position: absolute;
+        top: -18px;
+        right: 28px;
+        opacity: 0.14;
+        pointer-events: none;
     }}
     .bandeau .label {{
         text-transform: uppercase;
@@ -131,6 +140,12 @@ st.markdown(
         border-radius: 4px;
         padding: 1.1rem 1.3rem;
         height: 100%;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }}
+    .carte-kpi:hover {{
+        transform: translateY(-3px);
+        box-shadow: 0 10px 24px rgba(3,0,28,0.09);
+        border-color: {NAVY};
     }}
     .carte-kpi .accent {{
         display: inline-block;
@@ -250,6 +265,12 @@ with st.sidebar:
 st.markdown(
     """
     <div class="bandeau">
+        <svg class="motif-voile" width="190" height="190" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 8 L50 72 L18 72 Z" stroke="#ffffff" stroke-width="1.4" fill="none"/>
+            <path d="M50 20 L50 72 L74 72 Z" stroke="#ffffff" stroke-width="1.4" fill="none"/>
+            <line x1="50" y1="8" x2="50" y2="78" stroke="#ffffff" stroke-width="1.4"/>
+            <path d="M12 78 Q50 92 88 78" stroke="#ffffff" stroke-width="1.4" fill="none"/>
+        </svg>
         <div class="label">Simulateur patrimonial</div>
         <h1>Rémunération, holding & transmission</h1>
         <p>Compare salaire, dividende, capitalisation en holding et démembrement de propriété — avec les hypothèses toujours visibles et modifiables.</p>
@@ -338,6 +359,29 @@ with tab1:
     is_du = calcul_is(montant)
     distribuable = montant - is_du
     pfu_montant = distribuable * TAUX_PFU
+
+    with st.expander("Voir la cascade du calcul (du coût total entreprise au net en poche)", expanded=False):
+        fig_cascade = go.Figure(go.Waterfall(
+            orientation="v",
+            measure=["absolute", "relative", "relative", "relative", "total"],
+            x=["Coût total\nentreprise", "Charges\npatronales", "Charges\nsalariales", "Impôt sur\nle revenu", "Net en poche"],
+            y=[montant, -charges_employeur, -charges_salarie, -ir_salaire, net_salaire],
+            text=[fmt_euro(v) for v in [montant, charges_employeur, charges_salarie, ir_salaire, net_salaire]],
+            textposition="outside",
+            connector=dict(line=dict(color=GRILLE, width=1)),
+            decreasing=dict(marker=dict(color="#e34948")),
+            increasing=dict(marker=dict(color=COULEUR_DIVIDENDE)),
+            totals=dict(marker=dict(color=COULEUR_SALAIRE)),
+        ))
+        fig_cascade = _mise_en_forme_graphique(
+            fig_cascade, "De 100 % du coût entreprise au net réellement en poche (scénario salaire)", "Montant (€)"
+        )
+        fig_cascade.update_xaxes(showgrid=False)
+        st.plotly_chart(fig_cascade, width="stretch", config=CONFIG_GRAPHIQUE)
+        st.caption(
+            "L'abattement forfaitaire de 10 % n'apparaît pas ici : il réduit la base imposable, "
+            "pas directement la trésorerie — son effet est déjà intégré dans la barre « Impôt sur le revenu »."
+        )
 
     df_detail = pd.DataFrame(
         {
@@ -428,9 +472,19 @@ with tab2:
                       line=dict(color=COULEUR_DIVIDENDE, width=2.5), hovertemplate="Holding : %{y:,.0f} €<extra></extra>")
     fig2 = _mise_en_forme_graphique(fig2, "Direct vs holding — médiane et fourchette de résultats (P10-P90)", "Net si sortie à cette date (€)")
     fig2.update_xaxes(title="Année")
-    st.plotly_chart(fig2, width="stretch", config=CONFIG_GRAPHIQUE)
 
     resultat_det = comparer(profit_annuel, rendement_moyen, horizon)
+    if resultat_det["annee_croisement"]:
+        fig2.add_vline(
+            x=resultat_det["annee_croisement"],
+            line=dict(color=ENCRE_MUTED, width=1.4, dash="dot"),
+            annotation_text=f"  Croisement (scénario central) : année {resultat_det['annee_croisement']}",
+            annotation_position="top",
+            annotation=dict(font=dict(size=11, color=ENCRE_SECONDAIRE)),
+        )
+
+    st.plotly_chart(fig2, width="stretch", config=CONFIG_GRAPHIQUE)
+
     ecart_mediane_final = resultat_simu["holding"][50][-1] - resultat_simu["directe"][50][-1]
 
     col1, col2 = st.columns(2)
@@ -532,6 +586,28 @@ with tab3:
     fig3 = _mise_en_forme_graphique(fig3, f"Droits de donation pour {fmt_euro(valeur_bien)} transmis", "Droits de donation (€)")
     fig3.update_xaxes(showgrid=False)
     st.plotly_chart(fig3, width="stretch", config=CONFIG_GRAPHIQUE)
+
+    with st.expander("Voir le barème officiel de l'usufruit (article 669 du CGI)"):
+        ages_bareme = list(range(0, 100))
+        parts_usufruit = [pourcentage_usufruit(a) * 100 for a in ages_bareme]
+        fig_bareme = go.Figure()
+        fig_bareme.add_scatter(
+            x=ages_bareme, y=parts_usufruit, mode="lines", line=dict(color=COULEUR_DEMEMBREMENT, width=2.5, shape="hv"),
+            name="Part usufruit", hovertemplate="%{x} ans : %{y:.0f} %<extra></extra>",
+        )
+        fig_bareme.add_scatter(
+            x=[age_donateur], y=[pourcentage_usufruit(age_donateur) * 100], mode="markers",
+            marker=dict(color=NAVY, size=11, line=dict(color="#ffffff", width=1.5)),
+            name=f"Donateur ({age_donateur} ans)", hovertemplate="%{x} ans : %{y:.0f} %<extra></extra>",
+        )
+        fig_bareme = _mise_en_forme_graphique(fig_bareme, "Barème officiel : part de l'usufruit selon l'âge du donateur", "Part usufruit (%)")
+        fig_bareme.update_xaxes(title="Âge du donateur")
+        fig_bareme.update_yaxes(ticksuffix=" %", tickformat=".0f")
+        st.plotly_chart(fig_bareme, width="stretch", config=CONFIG_GRAPHIQUE)
+        st.caption(
+            "Barème fiscal forfaitaire par tranche d'âge (article 669 du CGI) — ce n'est pas une "
+            "estimation économique de la valeur de l'usufruit, qui dépendrait du rendement réel du bien."
+        )
 
     with st.expander("Voir le détail du calcul"):
         df_demembrement = pd.DataFrame(
