@@ -82,9 +82,11 @@ st.markdown(
 
     .block-container {{ padding-top: 2rem; max-width: 1150px; }}
 
+    .stApp {{ background: #ffffff; }}
+
     .bandeau {{
         background: linear-gradient(120deg, {NAVY} 0%, {NAVY_HOVER} 100%);
-        border-radius: 4px;
+        border-radius: 0;
         padding: 2.1rem 2.1rem 1.9rem;
         margin-bottom: 1.6rem;
         color: #ffffff;
@@ -124,20 +126,83 @@ st.markdown(
     }}
 
     .bloc-disclaimer {{
-        background: {CREME};
+        background: #ffffff;
         border: 1px solid {BORDURE};
         border-left: 3px solid {NAVY};
-        border-radius: 4px;
+        border-radius: 0;
         padding: 0.85rem 1.1rem;
         color: {ENCRE_SECONDAIRE};
         font-size: 0.88rem;
         margin-bottom: 1.3rem;
     }}
 
-    .carte-kpi {{
-        background: {SURFACE_CARTE};
+    .entete-section {{
+        margin: 0.2rem 0 1.4rem 0;
+    }}
+    .entete-section .titre {{
+        font-family: 'Libre Caslon Display', serif;
+        font-weight: 400;
+        font-size: 1.55rem;
+        color: {NAVY};
+        margin: 0 0 0.15rem 0;
+        line-height: 1.2;
+    }}
+    .entete-section .sous-titre {{
+        font-family: 'Libre Caslon Display', serif;
+        font-weight: 400;
+        font-size: 0.98rem;
+        color: {ENCRE_MUTED};
+        margin: 0;
+        font-style: italic;
+    }}
+
+    .filet {{
+        border: none;
+        border-top: 1px solid {BORDURE};
+        margin: 1.1rem 0;
+    }}
+
+    .etape-numerotee {{
+        display: flex;
+        align-items: baseline;
+        gap: 0.9rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid {BORDURE};
+    }}
+    .etape-numerotee:last-child {{ border-bottom: none; }}
+    .etape-numerotee .numero {{
+        font-family: 'Libre Caslon Display', serif;
+        color: {NAVY};
+        font-size: 0.95rem;
+        font-weight: 400;
+        min-width: 1.6rem;
+    }}
+    .etape-numerotee .texte {{
+        color: {ENCRE_SECONDAIRE};
+        font-size: 0.88rem;
+        line-height: 1.5;
+    }}
+
+    .tuile {{
+        background: #ffffff;
         border: 1px solid {BORDURE};
-        border-radius: 4px;
+        border-radius: 0;
+        padding: 1rem 1.2rem;
+        height: 100%;
+    }}
+    .tuile .tuile-titre {{
+        font-weight: 600;
+        font-size: 0.86rem;
+        color: {NAVY};
+        margin-bottom: 0.4rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }}
+
+    .carte-kpi {{
+        background: #ffffff;
+        border: 1px solid {BORDURE};
+        border-radius: 0;
         padding: 1.1rem 1.3rem;
         height: 100%;
         transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
@@ -191,7 +256,7 @@ st.markdown(
     .stTabs [data-baseweb="tab-highlight"] {{ background-color: {NAVY} !important; }}
 
     .stButton button, .stDownloadButton button {{
-        border-radius: 3px;
+        border-radius: 0;
         border-color: {NAVY};
         color: {NAVY};
     }}
@@ -226,6 +291,33 @@ def carte_kpi(label, valeur, couleur, sous_texte=""):
     )
 
 
+def entete_section(titre, sous_titre=""):
+    """En-tête à deux niveaux (gros titre serif + sous-titre serif italique),
+    repris du gabarit de titre de section du site grandlargepatrimoine.fr."""
+    st.markdown(
+        f"""
+        <div class="entete-section">
+            <div class="titre">{titre}</div>
+            <div class="sous-titre">{sous_titre}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def etapes_numerotees(etapes):
+    """Liste numérotée avec filets fins entre chaque étape — motif repris de
+    « La Méthode Grand Large » sur le site (01. Comprendre / 02. Structurer...)."""
+    lignes = "".join(
+        f'<div class="etape-numerotee">'
+        f'<div class="numero">{i:02d}.</div>'
+        f'<div class="texte">{texte}</div>'
+        f"</div>"
+        for i, texte in enumerate(etapes, start=1)
+    )
+    st.markdown(f"<div>{lignes}</div>", unsafe_allow_html=True)
+
+
 def _appliquer_profil_client():
     choix = st.session_state["persona_select"]
     if choix in PROFILS_CLIENT:
@@ -241,25 +333,23 @@ if "profit_input" not in st.session_state:
 with st.sidebar:
     st.markdown("### Grand Large Patrimoine")
     st.caption("Outil de simulation patrimoniale — projet de stage")
-    st.markdown("---")
+    st.markdown('<hr class="filet">', unsafe_allow_html=True)
     st.selectbox(
         "Profil client (pré-remplit les montants)",
         ["Personnalisé"] + list(PROFILS_CLIENT.keys()),
         key="persona_select",
         on_change=_appliquer_profil_client,
     )
-    st.caption("Archétypes illustratifs, calés sur les typologies affichées par Grand Large Patrimoine — aucune donnée réelle de client.")
-    st.markdown("---")
-    st.markdown(
-        "**Ce que fait l'outil**\n\n"
-        "Compare, pour un dirigeant de société, différentes façons de "
-        "sortir ou de conserver de l'argent dans l'entreprise — et montre "
-        "l'effet du temps et du risque sur ces choix.\n\n"
-        "**Ce que l'outil ne fait pas**\n\n"
-        "Il ne recommande aucune décision, aucun produit, aucun montant. "
-        "Chaque hypothèse est affichée et modifiable."
-    )
-    st.markdown("---")
+    st.caption("Archétypes illustratifs — aucune donnée réelle de client.")
+    st.markdown('<hr class="filet">', unsafe_allow_html=True)
+    with st.expander("Ce que fait / ne fait pas l'outil"):
+        st.markdown(
+            "Compare, pour un dirigeant de société, différentes façons de "
+            "sortir ou de conserver de l'argent dans l'entreprise, et "
+            "l'effet du temps et du risque sur ces choix.\n\n"
+            "**Il ne recommande aucune décision, aucun produit, aucun "
+            "montant.** Chaque hypothèse reste affichée et modifiable."
+        )
     st.caption("Projet réalisé par Antonin Desmazures")
 
 st.markdown(
@@ -311,10 +401,9 @@ def _mise_en_forme_graphique(fig, titre, y_titre):
 
 # --- Onglet 1 : comparaison simple salaire vs dividende sur une année ---
 with tab1:
-    st.subheader("Salaire vs dividende, sur une année")
-    st.caption(
-        "Hypothèse : dirigeant de SASU, assimilé salarié, part fiscale unique "
-        "(célibataire sans enfant, pas d'autre revenu). Barèmes 2026 (revenus 2025)."
+    entete_section(
+        "Salaire vs dividende, sur une année",
+        "Dirigeant de SASU, assimilé salarié, part fiscale unique — barèmes 2026 (revenus 2025)",
     )
 
     montant = st.number_input(
@@ -416,7 +505,10 @@ with tab1:
 
 # --- Onglet 2 : trajectoire pluriannuelle avec risque ---
 with tab2:
-    st.subheader("Garder l'argent en direct vs le laisser capitaliser dans une holding")
+    entete_section(
+        "Garder l'argent en direct vs le laisser capitaliser dans une holding",
+        "Simulation Monte-Carlo, fourchette P10–P90, sur plusieurs années",
+    )
 
     with st.expander("Hypothèses de ce scénario (à lire avant de tirer des conclusions)"):
         st.markdown(
@@ -527,11 +619,9 @@ with tab2:
 
 # --- Onglet 3 : démembrement de propriété ---
 with tab3:
-    st.subheader("Donation en pleine propriété vs donation de la nue-propriété")
-    st.caption(
-        "Hypothèse : donation en ligne directe (parent → enfant), abattement de "
-        "100 000 € non consommé par une donation antérieure de moins de 15 ans. "
-        "Barème de l'article 669 du CGI (source BOFiP)."
+    entete_section(
+        "Donation en pleine propriété vs donation de la nue-propriété",
+        "Ligne directe, abattement de 100 000 € disponible — barème de l'article 669 du CGI",
     )
 
     with st.expander("Comment lire ce scénario"):
@@ -642,16 +732,16 @@ with tab3:
 
 # --- Onglet 4 : veille marchés & produits, calée sur les solutions GLP ---
 with tab4:
-    st.subheader("Note Grand Large — veille marchés & produits")
-    st.caption(
-        "Indicateurs de marché et seuils réglementaires organisés autour des solutions affichées sur "
-        "grandlargepatrimoine.fr, pour une veille qui parle directement le langage de leurs métiers."
+    entete_section(
+        "Note Grand Large",
+        "Veille marchés & produits, organisée autour des solutions affichées sur grandlargepatrimoine.fr",
     )
 
     st.markdown(
         f"""
-        <div style="background:{CREME}; border-left:4px solid {NAVY}; padding:14px 18px;
-                    border-radius:6px; margin-bottom:18px; font-size:0.92rem; color:{ENCRE_SECONDAIRE};">
+        <div style="background:#ffffff; border:1px solid {BORDURE}; border-left:3px solid {NAVY};
+                    padding:14px 18px; border-radius:0; margin-bottom:18px; font-size:0.92rem;
+                    color:{ENCRE_SECONDAIRE};">
             <strong>Instantané du {DATE_MISE_A_JOUR}</strong> — données publiques, sourcées, figées à cette
             date. Pas un flux en direct : voir la checklist de rafraîchissement en bas de page avant toute
             réutilisation. Aucun de ces chiffres ne constitue un conseil en investissement ; les acteurs
@@ -665,7 +755,12 @@ with tab4:
     COULEUR_ALERTE = "#fab219"  # accent uniquement (texte en noir dessus pour le contraste) - cf. skill dataviz
 
     for section in TOUTES_SECTIONS:
-        st.markdown(f"#### {section.titre}")
+        st.markdown('<hr class="filet">', unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="font-family:\'Libre Caslon Display\', serif; font-weight:400; '
+            f'font-size:1.2rem; color:{NAVY}; margin-bottom:0.1rem;">{section.titre}</div>',
+            unsafe_allow_html=True,
+        )
         st.caption(f"Solution Grand Large Patrimoine concernée : {section.solution_glp}")
 
         for ind in section.indicateurs:
@@ -686,8 +781,8 @@ with tab4:
             # au milieu d'un bloc HTML coupe le bloc pour le parseur Markdown de
             # Streamlit, et le reste s'affiche alors en texte brut échappé.
             carte_html = (
-                f'<div style="background:{SURFACE_CARTE}; border:1px solid {GRILLE}; '
-                f'border-left:3px solid {bordure}; border-radius:6px; padding:12px 16px; margin-bottom:8px;">'
+                f'<div style="background:#ffffff; border:1px solid {GRILLE}; '
+                f'border-left:3px solid {bordure}; border-radius:0; padding:12px 16px; margin-bottom:8px;">'
                 f'<div style="display:flex; align-items:center; flex-wrap:wrap;">'
                 f'<span style="font-weight:600; color:{ENCRE_PRIMAIRE};">{ind.libelle}</span>{etiquette}'
                 f'</div>'
@@ -705,7 +800,12 @@ with tab4:
 
         st.write("")
 
-    st.markdown("#### Univers de partenaires cité par Grand Large Patrimoine")
+    st.markdown('<hr class="filet">', unsafe_allow_html=True)
+    st.markdown(
+        f'<div style="font-family:\'Libre Caslon Display\', serif; font-weight:400; '
+        f'font-size:1.2rem; color:{NAVY}; margin-bottom:0.1rem;">Univers de partenaires cité par Grand Large Patrimoine</div>',
+        unsafe_allow_html=True,
+    )
     st.caption(
         "Architecture ouverte : liste de référence relevée sur grandlargepatrimoine.fr, utile pour "
         "resituer un nom entendu en réunion — pas une recommandation ni un classement."
@@ -715,10 +815,13 @@ with tab4:
     for i, (categorie, acteurs) in enumerate(categories):
         cible = col_gauche if i % 2 == 0 else col_droite
         with cible:
-            st.markdown(f"**{categorie}**")
-            st.markdown(", ".join(acteurs))
-            st.write("")
+            st.markdown(
+                f'<div class="tuile" style="margin-bottom:0.9rem;">'
+                f'<div class="tuile-titre">{categorie}</div>'
+                f'<div style="font-size:0.88rem; color:{ENCRE_SECONDAIRE};">{", ".join(acteurs)}</div>'
+                f"</div>",
+                unsafe_allow_html=True,
+            )
 
     with st.expander("Checklist de rafraîchissement — à suivre avant toute utilisation"):
-        for etape in CHECKLIST_RAFRAICHISSEMENT:
-            st.markdown(f"- {etape}")
+        etapes_numerotees(CHECKLIST_RAFRAICHISSEMENT)
