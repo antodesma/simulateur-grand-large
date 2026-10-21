@@ -17,15 +17,15 @@ Un dirigeant de société qui se demande *« salaire ou dividende ? »*, *« je 
 ## Les 4 modules
 
 ### 1 — Rémunération annuelle
-Salaire vs dividende pour un dirigeant de SASU assimilé salarié : charges patronales et salariales calculées par tranche de PASS (sans approximation forfaitaire), abattement de 10 % pour frais professionnels, IS à 15 %/25 %, barème IR progressif, PFU sur dividendes. Détail du calcul étape par étape, export CSV.
+Salaire vs dividende pour un dirigeant de SASU assimilé salarié : charges patronales et salariales calculées par tranche de PASS (sans approximation forfaitaire), abattement de 10 % pour frais professionnels, IS à 15 %/25 %, barème IR progressif, PFU sur dividendes. Cascade interactive (waterfall) du coût total entreprise jusqu'au net en poche, détail du calcul étape par étape, export CSV.
 
 ### 2 — Trajectoire pluriannuelle
-Garder l'argent en direct vs le faire capitaliser dans une holding, sur plusieurs années. Simulation Monte-Carlo (1000 tirages) avec trois profils de rendement/risque, affichée en fourchette P10–P90 plutôt qu'en point unique — pour ne jamais ressembler à une prévision de performance personnalisée.
+Garder l'argent en direct vs le faire capitaliser dans une holding, sur plusieurs années. Simulation Monte-Carlo (1500 tirages) avec trois profils de rendement/risque, affichée en fourchette P10–P90 plutôt qu'en point unique — pour ne jamais ressembler à une prévision de performance personnalisée. L'année de croisement (scénario central) est annotée directement sur le graphique.
 
 ![Trajectoire pluriannuelle](screenshots/02_trajectoire.png)
 
 ### 3 — Démembrement de propriété
-Donation en pleine propriété vs donation de la nue-propriété (usufruit conservé par le donateur) : barème de l'article 669 du CGI, abattements de donation en ligne directe, calcul exact des droits de donation par tranche.
+Donation en pleine propriété vs donation de la nue-propriété (usufruit conservé par le donateur) : barème de l'article 669 du CGI, abattements de donation en ligne directe, calcul exact des droits de donation par tranche. Courbe interactive du barème officiel avec le donateur positionné sur sa tranche d'âge.
 
 ![Démembrement de propriété](screenshots/03_demembrement.png)
 
