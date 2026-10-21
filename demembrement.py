@@ -93,17 +93,58 @@ def calcul_droits_donation(valeur_transmise, abattement=ABATTEMENT_DONATION_LIGN
     return droits
 
 
-def comparer_transmission(valeur_bien, age_donateur, abattement=ABATTEMENT_DONATION_LIGNE_DIRECTE):
+def calcul_droits_donation_famille(
+    valeur_transmise,
+    nombre_enfants=1,
+    nombre_donateurs=1,
+    abattement=ABATTEMENT_DONATION_LIGNE_DIRECTE,
+):
+    """
+    Droits de donation en ligne directe pour une famille, en tenant compte
+    du fait que l'abattement de l'article 779 du CGI s'applique PAR ENFANT
+    ET PAR PARENT (et non une seule fois pour toute la transmission) :
+    un enfant avec ses deux parents vivants peut recevoir jusqu'à
+    200 000 € (2 x 100 000 €) en franchise de droits, et ce montant se
+    multiplie par le nombre d'enfants si le bien leur est transmis à parts
+    égales. On répartit donc la valeur transmise en autant de parts
+    (enfants x donateurs) et on applique le barème progressif, abattement
+    compris, à chaque part séparément - puis on additionne.
+    Source : service-public.gouv.fr (art. 779 et 784 du CGI).
+    """
+    nombre_enfants = max(1, nombre_enfants)
+    nombre_donateurs = max(1, nombre_donateurs)
+    nombre_parts = nombre_enfants * nombre_donateurs
+    valeur_par_part = valeur_transmise / nombre_parts
+    droits_par_part = calcul_droits_donation(valeur_par_part, abattement)
+    return droits_par_part * nombre_parts
+
+
+def comparer_transmission(
+    valeur_bien,
+    age_donateur,
+    nombre_enfants=1,
+    nombre_donateurs=1,
+    abattement=ABATTEMENT_DONATION_LIGNE_DIRECTE,
+):
     """
     Compare les droits de donation entre une transmission en pleine
     propriété et une donation de la seule nue-propriété (usufruit
-    conservé par le donateur jusqu'à son décès).
+    conservé par le donateur jusqu'à son décès), pour une famille de
+    nombre_enfants enfants, la donation étant faite par nombre_donateurs
+    parent(s) (1 = un seul parent donateur, 2 = les deux parents donnent
+    conjointement, chacun avec son propre abattement).
     """
     valeur_usufruit, valeur_nue_propriete = valeur_usufruit_nue_propriete(age_donateur, valeur_bien)
-    droits_pleine_propriete = calcul_droits_donation(valeur_bien, abattement)
-    droits_demembrement = calcul_droits_donation(valeur_nue_propriete, abattement)
+    droits_pleine_propriete = calcul_droits_donation_famille(
+        valeur_bien, nombre_enfants, nombre_donateurs, abattement
+    )
+    droits_demembrement = calcul_droits_donation_famille(
+        valeur_nue_propriete, nombre_enfants, nombre_donateurs, abattement
+    )
     return {
         "valeur_bien": valeur_bien,
+        "nombre_enfants": nombre_enfants,
+        "nombre_donateurs": nombre_donateurs,
         "pourcentage_usufruit": pourcentage_usufruit(age_donateur),
         "valeur_usufruit": valeur_usufruit,
         "valeur_nue_propriete": valeur_nue_propriete,
@@ -114,8 +155,8 @@ def comparer_transmission(valeur_bien, age_donateur, abattement=ABATTEMENT_DONAT
 
 
 if __name__ == "__main__":
-    resultat = comparer_transmission(valeur_bien=400_000, age_donateur=65)
-    print(f"Bien de {resultat['valeur_bien']:,.0f} €, donateur de 65 ans")
+    resultat = comparer_transmission(valeur_bien=400_000, age_donateur=65, nombre_enfants=2, nombre_donateurs=2)
+    print(f"Bien de {resultat['valeur_bien']:,.0f} €, donateur de 65 ans, {resultat['nombre_enfants']} enfant(s), {resultat['nombre_donateurs']} parent(s) donateur(s)")
     print(f"Part usufruit : {resultat['pourcentage_usufruit']:.0%} -> nue-propriété transmise : {resultat['valeur_nue_propriete']:,.0f} €")
     print(f"Droits si donation en pleine propriété : {resultat['droits_pleine_propriete']:,.0f} €")
     print(f"Droits si donation de la nue-propriété  : {resultat['droits_demembrement']:,.0f} €")

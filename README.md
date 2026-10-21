@@ -25,7 +25,7 @@ Garder l'argent en direct vs le faire capitaliser dans une holding, sur plusieur
 ![Trajectoire pluriannuelle](screenshots/02_trajectoire.png)
 
 ### 3 — Démembrement de propriété
-Donation en pleine propriété vs donation de la nue-propriété (usufruit conservé par le donateur) : barème de l'article 669 du CGI, abattements de donation en ligne directe, calcul exact des droits de donation par tranche. Courbe interactive du barème officiel avec le donateur positionné sur sa tranche d'âge.
+Donation en pleine propriété vs donation de la nue-propriété (usufruit conservé par le donateur) : barème de l'article 669 du CGI, abattements de donation en ligne directe, calcul exact des droits de donation par tranche. L'abattement de 100 000 € (article 779 du CGI) s'applique par enfant et par parent — l'outil répartit donc la valeur transmise selon le nombre d'enfants et le nombre de parents donateurs, au lieu d'un abattement unique global. Courbe interactive du barème officiel avec le donateur positionné sur sa tranche d'âge.
 
 ![Démembrement de propriété](screenshots/03_demembrement.png)
 
@@ -37,7 +37,7 @@ Indicateurs de marché et seuils réglementaires organisés autour des 6 solutio
 ## Rigueur méthodologique
 
 - **Aucune hypothèse inventée** : chaque seuil fiscal et chaque chiffre de marché est sourcé (CGI, ACPR, ASPIM, France Invest, France Assureurs, Banque de France...), avec sa date de validité.
-- **34 tests automatisés** (`tests_sanity.py`) : cas limites, monotonie, cohérence de la dichotomie brut ↔ coût total, reproductibilité de la simulation Monte-Carlo, cohérence du barème de démembrement.
+- **39 tests automatisés** (`tests_sanity.py`) : cas limites, monotonie, cohérence de la dichotomie brut ↔ coût total, reproductibilité de la simulation Monte-Carlo, cohérence du barème de démembrement et de la répartition de l'abattement de donation par enfant et par parent.
 - **Compliance-first** : bandeau de non-responsabilité sur chaque onglet, aucune recommandation de produit ou de montant, fourchettes de risque plutôt que performances ponctuelles.
 - **Charte graphique réelle** : couleurs et typographie extraites du site de Grand Large Patrimoine (et non inventées), palette de données validée accessibilité (contraste, daltonisme).
 
@@ -64,7 +64,7 @@ simulation.py        # même comparaison, Monte-Carlo (profils prudent/équilibr
 demembrement.py       # barème art. 669 CGI, droits de donation, pleine propriété vs démembrement
 veille.py             # indicateurs de marché et seuils réglementaires sourcés, organisés par solution GLP
 app.py                # interface Streamlit (4 onglets), charte graphique Grand Large Patrimoine
-tests_sanity.py       # 34 vérifications automatisées sur les 4 modules de calcul
+tests_sanity.py       # 39 vérifications automatisées sur les 4 modules de calcul
 ```
 
 ## Méthodologie — conçu avec Claude (Anthropic)

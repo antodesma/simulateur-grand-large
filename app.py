@@ -636,6 +636,13 @@ with tab3:
             "- **Au décès du parent**, l'usufruit s'éteint et l'enfant devient "
             "plein propriétaire **sans droit supplémentaire** (article 1133 "
             "du CGI).\n"
+            "- **L'abattement de 100 000 € est individuel : par parent, et par "
+            "enfant** (article 779 du CGI, source service-public.gouv.fr). Un "
+            "enfant qui a ses deux parents vivants peut donc recevoir jusqu'à "
+            "200 000 € en franchise de droits, et ce total se multiplie par le "
+            "nombre d'enfants si le bien leur est transmis à parts égales — "
+            "d'où les deux curseurs ci-dessous, qui changent fortement le "
+            "résultat.\n"
             "- **Contrepartie** : avec la nue-propriété seule, l'enfant "
             "n'a pas l'usage ou les revenus du bien avant l'extinction de "
             "l'usufruit — ce n'est pas strictement equivalent à une pleine "
@@ -647,7 +654,21 @@ with tab3:
     valeur_bien = col1.number_input("Valeur du bien transmis (€, pleine propriété)", min_value=0, max_value=10_000_000, value=400_000, step=10_000)
     age_donateur = col2.slider("Âge du donateur au moment de la donation", min_value=18, max_value=99, value=65)
 
-    resultat_demembrement = comparer_transmission(valeur_bien, age_donateur)
+    col3, col4 = st.columns(2)
+    nombre_enfants = col3.number_input("Nombre d'enfants bénéficiaires (bien transmis à parts égales)", min_value=1, max_value=10, value=1, step=1)
+    nombre_donateurs = col4.radio(
+        "Donation faite par",
+        options=[1, 2],
+        format_func=lambda n: "un seul parent" if n == 1 else "les deux parents conjointement",
+        horizontal=True,
+    )
+
+    resultat_demembrement = comparer_transmission(valeur_bien, age_donateur, nombre_enfants, nombre_donateurs)
+    nombre_parts = nombre_enfants * nombre_donateurs
+    st.caption(
+        f"Abattement total disponible pour cette transmission : {fmt_euro(100_000 * nombre_parts)} "
+        f"({nombre_enfants} enfant(s) × {nombre_donateurs} donateur(s) × 100 000 €, renouvelable tous les 15 ans)."
+    )
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -706,6 +727,7 @@ with tab3:
                     valeur_bien,
                     resultat_demembrement["valeur_usufruit"],
                     resultat_demembrement["valeur_nue_propriete"],
+                    100_000 * nombre_parts,
                     resultat_demembrement["droits_pleine_propriete"],
                     resultat_demembrement["droits_demembrement"],
                     resultat_demembrement["economie_droits"],
@@ -715,6 +737,7 @@ with tab3:
                 "Valeur du bien (pleine propriété)",
                 f"Valeur de l'usufruit ({resultat_demembrement['pourcentage_usufruit']:.0%})",
                 f"Valeur de la nue-propriété ({1 - resultat_demembrement['pourcentage_usufruit']:.0%})",
+                f"Abattement total ({nombre_enfants} enfant(s) × {nombre_donateurs} donateur(s))",
                 "Droits si donation en pleine propriété",
                 "Droits si donation de la nue-propriété",
                 "Économie de droits",
@@ -725,7 +748,7 @@ with tab3:
     st.download_button(
         "Télécharger ce scénario (CSV)",
         data=df_demembrement.to_csv().encode("utf-8"),
-        file_name=f"demembrement_{valeur_bien}_{age_donateur}ans.csv",
+        file_name=f"demembrement_{valeur_bien}_{nombre_enfants}enf_{age_donateur}ans.csv",
         mime="text/csv",
     )
 

@@ -117,6 +117,29 @@ verifier("démembrement ne coûte jamais plus cher que la pleine propriété", a
 verifier("cas 400k€ / 65 ans : économie exacte de 32 000€ (vérifié à la main)", abs(comparer_transmission(400_000, 65)["economie_droits"] - 32_000) < 1)
 verifier("sous l'abattement (100k€), aucun droit des deux côtés", comparer_transmission(90_000, 65)["droits_pleine_propriete"] == 0 and comparer_transmission(90_000, 65)["droits_demembrement"] == 0)
 
+# --- abattement par enfant ET par parent (art. 779 CGI) : pas un abattement unique global ---
+verifier(
+    "2 enfants à parts égales = 2x l'abattement d'un seul enfant (sous le seuil, droits nuls des deux côtés)",
+    comparer_transmission(180_000, 65, nombre_enfants=2)["droits_pleine_propriete"] == 0
+)
+verifier(
+    "2 enfants : les droits totaux sont strictement inférieurs à ceux d'un enfant unique sur le même bien",
+    comparer_transmission(500_000, 65, nombre_enfants=2)["droits_pleine_propriete"]
+    < comparer_transmission(500_000, 65, nombre_enfants=1)["droits_pleine_propriete"]
+)
+verifier(
+    "2 parents donateurs conjointement = 2x l'abattement d'un seul parent (sous 200k€, droits nuls)",
+    comparer_transmission(180_000, 65, nombre_donateurs=2)["droits_pleine_propriete"] == 0
+)
+verifier(
+    "1 enfant, 1 bien de 400k, réparti en 2 parts égales (2 enfants) : chaque part de 200k reste sous abattement -> 0€ de droits",
+    comparer_transmission(200_000, 65, nombre_enfants=2)["droits_pleine_propriete"] == 0
+)
+verifier(
+    "nombre_enfants=1 et nombre_donateurs=1 : comportement identique à l'ancienne API (non-régression)",
+    comparer_transmission(400_000, 65, 1, 1)["economie_droits"] == comparer_transmission(400_000, 65)["economie_droits"]
+)
+
 print()
 if echecs:
     print(f"{len(echecs)} échec(s) : {echecs}")
