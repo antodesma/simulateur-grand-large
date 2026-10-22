@@ -48,6 +48,7 @@ from demembrement import comparer_transmission, pourcentage_usufruit
 from succession import ABATTEMENT_TIERS, comparer_liens_parente
 from ifi import ABATTEMENT_RESIDENCE_PRINCIPALE, BAREME_IFI, SEUIL_ASSUJETTISSEMENT_IFI, synthese_ifi
 from sci import comparer_sci
+from per import comparer_per, economie_impot_per, montant_deductible, plafond_deduction_salarie, plafond_deduction_tns
 from pacte_dutreil import (
     calcul_transmission_dutreil,
     CONDITIONS_PACTE_DUTREIL,
@@ -580,12 +581,13 @@ with st.expander("Comment utiliser ce simulateur (à lire en premier)", expanded
         "Onglet « Assurance-vie » : combien reste-t-il net lors d'un rachat, ou pour les bénéficiaires à la transmission - selon l'âge du souscripteur au moment des versements ?",
         "Onglet « IFI » : le patrimoine immobilier (hors résidence principale partiellement abattue, hors biens professionnels) dépasse-t-il le seuil d'assujettissement, et pour combien ?",
         "Onglet « SCI (IS vs IR) » : pour détenir un bien locatif en société, IS (amortissement, double imposition) ou IR (pas d'amortissement, abattement durée de détention) - lequel laisse le plus au terme ?",
+        "Onglet « PER » : verser sur un plan d'épargne retraite plutôt que percevoir en net - troisième levier d'arbitrage de la rémunération, à côté du salaire et du dividende.",
         "Onglet « Note Grand Large » : les chiffres de marché et seuils réglementaires utilisés ailleurs dans l'outil, sourcés et datés.",
         "Dans chaque onglet, les montants se modifient librement — aucun résultat n'est figé, tout se recalcule en direct.",
     ])
 
-tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
-    ["Rémunération annuelle", "Trajectoire pluriannuelle", "Démembrement de propriété", "Succession", "Assurance-vie", "IFI", "SCI (IS vs IR)", "Note Grand Large"]
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(
+    ["Rémunération annuelle", "Trajectoire pluriannuelle", "Démembrement de propriété", "Succession", "Assurance-vie", "IFI", "SCI (IS vs IR)", "PER", "Note Grand Large"]
 )
 
 # Barre d'outils Plotly activée (zoom rectangle, panoramique, réinitialiser,
@@ -2894,8 +2896,187 @@ with tab7:
     )
 
 
-# --- Onglet 8 : veille marchés & produits, calée sur les solutions GLP ---
+# --- Onglet 8 : PER (plan d'épargne retraite) - troisième levier de l'arbitrage rémunération ---
 with tab8:
+    entete_section(
+        "PER : verser plutôt que percevoir en net ?",
+        "Économie d'impôt immédiate, capitalisation en franchise d'impôt, fiscalité différée à la sortie",
+    )
+    pitch_usage(
+        "<strong>Le dirigeant a déjà arbitré salaire/dividende sur le premier onglet - et s'il en "
+        "versait une partie sur un PER plutôt que de l'encaisser en net ?</strong> Le versement "
+        "réduit le revenu imposable tout de suite (dans la limite d'un plafond), et le capital brut "
+        "fructifie sans frottement fiscal annuel jusqu'à la sortie - où versements et gains sont "
+        "alors taxés séparément."
+    )
+
+    with st.expander("Comment lire ce calcul", expanded=True):
+        st.markdown(
+            "- **Plafond de déduction** : 10 % des revenus professionnels nets pour un salarié ou "
+            "assimilé salarié (président de SASU), plafonné à 10 % de **8 PASS** ; 10 % du bénéfice "
+            "plus 15 % supplémentaires sur la fraction comprise entre 1 et 8 PASS pour un TNS (gérant "
+            "majoritaire de SARL) - un plafond structurellement plus généreux.\n"
+            "- **À l'entrée** : le montant déductible procure une économie d'impôt immédiate égale à "
+            "ce montant multiplié par la TMI actuelle.\n"
+            "- **À la sortie en capital** (ce module ne traite pas la sortie en rente) : si les "
+            "versements ont été déduits, ils sont réintégrés au revenu imposable et taxés au barème "
+            "IR, à la TMI du moment - **sans prélèvements sociaux**. S'ils n'ont pas été déduits, ils "
+            "sont totalement exonérés. Les **gains**, eux, sont toujours taxés au **PFU de 31,4 %**, "
+            "déduits ou non.\n"
+            "- Ce module ne modélise ni la sortie en rente viagère, ni le PER d'entreprise "
+            "(abondement employeur, forfait social), ni les cas de déblocage anticipé, ni la "
+            "mutualisation des plafonds entre conjoints."
+        )
+
+    col_per1, col_per2 = st.columns(2)
+    with col_per1:
+        statut_per = st.radio(
+            "Statut du dirigeant", options=["Assimilé salarié (SASU)", "TNS (SARL, gérant majoritaire)"],
+            horizontal=True,
+        )
+        revenu_per = st.number_input(
+            "Revenu professionnel net / bénéfice de l'année (€)", min_value=0, max_value=1_000_000,
+            value=70_000, step=1_000,
+        )
+        st.caption(f"→ {fmt_euro(revenu_per)}")
+        if statut_per.startswith("Assimilé"):
+            plafond_per = plafond_deduction_salarie(revenu_per)
+        else:
+            plafond_per = plafond_deduction_tns(revenu_per)
+        st.caption(f"Plafond de déduction disponible : **{fmt_euro(plafond_per)}**")
+        versement_per = st.number_input(
+            "Montant versé sur le PER cette année (€)", min_value=0, max_value=200_000,
+            value=min(10_000, int(plafond_per)), step=500,
+        )
+        st.caption(f"→ {fmt_euro(versement_per)}")
+        deduit_per = st.checkbox("Opter pour la déduction fiscale à l'entrée (par défaut)", value=True)
+    with col_per2:
+        tmi_entree_per = st.radio(
+            "TMI actuelle (à l'entrée)", options=[0.11, 0.30, 0.41, 0.45],
+            format_func=lambda t: f"{t:.0%}", horizontal=True, index=2,
+        )
+        tmi_sortie_per = st.radio(
+            "TMI anticipée à la sortie (souvent plus basse à la retraite)", options=[0.0, 0.11, 0.30, 0.41, 0.45],
+            format_func=lambda t: f"{t:.0%}", horizontal=True, index=1,
+        )
+        rendement_per = st.slider(
+            "Rendement annuel moyen du support (%)", min_value=0.0, max_value=8.0, value=4.0, step=0.5,
+        ) / 100
+        duree_per = st.slider("Durée avant la sortie (années)", min_value=1, max_value=40, value=20)
+
+    montant_deductible_per = montant_deductible(versement_per, plafond_per)
+    if versement_per > plafond_per:
+        st.warning(
+            f"Le versement dépasse le plafond de déduction disponible : seuls {fmt_euro(montant_deductible_per)} "
+            f"sont déductibles, le solde ({fmt_euro(versement_per - montant_deductible_per)}) ne procure aucune "
+            "économie d'impôt à l'entrée (mais reste versé sur le PER et bénéficie de la même fiscalité de sortie)."
+        )
+
+    resultat_per = comparer_per(
+        versement_per, tmi_entree_per, tmi_sortie_per, rendement_per, duree_per,
+        deduit=deduit_per,
+    )
+    economie_per = economie_impot_per(montant_deductible_per, tmi_entree_per) if deduit_per else 0.0
+
+    col_kpi_per1, col_kpi_per2, col_kpi_per3 = st.columns(3)
+    with col_kpi_per1:
+        carte_kpi(
+            "Économie d'impôt immédiate", fmt_euro(economie_per), COULEUR_SALAIRE,
+            f"{fmt_euro(montant_deductible_per)} déductibles à {tmi_entree_per:.0%} de TMI." if deduit_per
+            else "Option de non-déduction choisie : aucune économie d'impôt à l'entrée.",
+        )
+    with col_kpi_per2:
+        carte_kpi(
+            f"Net perçu après {duree_per} ans - avec PER", fmt_euro(resultat_per["net_per"]), COULEUR_DEMEMBREMENT,
+            f"Capital brut {fmt_euro(versement_per)} capitalisé à {rendement_per:.1%}/an, "
+            f"fiscalité de sortie + économie d'impôt immédiate réinvestie.",
+        )
+    with col_kpi_per3:
+        carte_kpi(
+            "Écart vs encaissement net immédiat", fmt_euro(resultat_per["ecart"], signe=True), NAVY,
+            ("Le PER laisse plus au terme, dans ce scénario." if resultat_per["ecart"] > 0
+             else "Encaisser en net puis placer laisse plus au terme, dans ce scénario." if resultat_per["ecart"] < 0
+             else "Les deux options laissent exactement le même total, dans ce scénario."),
+        )
+
+    fig_per = go.Figure()
+    fig_per.add_bar(
+        x=["Avec PER", "Sans PER (net immédiat puis placement)"],
+        y=[resultat_per["net_per"], resultat_per["net_sans_per"]],
+        marker_color=[COULEUR_DEMEMBREMENT, COULEUR_SALAIRE],
+        hovertemplate="%{x} : %{y:,.0f} €<extra></extra>",
+    )
+    fig_per = _mise_en_forme_graphique(
+        fig_per, f"Net perçu après {duree_per} ans, PER vs encaissement immédiat", "Montant net (€)"
+    )
+    fig_per.update_xaxes(showgrid=False)
+    st.plotly_chart(fig_per, width="stretch", config=CONFIG_GRAPHIQUE)
+
+    with st.expander("Voir le détail du calcul"):
+        df_per = pd.DataFrame(
+            {
+                "Avec PER": [
+                    versement_per, economie_per, resultat_per["gains_per"],
+                    resultat_per["net_per"],
+                ],
+                "Sans PER": [
+                    versement_per * (1 - tmi_entree_per), 0.0, resultat_per["gains_sans_per"],
+                    resultat_per["net_sans_per"],
+                ],
+            },
+            index=["Capital investi au départ", "Économie d'impôt immédiate", "Gains générés", "Net perçu après sortie"],
+        )
+        st.dataframe(df_per.style.format(fmt_euro), width="stretch")
+
+    col_csv_per, col_pdf_per = st.columns(2)
+    with col_csv_per:
+        st.download_button(
+            "Télécharger ce scénario (CSV)",
+            data=df_per.to_csv().encode("utf-8"),
+            file_name=f"per_{versement_per}_{duree_per}ans.csv",
+            mime="text/csv",
+        )
+    with col_pdf_per:
+        lignes_pdf_per = [["Poste", "Avec PER", "Sans PER"]] + [
+            [str(poste), fmt_euro(avec), fmt_euro(sans)]
+            for poste, avec, sans in zip(df_per.index, df_per["Avec PER"], df_per["Sans PER"])
+        ]
+        pdf_bytes_per = generer_pdf_scenario(
+            titre="PER : verser plutôt que percevoir en net ?",
+            sous_titre=f"{fmt_euro(versement_per)} versés, TMI {tmi_entree_per:.0%} → {tmi_sortie_per:.0%}, sur {duree_per} ans",
+            kpis=[
+                ("Économie d'impôt immédiate", fmt_euro(economie_per)),
+                (f"Net perçu après {duree_per} ans - avec PER", fmt_euro(resultat_per["net_per"])),
+                ("Écart vs encaissement net immédiat", fmt_euro(resultat_per["ecart"], signe=True)),
+            ],
+            lignes_tableau=lignes_pdf_per,
+            hypotheses=[
+                "Plafond de déduction : 10 % des revenus professionnels nets (salarié, max 8 PASS) ou "
+                "10 % du bénéfice + 15 % entre 1 et 8 PASS (TNS).",
+                "Sortie en capital uniquement (pas de rente viagère) : versements déduits taxés au "
+                "barème IR à la TMI de sortie, sans prélèvements sociaux ; gains toujours taxés au PFU "
+                "de 31,4 %.",
+                "Scénario « sans PER » : encaissement net immédiat au TMI actuel, puis placement au "
+                "même rendement avec fiscalité PFU uniquement à la sortie (simplification, pas de "
+                "fiscalité annuelle intermédiaire).",
+            ],
+        )
+        st.download_button(
+            "Télécharger la synthèse (PDF)",
+            data=pdf_bytes_per,
+            file_name=f"synthese_per_{versement_per}.pdf",
+            mime="application/pdf",
+            type="primary",
+        )
+
+    glossaire_expander(
+        ["PER", "Plafond de déduction (PER)", "TMI", "PFU"],
+        titre="Glossaire — PER",
+    )
+
+
+# --- Onglet 9 : veille marchés & produits, calée sur les solutions GLP ---
+with tab9:
     entete_section(
         "Note Grand Large",
         "Veille marchés & produits, organisée autour des solutions affichées sur grandlargepatrimoine.fr",

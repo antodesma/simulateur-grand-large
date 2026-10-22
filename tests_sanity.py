@@ -16,6 +16,7 @@ from fiscalite import (
     net_apres_dividende,
     net_apres_salaire,
     PASS_2026,
+    TAUX_PFU,
 )
 from simulation import PROFILS, simulation_comparaison, simuler_directe, simuler_holding
 from paniers import CLASSES_ACTIFS, PANIERS, normaliser_ponderations, rendement_volatilite_panier
@@ -34,6 +35,14 @@ from assurance_vie import (
     prelevement_757_b,
     prelevement_990_i,
     taxation_transmission,
+)
+from per import (
+    comparer_per,
+    economie_impot_per,
+    fiscalite_sortie_capital,
+    montant_deductible,
+    plafond_deduction_salarie,
+    plafond_deduction_tns,
 )
 from sci import (
     TAUX_IR_PLUS_VALUE_IMMO,
@@ -649,6 +658,58 @@ verifier(
         - (comparer_sci(36_000, 8_000, 10_000, 0.30, 400_000, 600_000, 15)["cumul_revenus_ir"]
            + comparer_sci(36_000, 8_000, 10_000, 0.30, 400_000, 600_000, 15)["plus_value_nette_ir"])
     ) < 1e-6
+)
+
+# --- PER : plafond de déduction, économie d'impôt, fiscalité de sortie (task #32) ---
+verifier(
+    "plafond_deduction_salarie : plancher garanti de 10% d'un PASS même avec un faible revenu",
+    plafond_deduction_salarie(10_000) == 0.10 * PASS_2026
+)
+verifier(
+    "plafond_deduction_salarie : plafonné à 10% de 8 PASS au-delà de 8 PASS de revenu",
+    plafond_deduction_salarie(400_000) == 0.10 * 8 * PASS_2026
+)
+verifier(
+    "plafond_deduction_tns : exemple de référence (bénéfice 120 000 €) conforme à la source (10% + 15% au-delà d'1 PASS)",
+    abs(plafond_deduction_tns(120_000) - 22_791) < 1
+)
+verifier(
+    "plafond_deduction_tns : plafonné à 88 911 € au-delà de 8 PASS de bénéfice (10% de 8 PASS + 15% de 7 PASS)",
+    abs(plafond_deduction_tns(400_000) - 88_911) < 1
+)
+verifier(
+    "plafond_deduction_tns : structurellement plus généreux que le plafond salarié pour un même revenu élevé",
+    plafond_deduction_tns(120_000) > plafond_deduction_salarie(120_000)
+)
+verifier(
+    "montant_deductible : jamais plus que le plafond disponible, jamais négatif",
+    montant_deductible(50_000, 10_000) == 10_000 and montant_deductible(-5_000, 10_000) == 0.0
+)
+verifier(
+    "economie_impot_per : économie d'impôt proportionnelle à la TMI",
+    economie_impot_per(10_000, 0.30) == 3_000
+)
+verifier(
+    "fiscalite_sortie_capital : versements non déduits à l'entrée -> totalement exonérés à la sortie, seuls les gains sont taxés (au PFU)",
+    fiscalite_sortie_capital(10_000, 2_000, deduit=False, tmi_sortie=0.30)["impot_versements"] == 0.0
+)
+verifier(
+    "fiscalite_sortie_capital : versements déduits à l'entrée -> taxés au barème IR (TMI de sortie) à la sortie, sans prélèvements sociaux",
+    fiscalite_sortie_capital(10_000, 2_000, deduit=True, tmi_sortie=0.30)["impot_versements"] == 3_000
+)
+verifier(
+    "fiscalite_sortie_capital : les gains sont toujours taxés au PFU de 31,4%, déduit ou non",
+    abs(fiscalite_sortie_capital(10_000, 2_000, deduit=True, tmi_sortie=0.30)["impot_gains"] - 2_000 * TAUX_PFU) < 1e-6
+    and abs(fiscalite_sortie_capital(10_000, 2_000, deduit=False)["impot_gains"] - 2_000 * TAUX_PFU) < 1e-6
+)
+verifier(
+    "comparer_per : à TMI identique à l'entrée et à la sortie, le PER laisse toujours plus que l'absence de PER (le capital taxé à l'entrée ne fructifie jamais dans l'autre scénario)",
+    comparer_per(10_000, tmi_entree=0.30, tmi_sortie=0.30, rendement_annuel=0.04, duree_annees=20, deduit=True)["ecart"] > 0
+)
+verifier(
+    "comparer_per : l'écart en faveur du PER est encore plus favorable quand la TMI de sortie est inférieure à celle de l'entrée (cas classique du départ à la retraite)",
+    comparer_per(10_000, tmi_entree=0.41, tmi_sortie=0.11, rendement_annuel=0.04, duree_annees=20, deduit=True)["ecart"]
+    > comparer_per(10_000, tmi_entree=0.41, tmi_sortie=0.41, rendement_annuel=0.04, duree_annees=20, deduit=True)["ecart"]
 )
 
 print()

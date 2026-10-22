@@ -10,7 +10,7 @@ GLOSSAIRE = {
     "PASS": (
         "Plafond annuel de la Sécurité sociale - un seuil de revenu fixé "
         "chaque année par l'État, utilisé comme référence pour calculer de "
-        "nombreuses cotisations sociales (46 368 € en 2026)."
+        "nombreuses cotisations sociales (48 060 € en 2026)."
     ),
     "Assimilé salarié": (
         "Statut social du président de SASU : il cotise comme un salarié "
@@ -33,8 +33,8 @@ GLOSSAIRE = {
     "PFU": (
         "Prélèvement forfaitaire unique (la « flat tax ») - régime "
         "d'imposition par défaut des dividendes et de la plupart des "
-        "revenus du capital, au taux global de 30 % (12,8 % d'impôt sur le "
-        "revenu + 17,2 % de prélèvements sociaux)."
+        "revenus du capital, au taux global de 31,4 % (12,8 % d'impôt sur "
+        "le revenu + 18,6 % de prélèvements sociaux, taux 2026)."
     ),
     "IS": (
         "Impôt sur les sociétés - impôt payé par l'entreprise sur son "
@@ -172,6 +172,25 @@ GLOSSAIRE = {
         "l'exonération totale (22 ans pour l'impôt sur le revenu, 30 ans "
         "pour les prélèvements sociaux). Réservé au régime des "
         "particuliers (SCI à l'IR) - absent à l'IS."
+    ),
+    "PER": (
+        "Plan d'épargne retraite - permet de verser des sommes qui "
+        "réduisent le revenu imposable de l'année (dans la limite d'un "
+        "plafond), en contrepartie d'une sortie (en capital ou en rente) "
+        "taxée plus tard, en principe à la retraite."
+    ),
+    "Plafond de déduction (PER)": (
+        "Montant maximal des versements volontaires déductibles du revenu "
+        "imposable chaque année - 10 % des revenus professionnels nets "
+        "(plafonné à 8 PASS) pour un salarié, 10 % du bénéfice plus 15 % "
+        "supplémentaires entre 1 et 8 PASS pour un indépendant."
+    ),
+    "TMI": (
+        "Taux marginal d'imposition - le taux de la tranche la plus haute "
+        "du barème progressif de l'impôt sur le revenu atteinte par le "
+        "foyer fiscal. C'est ce taux qui s'applique à un euro de revenu "
+        "supplémentaire (ou économisé par une déduction), pas à l'ensemble "
+        "des revenus."
     ),
 }
 
