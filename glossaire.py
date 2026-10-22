@@ -151,6 +151,28 @@ GLOSSAIRE = {
         "holding animatrice de son groupe) - sous conditions précises, "
         "souvent source de contentieux avec l'administration fiscale."
     ),
+    "SCI": (
+        "Société civile immobilière - structure couramment utilisée pour "
+        "détenir un bien immobilier à plusieurs ou pour l'isoler du "
+        "patrimoine personnel. Elle peut être soumise à l'impôt sur le "
+        "revenu (transparente, taxation directe des associés) ou à "
+        "l'impôt sur les sociétés (sur option, irrévocable)."
+    ),
+    "Amortissement": (
+        "Constatation comptable de la perte de valeur d'un bien dans le "
+        "temps, déductible du résultat imposable à l'IS (pas pour les "
+        "revenus fonciers des particuliers) - réduit l'impôt chaque "
+        "année sans aucune sortie de trésorerie, mais réduit d'autant la "
+        "valeur nette comptable, donc augmente la plus-value taxable à "
+        "la revente."
+    ),
+    "Abattement pour durée de détention": (
+        "Réduction de la plus-value immobilière imposable qui augmente "
+        "avec le nombre d'années de détention du bien - jusqu'à "
+        "l'exonération totale (22 ans pour l'impôt sur le revenu, 30 ans "
+        "pour les prélèvements sociaux). Réservé au régime des "
+        "particuliers (SCI à l'IR) - absent à l'IS."
+    ),
 }
 
 

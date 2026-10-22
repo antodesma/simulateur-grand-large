@@ -47,6 +47,7 @@ from trajectoire import comparer
 from demembrement import comparer_transmission, pourcentage_usufruit
 from succession import ABATTEMENT_TIERS, comparer_liens_parente
 from ifi import ABATTEMENT_RESIDENCE_PRINCIPALE, BAREME_IFI, SEUIL_ASSUJETTISSEMENT_IFI, synthese_ifi
+from sci import comparer_sci
 from pacte_dutreil import (
     calcul_transmission_dutreil,
     CONDITIONS_PACTE_DUTREIL,
@@ -578,12 +579,13 @@ with st.expander("Comment utiliser ce simulateur (à lire en premier)", expanded
         "Onglet « Succession » : au décès, combien reste-t-il net selon qui hérite - conjoint, enfant, frère ou sœur, ou un tiers sans lien de parenté ?",
         "Onglet « Assurance-vie » : combien reste-t-il net lors d'un rachat, ou pour les bénéficiaires à la transmission - selon l'âge du souscripteur au moment des versements ?",
         "Onglet « IFI » : le patrimoine immobilier (hors résidence principale partiellement abattue, hors biens professionnels) dépasse-t-il le seuil d'assujettissement, et pour combien ?",
+        "Onglet « SCI (IS vs IR) » : pour détenir un bien locatif en société, IS (amortissement, double imposition) ou IR (pas d'amortissement, abattement durée de détention) - lequel laisse le plus au terme ?",
         "Onglet « Note Grand Large » : les chiffres de marché et seuils réglementaires utilisés ailleurs dans l'outil, sourcés et datés.",
         "Dans chaque onglet, les montants se modifient librement — aucun résultat n'est figé, tout se recalcule en direct.",
     ])
 
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
-    ["Rémunération annuelle", "Trajectoire pluriannuelle", "Démembrement de propriété", "Succession", "Assurance-vie", "IFI", "Note Grand Large"]
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
+    ["Rémunération annuelle", "Trajectoire pluriannuelle", "Démembrement de propriété", "Succession", "Assurance-vie", "IFI", "SCI (IS vs IR)", "Note Grand Large"]
 )
 
 # Barre d'outils Plotly activée (zoom rectangle, panoramique, réinitialiser,
@@ -2726,8 +2728,174 @@ with tab6:
     glossaire_expander(["IFI", "Décote (IFI)", "Biens professionnels (IFI)", "Abattement"], titre="Glossaire — IFI")
 
 
-# --- Onglet 7 : veille marchés & produits, calée sur les solutions GLP ---
+# --- Onglet 7 : SCI à l'IS vs à l'IR (détention immobilière en société) ---
 with tab7:
+    entete_section(
+        "SCI : à l'impôt sur le revenu ou à l'impôt sur les sociétés ?",
+        "Revenus locatifs annuels et plus-value de cession, cumulés sur la durée de détention",
+    )
+    pitch_usage(
+        "<strong>Le client détient (ou va détenir) un bien locatif en société et hésite entre "
+        "l'IR et l'IS ?</strong> L'IS permet d'amortir le bien (moins d'impôt chaque année), mais "
+        "perd l'abattement pour durée de détention à la revente et subit une double imposition dès "
+        "que l'argent sort vers l'associé. L'IR, c'est l'inverse. Cet onglet cumule les deux effets "
+        "sur toute la période de détention."
+    )
+
+    with st.expander("Comment lire ce calcul", expanded=True):
+        st.markdown(
+            "- **SCI à l'IR** (transparente) : les loyers sont taxés chaque année directement chez "
+            "l'associé, à son taux marginal d'imposition (TMI) + 17,2 % de prélèvements sociaux - "
+            "**pas d'amortissement déductible**. À la revente, la plus-value bénéficie d'un "
+            "**abattement pour durée de détention** : exonération totale d'impôt sur le revenu après "
+            "**22 ans**, de prélèvements sociaux après **30 ans**.\n"
+            "- **SCI à l'IS** : le résultat (loyers moins charges **moins l'amortissement** du bien, "
+            "lui déductible) est taxé à l'IS dans la société, puis, si distribué à l'associé, "
+            "**re-taxé au PFU** - double imposition. À la revente, **pas d'abattement durée de "
+            "détention** : la plus-value se calcule sur la valeur nette comptable (après "
+            "amortissements déjà déduits), souvent bien plus élevée pour un bien ancien très amorti.\n"
+            "- Ce module suppose un résultat positif chaque année (pas de report de déficit foncier "
+            "ou fiscal d'une année sur l'autre), et ne modélise ni la CFE, ni les droits "
+            "d'enregistrement de 5 % dus sur une cession de parts de SCI."
+        )
+
+    col_sci1, col_sci2 = st.columns(2)
+    with col_sci1:
+        loyers_sci = st.number_input("Loyers annuels perçus (€)", min_value=0, max_value=1_000_000, value=36_000, step=1_000)
+        st.caption(f"→ {fmt_euro(loyers_sci)}")
+        charges_sci = st.number_input(
+            "Charges déductibles (€/an, intérêts d'emprunt, entretien, taxe foncière, assurance, gestion)",
+            min_value=0, max_value=1_000_000, value=8_000, step=500,
+        )
+        st.caption(f"→ {fmt_euro(charges_sci)}")
+        amortissement_sci = st.number_input(
+            "Amortissement annuel du bien (€, déductible à l'IS uniquement)", min_value=0, max_value=200_000,
+            value=10_000, step=500,
+        )
+        st.caption(f"→ {fmt_euro(amortissement_sci)}")
+        tmi_sci = st.radio(
+            "Taux marginal d'imposition du foyer (pour l'IR)", options=[0.0, 0.11, 0.30, 0.41, 0.45],
+            format_func=lambda t: f"{t:.0%}", horizontal=True, index=2,
+        )
+    with col_sci2:
+        prix_acquisition_sci = st.number_input("Prix d'acquisition du bien (€)", min_value=0, max_value=20_000_000, value=400_000, step=10_000)
+        st.caption(f"→ {fmt_euro(prix_acquisition_sci)}")
+        prix_cession_sci = st.number_input("Prix de cession envisagé (€)", min_value=0, max_value=20_000_000, value=600_000, step=10_000)
+        st.caption(f"→ {fmt_euro(prix_cession_sci)}")
+        annees_detention_sci = st.slider("Durée de détention avant cession (années)", min_value=1, max_value=35, value=15)
+        distribue_sci = st.checkbox(
+            "SCI à l'IS : distribuer chaque année le résultat (sinon, il capitalise dans la société)",
+            value=True,
+        )
+
+    resultat_sci = comparer_sci(
+        loyers_sci, charges_sci, amortissement_sci, tmi_sci,
+        prix_acquisition_sci, prix_cession_sci, annees_detention_sci,
+        distribue=distribue_sci,
+    )
+
+    col_kpi_sci1, col_kpi_sci2, col_kpi_sci3 = st.columns(3)
+    with col_kpi_sci1:
+        carte_kpi(
+            "Total perçu - SCI à l'IR", fmt_euro(resultat_sci["total_ir"]), COULEUR_SALAIRE,
+            f"Revenus cumulés sur {annees_detention_sci} ans ({fmt_euro(resultat_sci['cumul_revenus_ir'])}) "
+            f"+ plus-value nette de cession ({fmt_euro(resultat_sci['plus_value_nette_ir'])}).",
+        )
+    with col_kpi_sci2:
+        carte_kpi(
+            "Total perçu - SCI à l'IS", fmt_euro(resultat_sci["total_is"]), COULEUR_DEMEMBREMENT,
+            f"Revenus cumulés sur {annees_detention_sci} ans ({fmt_euro(resultat_sci['cumul_revenus_is'])}) "
+            f"+ plus-value nette de cession ({fmt_euro(resultat_sci['plus_value_nette_is'])}).",
+        )
+    with col_kpi_sci3:
+        ecart_sci = resultat_sci["total_ir"] - resultat_sci["total_is"]
+        carte_kpi(
+            "Écart IR − IS", fmt_euro(ecart_sci, signe=True), NAVY,
+            ("La SCI à l'IR laisse plus au terme, dans ce scénario." if ecart_sci > 0
+             else "La SCI à l'IS laisse plus au terme, dans ce scénario." if ecart_sci < 0
+             else "Les deux régimes laissent exactement le même total, dans ce scénario."),
+        )
+
+    fig_sci = go.Figure()
+    fig_sci.add_bar(
+        x=["SCI à l'IR", "SCI à l'IS"],
+        y=[resultat_sci["cumul_revenus_ir"], resultat_sci["cumul_revenus_is"]],
+        name="Revenus cumulés", marker_color=COULEUR_SALAIRE,
+        hovertemplate="%{x} : %{y:,.0f} €<extra>Revenus cumulés</extra>",
+    )
+    fig_sci.add_bar(
+        x=["SCI à l'IR", "SCI à l'IS"],
+        y=[resultat_sci["plus_value_nette_ir"], resultat_sci["plus_value_nette_is"]],
+        name="Plus-value nette de cession", marker_color=COULEUR_DEMEMBREMENT,
+        hovertemplate="%{x} : %{y:,.0f} €<extra>Plus-value nette</extra>",
+    )
+    fig_sci = _mise_en_forme_graphique(
+        fig_sci, f"Total perçu sur {annees_detention_sci} ans, IR vs IS", "Montant (€)"
+    )
+    fig_sci.update_layout(barmode="stack")
+    fig_sci.update_xaxes(showgrid=False)
+    st.plotly_chart(fig_sci, width="stretch", config=CONFIG_GRAPHIQUE)
+
+    with st.expander("Voir le détail du calcul"):
+        df_sci = pd.DataFrame(
+            {
+                "SCI à l'IR": [resultat_sci["revenu_annuel_ir"], resultat_sci["cumul_revenus_ir"], resultat_sci["plus_value_nette_ir"], resultat_sci["total_ir"]],
+                "SCI à l'IS": [resultat_sci["revenu_annuel_is"], resultat_sci["cumul_revenus_is"], resultat_sci["plus_value_nette_is"], resultat_sci["total_is"]],
+            },
+            index=["Revenu net annuel", f"Revenus cumulés ({annees_detention_sci} ans)", "Plus-value nette de cession", "Total perçu"],
+        )
+        st.dataframe(df_sci.style.format(fmt_euro), width="stretch")
+
+    col_csv_sci, col_pdf_sci = st.columns(2)
+    with col_csv_sci:
+        st.download_button(
+            "Télécharger ce scénario (CSV)",
+            data=df_sci.to_csv().encode("utf-8"),
+            file_name=f"sci_{prix_acquisition_sci}_{annees_detention_sci}ans.csv",
+            mime="text/csv",
+        )
+    with col_pdf_sci:
+        lignes_pdf_sci = [["Poste", "SCI à l'IR", "SCI à l'IS"]] + [
+            [str(poste), fmt_euro(ir), fmt_euro(is_)]
+            for poste, ir, is_ in zip(df_sci.index, df_sci["SCI à l'IR"], df_sci["SCI à l'IS"])
+        ]
+        pdf_bytes_sci = generer_pdf_scenario(
+            titre="SCI : à l'impôt sur le revenu ou à l'impôt sur les sociétés ?",
+            sous_titre=f"Bien de {fmt_euro(prix_acquisition_sci)}, cédé {fmt_euro(prix_cession_sci)} après {annees_detention_sci} ans de détention",
+            kpis=[
+                ("Total perçu - SCI à l'IR", fmt_euro(resultat_sci["total_ir"])),
+                ("Total perçu - SCI à l'IS", fmt_euro(resultat_sci["total_is"])),
+                ("Écart IR − IS", fmt_euro(ecart_sci, signe=True)),
+            ],
+            lignes_tableau=lignes_pdf_sci,
+            hypotheses=[
+                "SCI à l'IR : pas d'amortissement déductible, loyers taxés au TMI du foyer + 17,2 % de "
+                "prélèvements sociaux ; plus-value avec abattement pour durée de détention (exonération "
+                "totale IR après 22 ans, prélèvements sociaux après 30 ans).",
+                "SCI à l'IS : amortissement du bien déductible chaque année ; résultat taxé à l'IS puis, "
+                "si distribué, re-taxé au PFU - double imposition ; plus-value de cession calculée sur la "
+                "valeur nette comptable (après amortissements déjà déduits), sans abattement durée de "
+                "détention.",
+                "Hypothèse d'un résultat positif chaque année (pas de report de déficit modélisé), hors "
+                "CFE et droits d'enregistrement sur cession de parts.",
+            ],
+        )
+        st.download_button(
+            "Télécharger la synthèse (PDF)",
+            data=pdf_bytes_sci,
+            file_name=f"synthese_sci_{prix_acquisition_sci}.pdf",
+            mime="application/pdf",
+            type="primary",
+        )
+
+    glossaire_expander(
+        ["SCI", "Amortissement", "Abattement pour durée de détention", "IS", "PFU"],
+        titre="Glossaire — SCI",
+    )
+
+
+# --- Onglet 8 : veille marchés & produits, calée sur les solutions GLP ---
+with tab8:
     entete_section(
         "Note Grand Large",
         "Veille marchés & produits, organisée autour des solutions affichées sur grandlargepatrimoine.fr",

@@ -35,6 +35,17 @@ from assurance_vie import (
     prelevement_990_i,
     taxation_transmission,
 )
+from sci import (
+    TAUX_IR_PLUS_VALUE_IMMO,
+    comparer_sci,
+    plus_value_brute,
+    plus_value_nette_sci_ir,
+    plus_value_nette_sci_is,
+    revenu_net_sci_ir,
+    revenu_net_sci_is,
+    taux_abattement_ir_duree,
+    taux_abattement_ps_duree,
+)
 from ifi import (
     ABATTEMENT_RESIDENCE_PRINCIPALE,
     SEUIL_ASSUJETTISSEMENT_IFI,
@@ -587,6 +598,57 @@ verifier(
 verifier(
     "synthese_ifi : à patrimoine identique, détenir sa résidence principale (abattement 30%) laisse un IFI net au plus égal à celui d'un même montant détenu en résidence secondaire (sans abattement)",
     synthese_ifi(valeur_residence_principale=2_000_000)["ifi_net"] <= synthese_ifi(valeur_autres_biens_immobiliers=2_000_000)["ifi_net"]
+)
+
+# --- SCI à l'IS vs à l'IR (task #31) ---
+verifier(
+    "taux_abattement_ir_duree : aucun abattement avant 6 ans, exonération totale à partir de 22 ans",
+    taux_abattement_ir_duree(5) == 0.0 and taux_abattement_ir_duree(22) == 1.0 and taux_abattement_ir_duree(30) == 1.0
+)
+verifier(
+    "taux_abattement_ps_duree : rythme plus lent que l'IR, exonération totale seulement à partir de 30 ans",
+    taux_abattement_ps_duree(22) == 0.28 and taux_abattement_ps_duree(21) < taux_abattement_ir_duree(21)
+    and taux_abattement_ps_duree(29) < 1.0 and taux_abattement_ps_duree(30) == 1.0
+)
+verifier(
+    "plus_value_brute : les frais d'acquisition et les travaux réduisent bien la plus-value imposable",
+    plus_value_brute(600_000, 400_000, frais_acquisition=20_000, travaux=30_000) == 150_000
+)
+verifier(
+    "plus_value_nette_sci_ir : exonération totale (IR et prélèvements sociaux) après 30 ans de détention",
+    plus_value_nette_sci_ir(600_000, 400_000, annees_detention=30)["net"] == 200_000
+)
+verifier(
+    "plus_value_nette_sci_ir : net croissant avec la durée de détention, à plus-value brute identique",
+    plus_value_nette_sci_ir(600_000, 400_000, annees_detention=10)["net"]
+    < plus_value_nette_sci_ir(600_000, 400_000, annees_detention=25)["net"]
+    < plus_value_nette_sci_ir(600_000, 400_000, annees_detention=30)["net"]
+)
+verifier(
+    "revenu_net_sci_ir : prélèvements sociaux de 17,2% et IR au TMI bien appliqués sur le revenu foncier net",
+    abs(revenu_net_sci_ir(30_000, 10_000, tmi=0.30)["net"] - 20_000 * (1 - 0.30 - 0.172)) < 1e-6
+)
+verifier(
+    "revenu_net_sci_is : non distribué -> rien ne sort pour l'associé cette année-là (capitalisation, comme une holding)",
+    revenu_net_sci_is(30_000, 10_000, amortissement_annuel=5_000, distribue=False)["net"] == 0.0
+)
+verifier(
+    "revenu_net_sci_is : distribué -> double imposition (IS puis PFU), donc net strictement positif mais inférieur au résultat après IS seul",
+    0 < revenu_net_sci_is(30_000, 10_000, amortissement_annuel=5_000, distribue=True)["net"]
+    < revenu_net_sci_is(30_000, 10_000, amortissement_annuel=5_000, distribue=True)["resultat_apres_is"]
+)
+verifier(
+    "plus_value_nette_sci_is : à prix de cession identique, un bien plus amorti (valeur nette comptable plus faible) génère une plus-value brute - donc un IS - plus élevé",
+    plus_value_nette_sci_is(600_000, 400_000, amortissements_cumules=300_000)["is_du"]
+    > plus_value_nette_sci_is(600_000, 400_000, amortissements_cumules=50_000)["is_du"]
+)
+verifier(
+    "comparer_sci : renvoie bien un total IR et un total IS cohérents (somme des revenus cumulés et de la plus-value nette)",
+    abs(
+        comparer_sci(36_000, 8_000, 10_000, 0.30, 400_000, 600_000, 15)["total_ir"]
+        - (comparer_sci(36_000, 8_000, 10_000, 0.30, 400_000, 600_000, 15)["cumul_revenus_ir"]
+           + comparer_sci(36_000, 8_000, 10_000, 0.30, 400_000, 600_000, 15)["plus_value_nette_ir"])
+    ) < 1e-6
 )
 
 print()
