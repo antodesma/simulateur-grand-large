@@ -2391,11 +2391,18 @@ with tab5:
             value=100_000, step=10_000,
         )
         st.caption(f"→ {fmt_euro(versements_cumules_rachat)}")
-        abattement_foyer_rachat = st.radio(
-            "Abattement annuel (si contrat de 8 ans ou plus)", options=[4_600, 9_200],
-            format_func=lambda v: f"{fmt_euro(v)} (personne seule)" if v == 4_600 else f"{fmt_euro(v)} (couple marié/pacsé)",
-            horizontal=True,
-        )
+        if anciennete_contrat >= 8:
+            abattement_foyer_rachat = st.radio(
+                "Abattement annuel (contrat de 8 ans ou plus)", options=[4_600, 9_200],
+                format_func=lambda v: f"{fmt_euro(v)} (personne seule)" if v == 4_600 else f"{fmt_euro(v)} (couple marié/pacsé)",
+                horizontal=True,
+            )
+        else:
+            abattement_foyer_rachat = 0
+            st.radio(
+                "Abattement annuel", options=[0], format_func=lambda v: "0 € - aucun abattement avant 8 ans de contrat",
+                horizontal=True, disabled=True,
+            )
 
     resultat_rachat = net_apres_rachat(
         montant_gains_rachat, anciennete_contrat, versements_cumules_rachat, abattement_foyer_rachat
@@ -2478,10 +2485,14 @@ with tab5:
             )
         else:
             part_primes_transmission = None
-            nombre_beneficiaires_transmission = 1
             st.caption(
                 f"Abattement de {fmt_euro(ABATTEMENT_990_I_PAR_BENEFICIAIRE)} par bénéficiaire "
-                "(article 990 I) - pas de répartition à saisir, il est individuel."
+                "(article 990 I), indépendant du nombre de bénéficiaires - mais entrez-le quand "
+                "même ci-dessous pour voir le total transmis à la famille entière."
+            )
+            nombre_beneficiaires_transmission = st.number_input(
+                "Nombre de bénéficiaires (si le capital ci-dessus est réparti également entre eux)",
+                min_value=1, max_value=10, value=1, step=1,
             )
 
     resultat_transmission = taxation_transmission(
@@ -2505,6 +2516,15 @@ with tab5:
             "Net pour le bénéficiaire", fmt_euro(resultat_transmission["net_beneficiaire"]), COULEUR_DEMEMBREMENT,
             f"Sur {fmt_euro(capital_transmis)} transmis "
             f"({resultat_transmission['net_beneficiaire'] / capital_transmis:.0%} conservé).",
+        )
+
+    if nombre_beneficiaires_transmission > 1:
+        net_famille = resultat_transmission["net_beneficiaire"] * nombre_beneficiaires_transmission
+        capital_famille = capital_transmis * nombre_beneficiaires_transmission
+        st.caption(
+            f"Pour les **{nombre_beneficiaires_transmission} bénéficiaires** (si chacun reçoit ce "
+            f"même montant) : {fmt_euro(capital_famille)} transmis au total, {fmt_euro(net_famille)} "
+            "net au total, une fois les droits de chacun payés."
         )
 
     fig_transmission = go.Figure()
@@ -3104,7 +3124,7 @@ with tab9:
         "Veille marchés & produits, organisée autour des solutions affichées sur grandlargepatrimoine.fr",
     )
     pitch_usage(
-        "<strong>Avant un rendez-vous client ou un point avec Pierre, besoin des derniers chiffres "
+        "<strong>Avant un rendez-vous client, besoin des derniers chiffres "
         "qui parlent directement de ses solutions ?</strong> Cette page les rassemble, sourcés, datés, "
         "classés par solution Grand Large Patrimoine - avec pour chacun une ligne sur ce qu'il change "
         "concrètement en entretien."
