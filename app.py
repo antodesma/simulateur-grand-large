@@ -2425,7 +2425,8 @@ with tab5:
             "Net perçu sur les gains", fmt_euro(resultat_rachat["net"]), COULEUR_DEMEMBREMENT,
             f"Sur {fmt_euro(montant_gains_rachat)} de gains rachetés "
             f"({resultat_rachat['net'] / montant_gains_rachat:.0%} conservé) - le capital "
-            f"versé initialement, lui, n'est jamais taxé.",
+            f"versé initialement, lui, n'est jamais taxé."
+            if montant_gains_rachat else "Aucun gain racheté - rien à taxer.",
         )
 
     fig_rachat = go.Figure()
@@ -2514,8 +2515,9 @@ with tab5:
     with col_kpi_t3:
         carte_kpi(
             "Net pour le bénéficiaire", fmt_euro(resultat_transmission["net_beneficiaire"]), COULEUR_DEMEMBREMENT,
-            f"Sur {fmt_euro(capital_transmis)} transmis "
-            f"({resultat_transmission['net_beneficiaire'] / capital_transmis:.0%} conservé).",
+            (f"Sur {fmt_euro(capital_transmis)} transmis "
+             f"({resultat_transmission['net_beneficiaire'] / capital_transmis:.0%} conservé).")
+            if capital_transmis else "Aucun capital transmis à ce bénéficiaire.",
         )
 
     if nombre_beneficiaires_transmission > 1:
