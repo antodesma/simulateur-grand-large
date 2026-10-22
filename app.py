@@ -257,15 +257,32 @@ st.markdown(
 
     h2, h3 {{ color: {ENCRE_PRIMAIRE}; font-family: 'Libre Caslon Display', serif; font-weight: 400; }}
 
-    .stTabs [data-baseweb="tab-list"] {{ gap: 8px; }}
+    .stTabs [data-baseweb="tab-list"] {{
+        gap: 10px;
+        border-bottom: none;
+    }}
     .stTabs [data-baseweb="tab"] {{
         font-weight: 600;
-        font-size: 1.05rem;
-        padding: 12px 20px 14px 20px;
+        font-size: 1rem;
+        padding: 10px 20px;
         height: auto;
+        background: #ffffff;
+        border: 1.5px solid {BORDURE};
+        border-radius: 0;
+        color: {ENCRE_SECONDAIRE};
+        transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }}
-    .stTabs [aria-selected="true"] {{ color: {NAVY} !important; }}
-    .stTabs [data-baseweb="tab-highlight"] {{ background-color: {NAVY} !important; height: 3px; }}
+    .stTabs [data-baseweb="tab"]:hover {{
+        border-color: {NAVY};
+        color: {NAVY};
+    }}
+    .stTabs [aria-selected="true"] {{
+        background: {NAVY} !important;
+        border-color: {NAVY} !important;
+        color: #ffffff !important;
+    }}
+    .stTabs [data-baseweb="tab-highlight"] {{ background-color: transparent !important; }}
+    .stTabs [data-baseweb="tab-border"] {{ background-color: transparent !important; }}
 
     .stButton button, .stDownloadButton button {{
         border-radius: 0;
