@@ -359,10 +359,20 @@ st.radio(
     horizontal=True,
     label_visibility="collapsed",
 )
-st.caption(
-    "Archétypes illustratifs, calés sur les typologies affichées par Grand Large Patrimoine — "
-    "pré-remplit les montants, aucune donnée réelle de client. Choisissez « Personnalisé » pour saisir vos propres chiffres."
-)
+profil_choisi = st.session_state["persona_select"]
+if profil_choisi in PROFILS_CLIENT:
+    p = PROFILS_CLIENT[profil_choisi]
+    st.caption(
+        f"→ Pré-remplit les deux premiers onglets pour ce profil : montant disponible à "
+        f"{fmt_euro(p['montant'])} (onglet 1), profit annuel réinvesti à {fmt_euro(p['profit_annuel'])} "
+        f"(onglet 2). Reste entièrement modifiable, et n'est tiré d'aucune donnée réelle de client."
+    )
+else:
+    st.caption(
+        "Archétypes illustratifs, calés sur les typologies affichées par Grand Large Patrimoine — "
+        "chacun pré-remplit le montant de l'onglet 1 et le profit annuel de l'onglet 2. Choisissez "
+        "« Personnalisé » pour saisir vos propres chiffres."
+    )
 
 st.markdown(
     '<div class="bloc-disclaimer">Outil informatif à usage pédagogique, construit sur des '
