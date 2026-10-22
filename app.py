@@ -296,13 +296,55 @@ st.markdown(
 
     .stButton button, .stDownloadButton button {{
         border-radius: 0;
-        border-color: {NAVY};
-        color: {NAVY};
-    }}
-    .stButton button:hover, .stDownloadButton button:hover {{
+        border: 1.5px solid {NAVY};
         background-color: {NAVY};
         color: #ffffff;
-        border-color: {NAVY};
+        font-weight: 600;
+        padding: 0.5rem 1.15rem;
+        transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    }}
+    .stButton button:hover, .stDownloadButton button:hover {{
+        background-color: {NAVY_HOVER};
+        border-color: {NAVY_HOVER};
+        color: #ffffff;
+        box-shadow: 0 8px 18px rgba(3,0,28,0.20);
+        transform: translateY(-1px);
+    }}
+    .stButton button:active, .stDownloadButton button:active {{
+        transform: translateY(0);
+        box-shadow: none;
+    }}
+    .stButton button:focus-visible, .stDownloadButton button:focus-visible {{
+        outline: 2px solid {NAVY};
+        outline-offset: 2px;
+    }}
+
+    /* Dépliables (st.expander) : le chrome gris par défaut de Streamlit ne
+       correspond à aucune autre surface de l'outil - on l'aligne sur la
+       même famille que .bloc-disclaimer / .tuile (fond blanc, filet fin,
+       accent marine à gauche) plutôt que de le laisser générique. */
+    [data-testid="stExpander"] {{
+        border: 1px solid {BORDURE};
+        border-left: 3px solid {NAVY};
+        border-radius: 0;
+        background: #ffffff;
+    }}
+    [data-testid="stExpander"] summary {{
+        background: #ffffff;
+        padding: 0.9rem 1.15rem;
+        font-weight: 600;
+        font-size: 0.92rem;
+        color: {NAVY};
+    }}
+    [data-testid="stExpander"] summary:hover {{
+        color: {NAVY_HOVER};
+        background: {CREME};
+    }}
+    [data-testid="stExpander"] summary svg {{
+        fill: {NAVY};
+    }}
+    [data-testid="stExpanderDetails"] {{
+        padding: 0.1rem 1.15rem 1.05rem;
     }}
     </style>
     """,
@@ -628,6 +670,7 @@ with tab1:
         fig_opt.add_scatter(
             x=pourcentages_opt, y=nets_opt, mode="lines",
             line=dict(color=NAVY, width=3, shape="linear"),
+            fill="tozeroy", fillcolor=rgba_depuis_hex(NAVY, 0.07),
             showlegend=False,
             hovertemplate=f"%{{x}} %% {libelle_opt_part} : %{{y:,.0f}} €<extra></extra>",
         )
@@ -653,6 +696,13 @@ with tab1:
             fig_opt, f"Net en poche selon la part allouée en {libelle_opt_part}", "Net en poche (€)"
         )
         fig_opt.update_xaxes(title=f"% alloué en {libelle_opt_part}", ticksuffix=" %", range=[-2, 108])
+        # Plage Y fixée explicitement : le remplissage "tozeroy" ferait sinon
+        # redescendre l'autorange jusqu'à 0, ce qui écraserait visuellement
+        # la courbe (l'intérêt du graphique est justement de montrer les
+        # petites variations entre répartitions, pas l'ordre de grandeur).
+        etendue_y = max(nets_opt) - min(nets_opt)
+        marge_y = etendue_y * 0.12 if etendue_y > 0 else max(nets_opt) * 0.01
+        fig_opt.update_yaxes(range=[min(nets_opt) - marge_y, max(nets_opt) + marge_y * 2.2])
         fig_opt.update_layout(margin=dict(r=70))
         st.plotly_chart(fig_opt, width="stretch", config=CONFIG_GRAPHIQUE)
         st.caption(
@@ -719,7 +769,7 @@ with tab1:
         abattement = net_avant_abattement - net_imposable
         ir_salaire = calcul_ir(net_imposable)
 
-        with st.expander("Voir la cascade du calcul (du coût total entreprise au net en poche)", expanded=False):
+        with st.expander("Voir la cascade du calcul — scénario rémunération", expanded=False):
             fig_cascade = go.Figure(go.Waterfall(
                 orientation="v",
                 measure=["absolute", "relative", "relative", "total"],
@@ -752,7 +802,7 @@ with tab1:
         cotisation_minimale_tns = cotisations_tns(0)
         impot_total_dividende_tns = is_du_dividende_tns + impot_dividende_hors_is_tns
 
-        with st.expander("Voir la cascade du calcul (du coût total entreprise au net en poche) ", expanded=False):
+        with st.expander("Voir la cascade du calcul — scénario dividende", expanded=False):
             fig_cascade_div = go.Figure(go.Waterfall(
                 orientation="v",
                 measure=["absolute", "relative", "relative", "relative", "relative", "total"],
@@ -805,7 +855,7 @@ with tab1:
         distribuable = montant - is_du
         pfu_montant = distribuable * TAUX_PFU
 
-        with st.expander("Voir la cascade du calcul (du coût total entreprise au net en poche)", expanded=False):
+        with st.expander("Voir la cascade du calcul — scénario salaire", expanded=False):
             fig_cascade = go.Figure(go.Waterfall(
                 orientation="v",
                 measure=["absolute", "relative", "relative", "relative", "total"],
@@ -828,7 +878,7 @@ with tab1:
                 "pas directement la trésorerie — son effet est déjà intégré dans la barre « Impôt sur le revenu »."
             )
 
-        with st.expander("Voir la cascade du calcul (du coût total entreprise au net en poche) ", expanded=False):
+        with st.expander("Voir la cascade du calcul — scénario dividende", expanded=False):
             fig_cascade_div = go.Figure(go.Waterfall(
                 orientation="v",
                 measure=["absolute", "relative", "relative", "total"],
