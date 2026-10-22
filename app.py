@@ -382,6 +382,7 @@ with tab1:
         "Montant disponible dans l'entreprise (€, coût total avant répartition)",
         min_value=0, max_value=1_000_000, step=5_000, key="montant_input",
     )
+    st.caption(f"→ {fmt_euro(montant)}")
 
     net_salaire = net_apres_salaire(montant)
     net_dividende = net_apres_dividende(montant)
@@ -500,7 +501,9 @@ with tab2:
         )
 
     col1, col2, col3 = st.columns(3)
-    profit_annuel = col1.number_input("Profit annuel réinvesti (€)", min_value=1_000, max_value=500_000, step=1_000, key="profit_input")
+    with col1:
+        profit_annuel = st.number_input("Profit annuel réinvesti (€)", min_value=1_000, max_value=500_000, step=1_000, key="profit_input")
+        st.caption(f"→ {fmt_euro(profit_annuel)}")
     horizon = col2.slider("Horizon (années)", min_value=2, max_value=25, value=10)
     profil = col3.selectbox("Profil de rendement (hypothèse, pas une recommandation)", list(PROFILS.keys()) + ["personnalisé"])
 
@@ -623,7 +626,9 @@ with tab3:
         )
 
     col1, col2 = st.columns(2)
-    valeur_bien = col1.number_input("Valeur du bien transmis (€, pleine propriété)", min_value=0, max_value=10_000_000, value=400_000, step=10_000)
+    with col1:
+        valeur_bien = st.number_input("Valeur du bien transmis (€, pleine propriété)", min_value=0, max_value=10_000_000, value=400_000, step=10_000)
+        st.caption(f"→ {fmt_euro(valeur_bien)}")
     age_donateur = col2.slider("Âge du donateur au moment de la donation", min_value=18, max_value=99, value=65)
 
     col3, col4 = st.columns(2)
