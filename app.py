@@ -424,6 +424,27 @@ st.markdown(
     [data-testid="stExpander"] summary svg {{
         fill: {NAVY};
     }}
+    /* Onglets (st.tabs) : 9 onglets avec le style par défaut de Streamlit
+       finissent minuscules et tassés - on agrandit le texte et l'espace
+       cliquable, et on marque l'onglet actif par un soulignement marine
+       plutôt que par la seule couleur, pour qu'il reste repérable même
+       en parcourant rapidement. */
+    [data-baseweb="tab-list"] {{
+        gap: 4px;
+    }}
+    [data-baseweb="tab-list"] button[data-baseweb="tab"] {{
+        height: auto;
+        padding: 0.7rem 1.1rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: {ENCRE_SECONDAIRE};
+    }}
+    [data-baseweb="tab-list"] button[data-baseweb="tab"][aria-selected="true"] {{
+        color: {NAVY};
+    }}
+    [data-baseweb="tab-list"] button[data-baseweb="tab"][aria-selected="true"] > div {{
+        border-bottom: 3px solid {NAVY};
+    }}
     [data-testid="stExpanderDetails"] {{
         padding: 0.1rem 1.15rem 1.05rem;
     }}
