@@ -239,9 +239,10 @@ st.markdown(
         font-variant-numeric: tabular-nums;
     }}
     .carte-kpi .sous-texte {{
-        color: {ENCRE_MUTED};
-        font-size: 0.78rem;
-        margin-top: 0.25rem;
+        color: {ENCRE_SECONDAIRE};
+        font-size: 0.85rem;
+        line-height: 1.4;
+        margin-top: 0.4rem;
     }}
 
     [data-testid="stMetricValue"] {{ font-variant-numeric: tabular-nums; }}
@@ -319,10 +320,10 @@ def etapes_numerotees(etapes):
 
 
 def glossaire_expander(cles, titre="Glossaire des termes utilisés ici"):
-    """Dépliable listant les définitions des termes techniques pertinents
-    pour l'onglet en cours - pour un lecteur non-initié (le dirigeant
-    lui-même, ou un membre de sa famille)."""
-    with st.expander(titre):
+    """Dépliable (ouvert par défaut) listant les définitions des termes
+    techniques pertinents pour l'onglet en cours - pour un lecteur
+    non-initié (le dirigeant lui-même, ou un membre de sa famille)."""
+    with st.expander(titre, expanded=True):
         for cle, definition in termes_glossaire(cles):
             st.markdown(f"**{cle}** — {definition}")
 
@@ -375,17 +376,28 @@ CONFIG_GRAPHIQUE = {"displayModeBar": False}
 
 def _mise_en_forme_graphique(fig, titre, y_titre):
     fig.update_layout(
-        title=dict(text=titre, font=dict(size=16, color=ENCRE_PRIMAIRE)),
+        title=dict(text=titre, font=dict(size=19, color=ENCRE_PRIMAIRE)),
         plot_bgcolor=SURFACE_CARTE,
         paper_bgcolor=SURFACE_CARTE,
-        font=dict(color=ENCRE_SECONDAIRE, size=13),
-        legend=dict(orientation="h", yanchor="bottom", y=1.1, xanchor="left", x=0, font=dict(color=ENCRE_SECONDAIRE)),
-        margin=dict(t=95, l=10, r=10, b=10),
+        font=dict(color=ENCRE_SECONDAIRE, size=15),
+        legend=dict(
+            orientation="h", yanchor="bottom", y=1.1, xanchor="left", x=0,
+            font=dict(color=ENCRE_SECONDAIRE, size=14),
+        ),
+        margin=dict(t=100, l=10, r=10, b=10),
         hovermode="x unified",
+        hoverlabel=dict(font=dict(size=14)),
         separators=". ",  # convention française : point décimal, espace pour les milliers
     )
-    fig.update_yaxes(title=y_titre, gridcolor=GRILLE, zeroline=False, tickformat=",.0f", ticksuffix=" €")
-    fig.update_xaxes(gridcolor=GRILLE, zeroline=False)
+    fig.update_yaxes(
+        title=dict(text=y_titre, font=dict(size=15)), gridcolor=GRILLE, zeroline=False,
+        tickformat=",.0f", ticksuffix=" €", tickfont=dict(size=13),
+    )
+    fig.update_xaxes(gridcolor=GRILLE, zeroline=False, tickfont=dict(size=14))
+    # Texte au-dessus des barres/cascades (montants) : agrandi, pour se lire
+    # sans devoir s'approcher de l'écran. N'affecte que les traces qui
+    # affichent du texte (bar, waterfall) - sans effet sur les courbes.
+    fig.update_traces(textfont=dict(size=15, color=ENCRE_PRIMAIRE))
     return fig
 
 
@@ -421,7 +433,7 @@ with tab1:
     st.caption(f"→ {fmt_euro(montant)}")
 
     if est_sarl:
-        with st.expander("Comment lire ce scénario (SARL / gérant majoritaire)"):
+        with st.expander("Comment lire ce scénario (SARL / gérant majoritaire)", expanded=True):
             st.markdown(
                 "- **Rémunération** : la société verse une rémunération au gérant, intégralement "
                 "déductible de l'IS - pas de charges patronales séparées comme en SASU, le gérant "
@@ -455,11 +467,23 @@ with tab1:
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        carte_kpi(libelle_salaire, fmt_euro(net_salaire), COULEUR_SALAIRE)
+        carte_kpi(
+            libelle_salaire, fmt_euro(net_salaire), COULEUR_SALAIRE,
+            f"Ce que le dirigeant garde vraiment, une fois toutes les charges et l'impôt payés, "
+            f"s'il se verse {fmt_euro(montant)} en {'rémunération' if est_sarl else 'salaire'}.",
+        )
     with col2:
-        carte_kpi("Net en poche si dividende", fmt_euro(net_dividende), COULEUR_DIVIDENDE)
+        carte_kpi(
+            "Net en poche si dividende", fmt_euro(net_dividende), COULEUR_DIVIDENDE,
+            f"Ce que le dirigeant garde vraiment après l'impôt sur les sociétés payé par "
+            f"l'entreprise, puis l'impôt sur le dividende qui lui est versé.",
+        )
     with col3:
-        carte_kpi("Écart", fmt_euro(ecart), ENCRE_MUTED, f"en faveur de {meilleur}")
+        carte_kpi(
+            "Écart", fmt_euro(ecart), ENCRE_MUTED,
+            f"{fmt_euro(ecart)} de plus en poche en choisissant {meilleur} plutôt que l'autre "
+            f"option, pour ce même montant de départ.",
+        )
 
     st.write("")
 
@@ -694,7 +718,7 @@ with tab2:
         "Simulation Monte-Carlo, fourchette P10–P90, sur plusieurs années",
     )
 
-    with st.expander("Hypothèses de ce scénario (à lire avant de tirer des conclusions)"):
+    with st.expander("Hypothèses de ce scénario (à lire avant de tirer des conclusions)", expanded=True):
         st.markdown(
             "- Le profit annuel avant impôt est supposé constant sur tout l'horizon.\n"
             "- **Scénario direct** : chaque année, le profit est distribué en "
@@ -772,16 +796,26 @@ with tab2:
                 "Croisement (scénario central, sans aléa)",
                 f"Année {resultat_det['annee_croisement']}",
                 COULEUR_DIVIDENDE,
-                "la holding dépasse le direct à partir de cette année",
+                f"À partir de cette année, dans le scénario central (rendement moyen, sans tenir "
+                f"compte du hasard), garder l'argent en holding devient plus avantageux que le "
+                f"sortir chaque année en direct.",
             )
         else:
-            carte_kpi("Croisement (scénario central)", "Aucun", ENCRE_MUTED, "la holding ne dépasse pas le direct sur cet horizon")
+            carte_kpi(
+                "Croisement (scénario central)", "Aucun", ENCRE_MUTED,
+                f"Sur {horizon} ans, dans le scénario central, la holding ne devient jamais plus "
+                f"avantageuse que la détention directe — sortir l'argent chaque année reste "
+                f"préférable sur cet horizon.",
+            )
     with col2:
+        faveur = "la holding" if ecart_mediane_final > 0 else "la détention directe"
         carte_kpi(
             "Écart médian en fin d'horizon",
             fmt_euro(ecart_mediane_final, signe=True),
             COULEUR_DIVIDENDE if ecart_mediane_final > 0 else COULEUR_SALAIRE,
-            f"en faveur de {'la holding' if ecart_mediane_final > 0 else 'la détention directe'} — jamais garanti (voir P10-P90)",
+            f"Au bout de {horizon} ans, la moitié des trajectoires simulées donnent un résultat "
+            f"au moins aussi bon en faveur de {faveur} — ce n'est pas une garantie, juste la "
+            f"tendance centrale (voir la fourchette P10-P90 sur le graphique).",
         )
 
     df_trajectoire = pd.DataFrame(
@@ -852,7 +886,7 @@ with tab3:
         "Ligne directe, abattement de 100 000 € disponible — barème de l'article 669 du CGI",
     )
 
-    with st.expander("Comment lire ce scénario"):
+    with st.expander("Comment lire ce scénario", expanded=True):
         st.markdown(
             "- **Pleine propriété** : l'enfant reçoit tout, les droits de "
             "donation portent sur la valeur totale du bien.\n"
@@ -902,15 +936,25 @@ with tab3:
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        carte_kpi("Droits si pleine propriété", fmt_euro(resultat_demembrement['droits_pleine_propriete']), COULEUR_SALAIRE)
+        carte_kpi(
+            "Droits si pleine propriété", fmt_euro(resultat_demembrement['droits_pleine_propriete']), COULEUR_SALAIRE,
+            "Ce que l'enfant devrait payer à l'État s'il reçoit le bien en pleine propriété, après "
+            "abattement.",
+        )
     with col2:
-        carte_kpi("Droits si nue-propriété seule", fmt_euro(resultat_demembrement['droits_demembrement']), COULEUR_DEMEMBREMENT)
+        carte_kpi(
+            "Droits si nue-propriété seule", fmt_euro(resultat_demembrement['droits_demembrement']), COULEUR_DEMEMBREMENT,
+            "Ce que l'enfant devrait payer à l'État s'il ne reçoit que la nue-propriété, le parent "
+            "gardant l'usufruit jusqu'à son décès.",
+        )
     with col3:
         carte_kpi(
             "Économie de droits",
             fmt_euro(resultat_demembrement['economie_droits']),
             ENCRE_MUTED,
-            f"part usufruit à {age_donateur} ans : {resultat_demembrement['pourcentage_usufruit']:.0%}",
+            f"Ce que la famille évite de payer en choisissant la nue-propriété plutôt que la pleine "
+            f"propriété (à {age_donateur} ans, l'usufruit représente "
+            f"{resultat_demembrement['pourcentage_usufruit']:.0%} de la valeur du bien).",
         )
 
     st.write("")
