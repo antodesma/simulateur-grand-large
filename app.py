@@ -614,14 +614,15 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(
 # Barre d'outils Plotly activée (zoom rectangle, panoramique, réinitialiser,
 # export PNG) - seuls les boutons de sélection (lasso/rectangle de sélection
 # de points, inutiles sur des courbes/barres) et le logo Plotly sont retirés.
-# scrollZoom : zoom à la molette directement sur le graphique, en plus du
-# zoom rectangle de la barre d'outils - geste plus naturel que de devoir
-# d'abord cliquer l'icône loupe puis tracer un rectangle.
+# scrollZoom désactivé (False) : zoomer à la molette captait le défilement de
+# la page dès que la souris survolait un graphique en faisant simplement
+# défiler la page - gênant en usage normal. Le zoom reste possible via la
+# barre d'outils (icône loupe puis rectangle de sélection).
 CONFIG_GRAPHIQUE = {
     "displayModeBar": True,
     "displaylogo": False,
     "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d"],
-    "scrollZoom": True,
+    "scrollZoom": False,
 }
 
 
@@ -648,8 +649,8 @@ def _mise_en_forme_graphique(fig, titre, y_titre):
         hovermode="x unified",
         # dragmode=False : cliquer-glisser sur le graphique ne déclenche plus
         # de rectangle de sélection/zoom accidentel (gênant en usage normal,
-        # ex. en essayant juste de survoler le graphique). Le zoom molette
-        # (scrollZoom, dans CONFIG_GRAPHIQUE) reste le moyen de zoomer.
+        # ex. en essayant juste de survoler le graphique). Le zoom reste
+        # possible via la barre d'outils (CONFIG_GRAPHIQUE).
         dragmode=False,
         # Infobulle en carte marine pleine plutôt que le cadre blanc/gris par
         # défaut de Plotly - qui est l'un des signaux les plus "logiciel de
