@@ -294,21 +294,36 @@ st.markdown(
     .stTabs [data-baseweb="tab-highlight"] {{ background-color: transparent !important; }}
     .stTabs [data-baseweb="tab-border"] {{ background-color: transparent !important; }}
 
+    /* Deux poids plutôt qu'un seul : le CSV est une donnée brute
+       (secondaire, contour), le PDF est le livrable fini qu'on montre
+       réellement à un client (primaire, plein) - une vraie hiérarchie
+       entre les deux actions, pas juste une couleur appliquée partout. */
     .stButton button, .stDownloadButton button {{
         border-radius: 0;
         border: 1.5px solid {NAVY};
-        background-color: {NAVY};
-        color: #ffffff;
+        background-color: #ffffff;
+        color: {NAVY};
         font-weight: 600;
+        letter-spacing: 0.01em;
         padding: 0.5rem 1.15rem;
         transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
     }}
     .stButton button:hover, .stDownloadButton button:hover {{
+        background-color: {CREME};
+        border-color: {NAVY};
+        color: {NAVY};
+        transform: translateY(-1px);
+    }}
+    .stButton button[kind="primary"], .stDownloadButton button[kind="primary"] {{
+        background-color: {NAVY};
+        border-color: {NAVY};
+        color: #ffffff;
+    }}
+    .stButton button[kind="primary"]:hover, .stDownloadButton button[kind="primary"]:hover {{
         background-color: {NAVY_HOVER};
         border-color: {NAVY_HOVER};
         color: #ffffff;
-        box-shadow: 0 8px 18px rgba(3,0,28,0.20);
-        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(3,0,28,0.22);
     }}
     .stButton button:active, .stDownloadButton button:active {{
         transform: translateY(0);
@@ -481,30 +496,50 @@ tab1, tab2, tab3, tab4 = st.tabs(
 CONFIG_GRAPHIQUE = {"displayModeBar": False}
 
 
+POLICE_TITRE_GRAPHIQUE = "Libre Caslon Display, Georgia, serif"
+POLICE_CORPS_GRAPHIQUE = "Inter, -apple-system, Segoe UI, sans-serif"
+
+
 def _mise_en_forme_graphique(fig, titre, y_titre):
     fig.update_layout(
-        title=dict(text=titre, font=dict(size=19, color=ENCRE_PRIMAIRE)),
+        title=dict(text=titre, font=dict(family=POLICE_TITRE_GRAPHIQUE, size=20, color=ENCRE_PRIMAIRE)),
         plot_bgcolor=SURFACE_CARTE,
         paper_bgcolor=SURFACE_CARTE,
-        font=dict(color=ENCRE_SECONDAIRE, size=15),
+        font=dict(family=POLICE_CORPS_GRAPHIQUE, color=ENCRE_SECONDAIRE, size=14),
         legend=dict(
-            orientation="h", yanchor="bottom", y=1.1, xanchor="left", x=0,
-            font=dict(color=ENCRE_SECONDAIRE, size=14),
+            orientation="h", yanchor="bottom", y=1.08, xanchor="left", x=0,
+            font=dict(family=POLICE_CORPS_GRAPHIQUE, color=ENCRE_SECONDAIRE, size=13),
         ),
         margin=dict(t=100, l=10, r=10, b=10),
         hovermode="x unified",
-        hoverlabel=dict(font=dict(size=14)),
+        # Infobulle en carte marine pleine plutôt que le cadre blanc/gris par
+        # défaut de Plotly - qui est l'un des signaux les plus "logiciel de
+        # calcul" d'un graphique autrement soigné.
+        hoverlabel=dict(
+            bgcolor=NAVY, bordercolor=NAVY,
+            font=dict(family=POLICE_CORPS_GRAPHIQUE, color="#ffffff", size=13),
+        ),
         separators=". ",  # convention française : point décimal, espace pour les milliers
     )
     fig.update_yaxes(
-        title=dict(text=y_titre, font=dict(size=15)), gridcolor=GRILLE, zeroline=False,
-        tickformat=",.0f", ticksuffix=" €", tickfont=dict(size=13),
+        title=dict(text=y_titre, font=dict(family=POLICE_CORPS_GRAPHIQUE, size=13, color=ENCRE_MUTED)),
+        gridcolor=GRILLE, gridwidth=1, zeroline=False, showline=False,
+        tickformat=",.0f", ticksuffix=" €", tickfont=dict(family=POLICE_CORPS_GRAPHIQUE, size=12, color=ENCRE_MUTED),
     )
-    fig.update_xaxes(gridcolor=GRILLE, zeroline=False, tickfont=dict(size=14))
-    # Texte au-dessus des barres/cascades (montants) : agrandi, pour se lire
-    # sans devoir s'approcher de l'écran. N'affecte que les traces qui
-    # affichent du texte (bar, waterfall) - sans effet sur les courbes.
-    fig.update_traces(textfont=dict(size=15, color=ENCRE_PRIMAIRE))
+    # Pas de quadrillage vertical : c'est lui qui donne aux graphiques leur
+    # air de capture Excel. Seule une ligne de base fine signale l'axe des
+    # catégories - jamais un cadre complet autour du tracé.
+    fig.update_xaxes(
+        showgrid=False, zeroline=False,
+        showline=True, linecolor=BORDURE, linewidth=1,
+        tickfont=dict(family=POLICE_CORPS_GRAPHIQUE, size=13, color=ENCRE_SECONDAIRE),
+    )
+    # Texte au-dessus des barres/cascades (montants) : en encre secondaire
+    # plutôt qu'en noir plein - les totaux (barres pleines) restent lisibles
+    # sans que chaque valeur intermédiaire ne crie au même niveau que le
+    # titre. N'affecte que les traces qui affichent du texte (bar,
+    # waterfall) - sans effet sur les courbes.
+    fig.update_traces(textfont=dict(family=POLICE_CORPS_GRAPHIQUE, size=13, color=ENCRE_SECONDAIRE))
     # Coins arrondis sur les barres - rendu plus actuel qu'un rectangle plein.
     fig.update_traces(marker=dict(cornerradius=6), selector=dict(type="bar"))
     return fig
@@ -978,6 +1013,7 @@ with tab1:
             data=pdf_bytes,
             file_name=f"synthese_remuneration_{montant}.pdf",
             mime="application/pdf",
+            type="primary",
         )
 
     glossaire_expander(["Assimilé salarié", "TNS", "PASS", "Assiette", "PFU", "IS", "IR", "Abattement"])
@@ -1200,6 +1236,7 @@ with tab2:
             data=pdf_bytes_trajectoire,
             file_name=f"synthese_trajectoire_{profil}_{horizon}ans.pdf",
             mime="application/pdf",
+            type="primary",
         )
 
     glossaire_expander(["Holding", "PFU", "IS", "Monte-Carlo (simulation)", "P10 / P50 / P90"])
@@ -1391,6 +1428,7 @@ with tab3:
             data=pdf_bytes_demembrement,
             file_name=f"synthese_demembrement_{valeur_bien}.pdf",
             mime="application/pdf",
+            type="primary",
         )
 
     glossaire_expander(["Démembrement de propriété", "Usufruit", "Nue-propriété", "Abattement"])
@@ -1537,6 +1575,7 @@ with tab3:
             data=pdf_bytes_dutreil,
             file_name=f"synthese_dutreil_{valeur_entreprise}.pdf",
             mime="application/pdf",
+            type="primary",
         )
 
     glossaire_expander(["Pacte Dutreil", "Abattement", "Holding"], titre="Glossaire — Pacte Dutreil")
