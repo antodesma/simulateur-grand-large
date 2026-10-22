@@ -21,6 +21,8 @@ Salaire vs dividende, avec un choix de la forme juridique du dirigeant : SASU (p
 
 **Optimiseur de répartition** : plutôt que de choisir entre 100 % salaire et 100 % dividende, un balayage exhaustif de toutes les répartitions intermédiaires trouve le point qui laisse le plus de net en poche — parce que les effets de seuil (plafond de la sécurité sociale, tranches de l'IR, seuil de dividende non cotisé en SARL) rendent la fonction non monotone : l'optimum n'est pas toujours à une extrémité.
 
+**Analyse de sensibilité (tornade)** : à répartition optimale, quel paramètre fait le plus bouger le net en poche ? La forme juridique (SASU vs SARL), le taux normal d'IS, et - selon la forme choisie - l'abattement forfaitaire de 10 % (SASU) ou le capital social (SARL) sont testés un par un, à la hausse et à la baisse, toutes choses égales par ailleurs. Chaque variation est un test de robustesse explicitement présenté comme tel, jamais comme une prévision ; quand un paramètre n'a, pour ce scénario précis, aucune prise sur le résultat (ex. le taux d'IS normal quand le dividende optimal reste sous le seuil des 42 500 € taxés à taux réduit), le graphique l'indique clairement plutôt que d'afficher une barre invisible.
+
 ### 2 — Trajectoire pluriannuelle
 Garder l'argent en direct vs le faire capitaliser dans une holding, sur plusieurs années. Simulation Monte-Carlo (1500 tirages), affichée en fourchette P10–P90 plutôt qu'en point unique — pour ne jamais ressembler à une prévision de performance personnalisée. L'année de croisement (scénario central) est annotée directement sur le graphique.
 
@@ -45,7 +47,7 @@ Chaque onglet (sauf la veille) propose aussi un export PDF en plus du CSV, et un
 ## Rigueur méthodologique
 
 - **Aucune hypothèse inventée** : chaque seuil fiscal et chaque chiffre de marché est sourcé (CGI, ACPR, ASPIM, France Invest, France Assureurs, Banque de France...), avec sa date de validité.
-- **78 tests automatisés** (`tests_sanity.py`) : cas limites, monotonie, cohérence de la dichotomie brut ↔ coût total, reproductibilité de la simulation Monte-Carlo, cohérence du barème de démembrement, répartition de l'abattement de donation par enfant et par parent, cohérence du régime TNS (SARL) face au régime assimilé salarié (SASU), exactitude de l'optimiseur de répartition (recoupement exact avec les scénarios purs aux deux extrémités), cohérence du calculateur Pacte Dutreil (conservation de la valeur, économie strictement positive), et cohérence des paniers de solutions (répartitions qui somment à 100 %, rendement pondéré correct, normalisation d'une saisie imparfaite).
+- **83 tests automatisés** (`tests_sanity.py`) : cas limites, monotonie, cohérence de la dichotomie brut ↔ coût total, reproductibilité de la simulation Monte-Carlo, cohérence du barème de démembrement, répartition de l'abattement de donation par enfant et par parent, cohérence du régime TNS (SARL) face au régime assimilé salarié (SASU), exactitude de l'optimiseur de répartition (recoupement exact avec les scénarios purs aux deux extrémités), cohérence de l'analyse de sensibilité (tri par amplitude, recoupement avec l'optimiseur), cohérence du calculateur Pacte Dutreil (conservation de la valeur, économie strictement positive), et cohérence des paniers de solutions (répartitions qui somment à 100 %, rendement pondéré correct, normalisation d'une saisie imparfaite).
 - **Compliance-first** : bandeau de non-responsabilité sur chaque onglet, aucune recommandation de produit ou de montant, fourchettes de risque plutôt que performances ponctuelles.
 - **Charte graphique réelle** : couleurs et typographie extraites du site de Grand Large Patrimoine (et non inventées), palette de données validée accessibilité (contraste, daltonisme).
 
@@ -79,7 +81,7 @@ regle_fiscale.py      # catalogue de mécanismes patrimoniaux niches, rotation q
 export_pdf.py         # génération des exports PDF one-pager (un par scénario)
 glossaire.py          # définitions courtes des termes techniques, affichées par onglet
 app.py                # interface Streamlit (4 onglets), charte graphique Grand Large Patrimoine
-tests_sanity.py       # 78 vérifications automatisées sur les modules de calcul
+tests_sanity.py       # 83 vérifications automatisées sur les modules de calcul
 ```
 
 ## Méthodologie — conçu avec Claude (Anthropic)

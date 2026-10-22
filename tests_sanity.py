@@ -34,7 +34,7 @@ from fiscalite_tns import (
     net_apres_remuneration_tns,
     seuil_dividendes_sans_cotisations,
 )
-from optimisation import net_total_mix, repartition_optimale
+from optimisation import analyse_sensibilite, net_total_mix, repartition_optimale
 from pacte_dutreil import calcul_transmission_dutreil, TAUX_EXONERATION_DUTREIL
 
 echecs = []
@@ -314,6 +314,49 @@ verifier(
         rendement_volatilite_panier({"epargne_securisee": 0.5, "marches_financiers": 0.5}, rendements_override={"epargne_securisee": 0.05})["rendement_moyen"]
         - (0.5 * 0.05 + 0.5 * CLASSES_ACTIFS["marches_financiers"].rendement_moyen)
     ) < 1e-9
+)
+
+# --- Analyse de sensibilité (tornade) ---
+_sensibilite_sasu = analyse_sensibilite(80_000, False)
+_sensibilite_sarl = analyse_sensibilite(80_000, True, capital_social=10_000)
+
+verifier(
+    "analyse_sensibilite SASU : 3 paramètres (forme juridique, taux IS, abattement forfaitaire)",
+    {r["parametre"].split(" (")[0] for r in _sensibilite_sasu} == {"Forme juridique", "Taux normal d'IS", "Abattement forfaitaire frais professionnels"}
+)
+verifier(
+    "analyse_sensibilite SASU : la sensibilité à l'abattement forfaitaire est non nulle (contrairement au PASS, volontairement écarté - voir le code)",
+    abs(
+        next(r for r in _sensibilite_sasu if r["parametre"].startswith("Abattement"))["valeur_haut"]
+        - next(r for r in _sensibilite_sasu if r["parametre"].startswith("Abattement"))["valeur_bas"]
+    ) > 1
+)
+verifier(
+    "analyse_sensibilite SARL : 3 paramètres (forme juridique, taux IS, capital social)",
+    {r["parametre"].split(" (")[0] for r in _sensibilite_sarl} == {"Forme juridique", "Taux normal d'IS", "Capital social de la SARL"}
+)
+verifier(
+    "analyse_sensibilite : triée par amplitude d'impact décroissante",
+    all(
+        abs(_sensibilite_sasu[i]["valeur_haut"] - _sensibilite_sasu[i]["valeur_bas"])
+        >= abs(_sensibilite_sasu[i + 1]["valeur_haut"] - _sensibilite_sasu[i + 1]["valeur_bas"])
+        for i in range(len(_sensibilite_sasu) - 1)
+    )
+)
+verifier(
+    "analyse_sensibilite : la ligne « Forme juridique » recoupe repartition_optimale pour chaque forme",
+    abs(
+        next(r for r in _sensibilite_sasu if r["parametre"].startswith("Forme juridique"))["valeur_bas"]
+        - repartition_optimale(80_000, False)["meilleur_net"]
+    ) < 1e-6
+)
+verifier(
+    "net_total_mix SASU à p=100% : pass_value est bien pris en compte (change le résultat)",
+    net_total_mix(80_000, 1.0, False, pass_value=PASS_2026 * 2) != net_total_mix(80_000, 1.0, False, pass_value=PASS_2026)
+)
+verifier(
+    "net_total_mix SASU à p=100% : avec pass_value = PASS_2026, résultat identique à l'appel sans surcharge",
+    abs(net_total_mix(80_000, 1.0, False) - net_total_mix(80_000, 1.0, False, pass_value=PASS_2026)) < 1e-9
 )
 
 print()

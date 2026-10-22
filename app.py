@@ -55,7 +55,7 @@ from fiscalite_tns import (
 )
 from export_pdf import generer_pdf_scenario
 from glossaire import termes_glossaire
-from optimisation import repartition_optimale
+from optimisation import analyse_sensibilite, repartition_optimale
 from regle_fiscale import regle_du_jour
 from veille import (
     CHECKLIST_RAFRAICHISSEMENT,
@@ -853,6 +853,98 @@ with tab1:
             f"losange marine. La courbe n'est pas lissée volontairement : les coudes marquent les "
             f"effets de seuil (plafond de la sécurité sociale, tranches de l'impôt...)."
         )
+
+    # --- Analyse de sensibilité (tornade) ---
+    titre_sous_section("Sensibilité du résultat")
+    st.caption(
+        "Quel paramètre fait le plus bouger le net en poche optimal, toutes choses égales par "
+        "ailleurs ? Chaque hypothèse haute/basse est un test de robustesse, pas une prévision - "
+        "certains paramètres (taux d'IS, abattement forfaitaire) ne changent pas du jour au lendemain "
+        "dans la réalité."
+    )
+    capital_social_sensibilite = capital_social if est_sarl else 10_000
+    compte_courant_sensibilite = compte_courant_moyen if est_sarl else 0.0
+    resultats_sensibilite = analyse_sensibilite(montant, est_sarl, capital_social_sensibilite, compte_courant_sensibilite)
+    baseline_sensibilite = resultat_opt["meilleur_net"]
+
+    # En-dessous de ce seuil, l'écart est traité comme négligeable (un simple
+    # résidu d'arrondi du balayage à 1 point de pourcentage) plutôt qu'un
+    # véritable effet - certaines combinaisons mettent légitimement un
+    # paramètre hors-jeu pour ce scénario précis (ex. le taux d'IS normal n'a
+    # aucune prise quand le dividende optimal reste sous le seuil des 42 500€
+    # taxés à taux réduit, ou quand la répartition optimale est déjà à 100%
+    # d'un seul côté) : mieux vaut l'annoncer explicitement qu'afficher une
+    # barre invisible qui aurait l'air d'un bug d'affichage.
+    SEUIL_EFFET_NEGLIGEABLE = 15
+
+    donnees_tornade = list(reversed(resultats_sensibilite))  # plus grande amplitude en haut du graphique
+    categories_tornade = [d["parametre"] for d in donnees_tornade]
+    textes_bas, textes_haut, valeurs_bas, valeurs_haut = [], [], [], []
+    sans_effet = []
+    for d in donnees_tornade:
+        if d["type"] == "categoriel":
+            lib_bas, lib_haut = d["libelle_bas"], d["libelle_haut"]
+        elif d["type"] == "pourcentage":
+            lib_bas, lib_haut = f"taux à {d['param_bas']:.0%}", f"taux à {d['param_haut']:.0%}"
+        else:
+            lib_bas, lib_haut = f"à {fmt_euro(d['param_bas'])}", f"à {fmt_euro(d['param_haut'])}"
+        textes_bas.append(lib_bas)
+        textes_haut.append(lib_haut)
+        valeurs_bas.append(d["valeur_bas"])
+        valeurs_haut.append(d["valeur_haut"])
+        sans_effet.append(abs(d["valeur_haut"] - d["valeur_bas"]) < SEUIL_EFFET_NEGLIGEABLE)
+
+    fig_tornade = go.Figure()
+    fig_tornade.add_bar(
+        y=categories_tornade, x=[v - baseline_sensibilite for v in valeurs_bas], base=baseline_sensibilite,
+        orientation="h", name="Hypothèse basse", marker_color=COULEUR_DEMEMBREMENT,
+        customdata=list(zip(textes_bas, valeurs_bas)),
+        hovertemplate="<b>%{y}</b><br>%{customdata[0]} : %{customdata[1]:,.0f} €<extra></extra>",
+        text=["" if sa else fmt_euro(v) for sa, v in zip(sans_effet, valeurs_bas)], textposition="outside",
+        textfont=dict(family=POLICE_CORPS_GRAPHIQUE, size=12, color=COULEUR_DEMEMBREMENT),
+    )
+    fig_tornade.add_bar(
+        y=categories_tornade, x=[v - baseline_sensibilite for v in valeurs_haut], base=baseline_sensibilite,
+        orientation="h", name="Hypothèse haute", marker_color=COULEUR_MAGENTA,
+        customdata=list(zip(textes_haut, valeurs_haut)),
+        hovertemplate="<b>%{y}</b><br>%{customdata[0]} : %{customdata[1]:,.0f} €<extra></extra>",
+        text=["" if sa else fmt_euro(v) for sa, v in zip(sans_effet, valeurs_haut)], textposition="outside",
+        textfont=dict(family=POLICE_CORPS_GRAPHIQUE, size=12, color=COULEUR_MAGENTA),
+    )
+    for categorie, est_sans_effet in zip(categories_tornade, sans_effet):
+        if est_sans_effet:
+            fig_tornade.add_annotation(
+                x=baseline_sensibilite, y=categorie, text="<i>sans effet pour ce scénario</i>",
+                showarrow=False, xanchor="left", xshift=14, align="left",
+                font=dict(family=POLICE_CORPS_GRAPHIQUE, size=12, color=ENCRE_MUTED),
+            )
+    fig_tornade.add_vline(
+        x=baseline_sensibilite, line=dict(color=ENCRE_MUTED, width=1.4, dash="dot"),
+        annotation_text="Scénario actuel", annotation_position="top",
+        annotation_font=dict(family=POLICE_CORPS_GRAPHIQUE, size=12, color=ENCRE_MUTED),
+    )
+    fig_tornade = _mise_en_forme_graphique(fig_tornade, "Sensibilité du net en poche optimal", "")
+    fig_tornade.update_yaxes(
+        title=None, showgrid=False, zeroline=False, showline=False,
+        tickfont=dict(family=POLICE_CORPS_GRAPHIQUE, size=13, color=ENCRE_SECONDAIRE),
+    )
+    valeurs_toutes = valeurs_bas + valeurs_haut + [baseline_sensibilite]
+    etendue_tornade = max(valeurs_toutes) - min(valeurs_toutes)
+    marge_tornade = etendue_tornade * 0.22 if etendue_tornade > 0 else max(valeurs_toutes) * 0.02
+    fig_tornade.update_xaxes(
+        title=dict(text="Net en poche (€)", font=dict(family=POLICE_CORPS_GRAPHIQUE, size=13, color=ENCRE_MUTED)),
+        gridcolor=GRILLE, gridwidth=1, zeroline=False, showline=False,
+        tickformat=",.0f", ticksuffix=" €", tickfont=dict(family=POLICE_CORPS_GRAPHIQUE, size=12, color=ENCRE_MUTED),
+        range=[min(valeurs_toutes) - marge_tornade, max(valeurs_toutes) + marge_tornade],
+    )
+    fig_tornade.update_layout(height=140 + 80 * len(categories_tornade), margin=dict(l=10, r=10, t=100, b=10))
+    st.plotly_chart(fig_tornade, width="stretch", config=CONFIG_GRAPHIQUE)
+    st.caption(
+        f"Scénario actuel (ligne pointillée) : {fmt_euro(baseline_sensibilite)} de net en poche "
+        f"optimal, pour {fmt_euro(montant)} disponibles en {forme_juridique.split(' (')[0]}. Barres "
+        f"triées par amplitude d'impact décroissante - le paramètre du haut est celui qui fait le "
+        f"plus bouger le résultat."
+    )
 
     # --- Comparateur direct des 4 scénarios (SASU et SARL), sans bascule ---
     if est_sarl:

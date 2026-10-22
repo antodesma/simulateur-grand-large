@@ -39,7 +39,7 @@ PRINCIPE SARL/TNS (par opposition à la SASU) :
   sociaux). Source : lecoindesentrepreneurs.fr.
 """
 
-from fiscalite import PASS_2026, TAUX_PFU, calcul_ir, calcul_is
+from fiscalite import PASS_2026, TAUX_IS_NORMAL, TAUX_PFU, calcul_ir, calcul_is
 
 TAUX_IR_SEUL_PFU = 0.128  # la part "impôt sur le revenu" du PFU (12,8%), sans les 18,6% de prélèvements sociaux
 
@@ -150,7 +150,7 @@ def seuil_dividendes_sans_cotisations(capital_social, compte_courant_moyen=0.0, 
     return 0.10 * (capital_social + compte_courant_moyen + primes_emission)
 
 
-def net_apres_dividende_tns(montant_disponible, capital_social, compte_courant_moyen=0.0, primes_emission=0.0):
+def net_apres_dividende_tns(montant_disponible, capital_social, compte_courant_moyen=0.0, primes_emission=0.0, taux_is_normal=TAUX_IS_NORMAL):
     """
     Scénario dividende pour un gérant majoritaire de SARL : IS d'abord
     (identique à la SASU), puis séparation du dividende distribuable en
@@ -161,8 +161,10 @@ def net_apres_dividende_tns(montant_disponible, capital_social, compte_courant_m
     explicite, cf. docstring du module) et ne supporte que les 12,8%
     d'impôt sur le revenu du PFU (la CSG-CRDS est déjà comprise dans les
     cotisations).
+    taux_is_normal : surcharge du taux normal d'IS, uniquement pour le
+    graphique tornade de sensibilité (voir fiscalite.calcul_is).
     """
-    is_du = calcul_is(montant_disponible)
+    is_du = calcul_is(montant_disponible, taux_is_normal)
     distribuable = montant_disponible - is_du
     seuil = seuil_dividendes_sans_cotisations(capital_social, compte_courant_moyen, primes_emission)
 

@@ -107,7 +107,7 @@ def charges_sur_brut(brut, pass_value=PASS_2026):
     return charges_employeur, charges_salarie
 
 
-def brut_depuis_cout_total(cout_total, precision=0.01):
+def brut_depuis_cout_total(cout_total, precision=0.01, pass_value=PASS_2026):
     """
     Problème : on connaît le COÛT TOTAL que l'entreprise est prête à payer
     (brut + charges patronales), on veut retrouver le BRUT correspondant.
@@ -119,11 +119,15 @@ def brut_depuis_cout_total(cout_total, precision=0.01):
     et on resserre l'intervalle jusqu'à tomber dans la précision voulue.
     C'est une technique générale (root-finding) : utile dès qu'une formule
     n'a pas d'inverse simple à écrire.
+
+    pass_value : surcharge du PASS, uniquement pour tester la sensibilité
+    du résultat à ce seuil (graphique tornade) - PASS_2026 reste le défaut
+    partout ailleurs dans l'outil.
     """
     borne_basse, borne_haute = 0, cout_total  # le brut est forcément entre 0 et le coût total
     while borne_haute - borne_basse > precision:
         brut_test = (borne_basse + borne_haute) / 2
-        charges_employeur, _ = charges_sur_brut(brut_test)
+        charges_employeur, _ = charges_sur_brut(brut_test, pass_value)
         cout_genere = brut_test + charges_employeur
         if cout_genere > cout_total:
             borne_haute = brut_test
@@ -132,14 +136,18 @@ def brut_depuis_cout_total(cout_total, precision=0.01):
     return (borne_basse + borne_haute) / 2
 
 
-def calcul_is(profit):
+def calcul_is(profit, taux_normal=TAUX_IS_NORMAL):
     """
-    Impôt sur les sociétés : 15% jusqu'à 42 500€, 25% au-delà.
-    On ne paie le taux de 25% QUE sur la part qui dépasse le seuil.
+    Impôt sur les sociétés : 15% jusqu'à 42 500€, taux normal au-delà
+    (25% actuellement). On ne paie le taux normal QUE sur la part qui
+    dépasse le seuil.
+    taux_normal : surcharge du taux normal, uniquement pour tester la
+    sensibilité du résultat à ce taux (graphique tornade) - 25% reste le
+    défaut partout ailleurs dans l'outil.
     """
     if profit <= SEUIL_IS_REDUIT:
         return profit * TAUX_IS_REDUIT
-    return SEUIL_IS_REDUIT * TAUX_IS_REDUIT + (profit - SEUIL_IS_REDUIT) * TAUX_IS_NORMAL
+    return SEUIL_IS_REDUIT * TAUX_IS_REDUIT + (profit - SEUIL_IS_REDUIT) * taux_normal
 
 
 def calcul_ir(revenu_imposable):
@@ -158,36 +166,47 @@ def calcul_ir(revenu_imposable):
     return impot
 
 
-def applique_abattement_salaire(net_imposable_brut):
+def applique_abattement_salaire(net_imposable_brut, taux_abattement=0.10):
     """
     Déduction forfaitaire de 10% pour frais professionnels, plafonnée.
     S'applique aux salaires avant le calcul de l'IR, pas aux dividendes.
+    taux_abattement : surcharge du taux (10% actuellement), uniquement
+    pour tester la sensibilité du résultat à ce taux (graphique tornade) -
+    10% reste le défaut partout ailleurs dans l'outil. Les bornes planchers
+    et plafond (en euros) restent celles réellement en vigueur : seul le
+    taux appliqué à l'intérieur de cette fourchette est testé.
     """
-    abattement = net_imposable_brut * 0.10
+    abattement = net_imposable_brut * taux_abattement
     abattement = max(ABATTEMENT_10_MIN, min(abattement, ABATTEMENT_10_MAX))
     return net_imposable_brut - abattement
 
 
-def net_apres_salaire(montant_disponible):
+def net_apres_salaire(montant_disponible, pass_value=PASS_2026, abattement_taux=0.10):
     """
     Scénario salaire : on part du coût total que l'entreprise est prête à
     payer, on en déduit le brut (par dichotomie), on retire les charges
     salariales pour avoir le net avant abattement, on applique l'abattement
     de 10% (plafonné) propre aux salaires, puis l'IR sur ce qui reste.
+    pass_value : surcharge du PASS, abattement_taux : surcharge du taux
+    d'abattement forfaitaire (10%) - toutes deux uniquement pour le
+    graphique tornade de sensibilité (voir brut_depuis_cout_total et
+    applique_abattement_salaire).
     """
-    brut = brut_depuis_cout_total(montant_disponible)
-    _, charges_salarie = charges_sur_brut(brut)
+    brut = brut_depuis_cout_total(montant_disponible, pass_value=pass_value)
+    _, charges_salarie = charges_sur_brut(brut, pass_value)
     net_avant_abattement = brut - charges_salarie
-    net_imposable = applique_abattement_salaire(net_avant_abattement)
+    net_imposable = applique_abattement_salaire(net_avant_abattement, abattement_taux)
     impot = calcul_ir(net_imposable)
     return net_avant_abattement - impot
 
 
-def net_apres_dividende(montant_disponible):
+def net_apres_dividende(montant_disponible, taux_is_normal=TAUX_IS_NORMAL):
     """
     Scénario dividende : IS d'abord (sur le profit avant distribution), puis PFU.
+    taux_is_normal : surcharge du taux normal d'IS, uniquement pour le
+    graphique tornade de sensibilité (voir calcul_is).
     """
-    is_du = calcul_is(montant_disponible)
+    is_du = calcul_is(montant_disponible, taux_is_normal)
     distribuable = montant_disponible - is_du
     return distribuable * (1 - TAUX_PFU)
 
