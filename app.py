@@ -45,6 +45,7 @@ from assurance_vie import (
 from paniers import CLASSES_ACTIFS, PANIERS, rendement_volatilite_panier
 from trajectoire import comparer
 from demembrement import comparer_transmission, pourcentage_usufruit
+from succession import ABATTEMENT_TIERS, comparer_liens_parente
 from pacte_dutreil import (
     calcul_transmission_dutreil,
     CONDITIONS_PACTE_DUTREIL,
@@ -573,13 +574,14 @@ with st.expander("Comment utiliser ce simulateur (à lire en premier)", expanded
         "Onglet « Rémunération annuelle » : pour une année donnée, salaire ou dividende — lequel laisse le plus net en poche au dirigeant ? Saisissez le montant réellement disponible du client.",
         "Onglet « Trajectoire pluriannuelle » : sur plusieurs années, vaut-il mieux sortir l'argent chaque année ou le laisser capitaliser dans une holding ? Avec l'incertitude du rendement (fourchette P10-P90), pas un chiffre unique.",
         "Onglet « Démembrement de propriété » : pour transmettre un bien aux enfants, comparez donation en pleine propriété et donation de la seule nue-propriété.",
+        "Onglet « Succession » : au décès, combien reste-t-il net selon qui hérite - conjoint, enfant, frère ou sœur, ou un tiers sans lien de parenté ?",
         "Onglet « Assurance-vie » : combien reste-t-il net lors d'un rachat, ou pour les bénéficiaires à la transmission - selon l'âge du souscripteur au moment des versements ?",
         "Onglet « Note Grand Large » : les chiffres de marché et seuils réglementaires utilisés ailleurs dans l'outil, sourcés et datés.",
         "Dans chaque onglet, les montants se modifient librement — aucun résultat n'est figé, tout se recalcule en direct.",
     ])
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(
-    ["Rémunération annuelle", "Trajectoire pluriannuelle", "Démembrement de propriété", "Assurance-vie", "Note Grand Large"]
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+    ["Rémunération annuelle", "Trajectoire pluriannuelle", "Démembrement de propriété", "Succession", "Assurance-vie", "Note Grand Large"]
 )
 
 # Barre d'outils Plotly activée (zoom rectangle, panoramique, réinitialiser,
@@ -2150,8 +2152,171 @@ with tab3:
     glossaire_expander(["Pacte Dutreil", "Abattement", "Holding"], titre="Glossaire — Pacte Dutreil")
 
 
-# --- Onglet 4 : assurance-vie (rachat du vivant, transmission au décès) ---
+# --- Onglet 4 : succession hors donation (droits selon le lien de parenté) ---
 with tab4:
+    entete_section(
+        "Succession : qui hérite, et combien lui reste-t-il ?",
+        "Droits de succession selon le lien de parenté avec le défunt — articles 777, 779 et 796-0 bis du CGI",
+    )
+    pitch_usage(
+        "<strong>Le client se demande ce qu'il resterait à ses proches s'il venait à "
+        "disparaître ?</strong> Le lien de parenté change presque tout : le conjoint ne "
+        "paie rien, un enfant paie peu après abattement, mais un frère, un neveu ou un "
+        "tiers sans lien de parenté peuvent perdre plus de la moitié de ce qu'ils "
+        "reçoivent. Cet onglet chiffre l'écart, sur une même masse successorale."
+    )
+
+    with st.expander("Comment lire ce calcul", expanded=True):
+        st.markdown(
+            "- **Conjoint survivant ou partenaire pacsé** : exonération **totale**, quel "
+            "que soit le montant (article 796-0 bis du CGI, depuis la loi TEPA de 2007).\n"
+            "- **Enfant (ligne directe)** : même barème et même abattement de "
+            "**100 000 € par enfant** qu'une donation en ligne directe (article 777 du "
+            "CGI) - voir l'onglet « Démembrement de propriété ».\n"
+            "- **Frère ou sœur** : abattement de **15 932 €**, puis 35 % jusqu'à "
+            "24 430 € de base taxable, 45 % au-delà. Une exonération totale existe sous "
+            "conditions cumulatives strictes (célibataire, veuf, divorcé ou séparé de "
+            "corps, de plus de 50 ans ou infirme, domicilié avec le défunt depuis plus de "
+            "5 ans - article 796-0 ter du CGI) - **non modélisée ici**, à vérifier au cas "
+            "par cas.\n"
+            "- **Neveu ou nièce** : abattement de **7 967 €**, taux fixe de **55 %**.\n"
+            "- **Autre personne sans lien de parenté** (concubin non pacsé, tiers) : "
+            "abattement de **1 594 €**, taux fixe de **60 %**.\n"
+            "- Ce module ne tient pas compte d'une assurance-vie transmise en parallèle "
+            "(voir l'onglet « Assurance-vie »), ni de donations antérieures de moins de "
+            "15 ans qui réduiraient l'abattement encore disponible."
+        )
+
+    col_suc1, col_suc2 = st.columns(2)
+    with col_suc1:
+        valeur_succession = st.number_input(
+            "Masse successorale à comparer (€)", min_value=0, max_value=20_000_000,
+            value=500_000, step=10_000,
+        )
+        st.caption(f"→ {fmt_euro(valeur_succession)}")
+    with col_suc2:
+        nombre_enfants_succession = st.number_input(
+            "Si elle revient aux enfants, nombre d'enfants (abattement de 100 000€ chacun)",
+            min_value=1, max_value=10, value=2, step=1,
+        )
+
+    resultats_succession = comparer_liens_parente(valeur_succession, nombre_enfants_succession)
+
+    st.caption(
+        "Chaque ligne du graphique suppose que la **totalité** de la masse successorale "
+        "revient à ce seul lien de parenté (sauf « Enfant », répartie entre "
+        f"{nombre_enfants_succession} enfant(s)) - pour isoler l'effet du lien de parenté, "
+        "pas un partage réel entre plusieurs héritiers de rangs différents."
+    )
+
+    fig_succession = go.Figure()
+    fig_succession.add_bar(
+        y=[r["lien"] for r in resultats_succession],
+        x=[r["net"] for r in resultats_succession],
+        orientation="h",
+        marker_color=[NAVY, COULEUR_DEMEMBREMENT, COULEUR_SALAIRE, COULEUR_JAUNE, COULEUR_MAGENTA],
+        text=[fmt_euro(r["net"]) for r in resultats_succession],
+        textposition="outside",
+        hovertemplate="%{y} : net %{x:,.0f} €<extra></extra>",
+    )
+    fig_succession = _mise_en_forme_graphique(
+        fig_succession, f"Net reçu sur {fmt_euro(valeur_succession)} de succession, selon le lien de parenté", ""
+    )
+    fig_succession.update_yaxes(title=None, showgrid=False)
+    fig_succession.update_xaxes(
+        title=dict(text="Net reçu (€)", font=dict(family=POLICE_CORPS_GRAPHIQUE, size=13, color=ENCRE_MUTED)),
+        range=[0, valeur_succession * 1.22],
+    )
+    fig_succession.update_layout(height=380)
+    st.plotly_chart(fig_succession, width="stretch", config=CONFIG_GRAPHIQUE)
+
+    col_kpi_s1, col_kpi_s2, col_kpi_s3 = st.columns(3)
+    conjoint_vs_tiers = next(r for r in resultats_succession if r["lien"] == "Conjoint survivant / partenaire pacsé")
+    enfant_vs = next(r for r in resultats_succession if r["lien"] == "Enfant (ligne directe)")
+    tiers_vs = next(r for r in resultats_succession if r["lien"] == "Autre (sans lien de parenté)")
+    with col_kpi_s1:
+        carte_kpi(
+            "Conjoint / partenaire pacsé", fmt_euro(conjoint_vs_tiers["net"]), NAVY,
+            "Exonération totale - rien n'est prélevé, quel que soit le montant.",
+        )
+    with col_kpi_s2:
+        carte_kpi(
+            f"{nombre_enfants_succession} enfant(s)", fmt_euro(enfant_vs["net"]), COULEUR_DEMEMBREMENT,
+            f"Taux effectif de {enfant_vs['taux_effectif']:.1%}, après {fmt_euro(100_000 * nombre_enfants_succession)} "
+            f"d'abattement cumulé.",
+        )
+    with col_kpi_s3:
+        carte_kpi(
+            "Tiers sans lien de parenté", fmt_euro(tiers_vs["net"]), COULEUR_MAGENTA,
+            f"Taux effectif de {tiers_vs['taux_effectif']:.1%} - seulement {fmt_euro(ABATTEMENT_TIERS)} d'abattement, "
+            f"puis 60 % de taux fixe.",
+        )
+
+    with st.expander("Voir le détail du calcul, lien par lien"):
+        df_succession = pd.DataFrame(
+            {
+                "Droits": [r["droits"] for r in resultats_succession],
+                "Net reçu": [r["net"] for r in resultats_succession],
+                "Taux effectif": [r["taux_effectif"] for r in resultats_succession],
+            },
+            index=[r["lien"] for r in resultats_succession],
+        )
+        st.dataframe(
+            df_succession.style.format({"Droits": fmt_euro, "Net reçu": fmt_euro, "Taux effectif": "{:.1%}".format}),
+            width="stretch",
+        )
+
+    col_csv_suc, col_pdf_suc = st.columns(2)
+    with col_csv_suc:
+        st.download_button(
+            "Télécharger ce scénario (CSV)",
+            data=df_succession.to_csv().encode("utf-8"),
+            file_name=f"succession_{valeur_succession}.csv",
+            mime="text/csv",
+        )
+    with col_pdf_suc:
+        lignes_pdf_succession = [["Lien de parenté", "Droits", "Net reçu"]] + [
+            [r["lien"], fmt_euro(r["droits"]), fmt_euro(r["net"])] for r in resultats_succession
+        ]
+        pdf_bytes_succession = generer_pdf_scenario(
+            titre="Succession : droits selon le lien de parenté",
+            sous_titre=f"Masse successorale de {fmt_euro(valeur_succession)} — articles 777, 779 et 796-0 bis du CGI",
+            kpis=[
+                ("Conjoint / partenaire pacsé", fmt_euro(conjoint_vs_tiers["net"])),
+                (f"{nombre_enfants_succession} enfant(s)", fmt_euro(enfant_vs["net"])),
+                ("Tiers sans lien de parenté", fmt_euro(tiers_vs["net"])),
+            ],
+            lignes_tableau=lignes_pdf_succession,
+            hypotheses=[
+                "Conjoint survivant ou partenaire pacsé : exonération totale (article 796-0 bis "
+                "du CGI), quel que soit le montant hérité.",
+                f"Enfant : abattement de 100 000 € par enfant (article 779 du CGI), masse "
+                f"répartie ici entre {nombre_enfants_succession} enfant(s).",
+                "Frère/sœur : abattement de 15 932 €, puis 35 %/45 % ; neveu/nièce : abattement "
+                "de 7 967 €, taux fixe de 55 % ; tiers sans lien de parenté : abattement de "
+                "1 594 €, taux fixe de 60 %.",
+                "Chaque ligne suppose que la masse successorale entière revient à ce seul lien "
+                "de parenté - ne tient pas compte d'un partage réel entre héritiers de rangs "
+                "différents, ni d'une assurance-vie ou de donations antérieures transmises en "
+                "parallèle.",
+            ],
+        )
+        st.download_button(
+            "Télécharger la synthèse (PDF)",
+            data=pdf_bytes_succession,
+            file_name=f"synthese_succession_{valeur_succession}.pdf",
+            mime="application/pdf",
+            type="primary",
+        )
+
+    glossaire_expander(
+        ["Lien de parenté (succession)", "Article 796-0 bis du CGI", "Abattement"],
+        titre="Glossaire — Succession",
+    )
+
+
+# --- Onglet 5 : assurance-vie (rachat du vivant, transmission au décès) ---
+with tab5:
     entete_section(
         "Assurance-vie : rachat et transmission",
         "Régime du PFU pour les rachats (versements à partir du 27/09/2017) — articles 990 I et 757 B du CGI pour la transmission",
@@ -2399,8 +2564,8 @@ with tab4:
     )
 
 
-# --- Onglet 5 : veille marchés & produits, calée sur les solutions GLP ---
-with tab5:
+# --- Onglet 6 : veille marchés & produits, calée sur les solutions GLP ---
+with tab6:
     entete_section(
         "Note Grand Large",
         "Veille marchés & produits, organisée autour des solutions affichées sur grandlargepatrimoine.fr",

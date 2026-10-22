@@ -120,6 +120,19 @@ GLOSSAIRE = {
         "entre tous les bénéficiaires, puis taxation au barème des droits "
         "de succession classique."
     ),
+    "Lien de parenté (succession)": (
+        "Ce qui détermine en premier lieu le montant des droits de "
+        "succession : conjoint et partenaire pacsé sont totalement "
+        "exonérés, un enfant bénéficie du barème le plus favorable après "
+        "les 100 000 € d'abattement, les liens plus éloignés (frère/sœur, "
+        "neveu/nièce, tiers) subissent un abattement réduit et un taux "
+        "souvent fixe et élevé."
+    ),
+    "Article 796-0 bis du CGI": (
+        "Exonération totale des droits de succession pour le conjoint "
+        "survivant et le partenaire de PACS, quel que soit le montant "
+        "hérité - instaurée par la loi TEPA de 2007."
+    ),
 }
 
 

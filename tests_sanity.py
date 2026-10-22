@@ -35,6 +35,18 @@ from assurance_vie import (
     prelevement_990_i,
     taxation_transmission,
 )
+from succession import (
+    ABATTEMENT_FRERE_SOEUR,
+    ABATTEMENT_NEVEU_NIECE,
+    ABATTEMENT_TIERS,
+    CONJOINT,
+    ENFANT,
+    FRERE_SOEUR,
+    NEVEU_NIECE,
+    TIERS,
+    calcul_droits_succession,
+    comparer_liens_parente,
+)
 from fiscalite_tns import (
     cotisations_tns,
     net_apres_dividende_tns,
@@ -478,6 +490,55 @@ verifier(
     "taxation_transmission : à montant identique, le régime 990 I (abattement 152 500€) est toujours au moins aussi favorable que le 757 B (abattement 30 500€) sur la part primes",
     taxation_transmission(400_000, age_versement=65)["net_beneficiaire"]
     >= taxation_transmission(400_000, age_versement=75, part_primes_versees=400_000)["net_beneficiaire"]
+)
+
+# --- Succession hors donation (task #29) ---
+verifier(
+    "calcul_droits_succession : conjoint survivant/partenaire pacsé -> exonération totale, quel que soit le montant",
+    calcul_droits_succession(5_000_000, CONJOINT) == 0
+)
+verifier(
+    "calcul_droits_succession : montant sous l'abattement correspondant -> aucun droit, pour chaque lien de parenté",
+    calcul_droits_succession(10_000, ENFANT) == 0
+    and calcul_droits_succession(10_000, FRERE_SOEUR) == 0
+    and calcul_droits_succession(5_000, NEVEU_NIECE) == 0
+    and calcul_droits_succession(1_000, TIERS) == 0
+)
+verifier(
+    "calcul_droits_succession : abattement de 15 932€ pour frère/soeur bien appliqué avant le taux de 35%",
+    abs(calcul_droits_succession(ABATTEMENT_FRERE_SOEUR + 10_000, FRERE_SOEUR) - 10_000 * 0.35) < 1e-6
+)
+verifier(
+    "calcul_droits_succession : taux majoré de 45% pour frère/soeur au-delà de 24 430€ de base taxable",
+    abs(
+        calcul_droits_succession(ABATTEMENT_FRERE_SOEUR + 24_430 + 10_000, FRERE_SOEUR)
+        - (24_430 * 0.35 + 10_000 * 0.45)
+    ) < 1e-6
+)
+verifier(
+    "calcul_droits_succession : taux fixe de 55% pour neveu/nièce après abattement de 7 967€",
+    abs(calcul_droits_succession(ABATTEMENT_NEVEU_NIECE + 10_000, NEVEU_NIECE) - 10_000 * 0.55) < 1e-6
+)
+verifier(
+    "calcul_droits_succession : taux fixe de 60% pour un tiers sans lien de parenté après abattement de 1 594€",
+    abs(calcul_droits_succession(ABATTEMENT_TIERS + 10_000, TIERS) - 10_000 * 0.60) < 1e-6
+)
+verifier(
+    "calcul_droits_succession : à montant identique, le conjoint est toujours au moins aussi favorisé que l'enfant, lui-même toujours au moins aussi favorisé qu'un tiers sans lien de parenté",
+    calcul_droits_succession(500_000, CONJOINT) <= calcul_droits_succession(500_000, ENFANT, nombre_enfants=1)
+    <= calcul_droits_succession(500_000, TIERS)
+)
+verifier(
+    "calcul_droits_succession : répartir entre 2 enfants laisse strictement moins de droits totaux qu'un enfant unique, à masse successorale identique (deux abattements de 100 000€ au lieu d'un seul)",
+    calcul_droits_succession(500_000, ENFANT, nombre_enfants=2) < calcul_droits_succession(500_000, ENFANT, nombre_enfants=1)
+)
+verifier(
+    "comparer_liens_parente : renvoie bien les 5 liens de parenté, triés dans l'ordre de LIENS_PARENTE",
+    [r["lien"] for r in comparer_liens_parente(500_000)] == [CONJOINT, ENFANT, FRERE_SOEUR, NEVEU_NIECE, TIERS]
+)
+verifier(
+    "comparer_liens_parente : le net perçu décroît (au sens large) du conjoint vers le tiers sans lien de parenté",
+    [r["net"] for r in comparer_liens_parente(500_000)] == sorted([r["net"] for r in comparer_liens_parente(500_000)], reverse=True)
 )
 
 print()
