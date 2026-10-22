@@ -34,6 +34,14 @@ from fiscalite import (
     TAUX_PFU,
 )
 from simulation import simulation_comparaison
+from assurance_vie import (
+    net_apres_rachat,
+    prelevement_990_i,
+    taxation_transmission,
+    ABATTEMENT_757_B_GLOBAL,
+    ABATTEMENT_990_I_PAR_BENEFICIAIRE,
+    SEUIL_VERSEMENTS_TAUX_REDUIT,
+)
 from paniers import CLASSES_ACTIFS, PANIERS, rendement_volatilite_panier
 from trajectoire import comparer
 from demembrement import comparer_transmission, pourcentage_usufruit
@@ -565,12 +573,13 @@ with st.expander("Comment utiliser ce simulateur (à lire en premier)", expanded
         "Onglet « Rémunération annuelle » : pour une année donnée, salaire ou dividende — lequel laisse le plus net en poche au dirigeant ? Saisissez le montant réellement disponible du client.",
         "Onglet « Trajectoire pluriannuelle » : sur plusieurs années, vaut-il mieux sortir l'argent chaque année ou le laisser capitaliser dans une holding ? Avec l'incertitude du rendement (fourchette P10-P90), pas un chiffre unique.",
         "Onglet « Démembrement de propriété » : pour transmettre un bien aux enfants, comparez donation en pleine propriété et donation de la seule nue-propriété.",
+        "Onglet « Assurance-vie » : combien reste-t-il net lors d'un rachat, ou pour les bénéficiaires à la transmission - selon l'âge du souscripteur au moment des versements ?",
         "Onglet « Note Grand Large » : les chiffres de marché et seuils réglementaires utilisés ailleurs dans l'outil, sourcés et datés.",
         "Dans chaque onglet, les montants se modifient librement — aucun résultat n'est figé, tout se recalcule en direct.",
     ])
 
-tab1, tab2, tab3, tab4 = st.tabs(
-    ["Rémunération annuelle", "Trajectoire pluriannuelle", "Démembrement de propriété", "Note Grand Large"]
+tab1, tab2, tab3, tab4, tab5 = st.tabs(
+    ["Rémunération annuelle", "Trajectoire pluriannuelle", "Démembrement de propriété", "Assurance-vie", "Note Grand Large"]
 )
 
 # Barre d'outils Plotly activée (zoom rectangle, panoramique, réinitialiser,
@@ -2141,8 +2150,257 @@ with tab3:
     glossaire_expander(["Pacte Dutreil", "Abattement", "Holding"], titre="Glossaire — Pacte Dutreil")
 
 
-# --- Onglet 4 : veille marchés & produits, calée sur les solutions GLP ---
+# --- Onglet 4 : assurance-vie (rachat du vivant, transmission au décès) ---
 with tab4:
+    entete_section(
+        "Assurance-vie : rachat et transmission",
+        "Régime du PFU pour les rachats (versements à partir du 27/09/2017) — articles 990 I et 757 B du CGI pour la transmission",
+    )
+    pitch_usage(
+        "<strong>Le client a un contrat d'assurance-vie et veut savoir combien il en reste, "
+        "net ?</strong> Que ce soit pour un retrait de son vivant (rachat) ou pour ce que "
+        "ses bénéficiaires toucheront à son décès, la fiscalité dépend surtout de deux "
+        "choses : l'ancienneté du contrat pour un rachat, l'âge du souscripteur au moment "
+        "des versements pour une transmission."
+    )
+
+    titre_sous_section("Rachat du vivant")
+    with st.expander("Comment lire ce calcul", expanded=True):
+        st.markdown(
+            "- Seule la **part de gains** (intérêts, plus-values) comprise dans le rachat "
+            "est taxée - le capital initialement versé ne l'est jamais, quelle que soit "
+            "l'ancienneté.\n"
+            "- **17,2 % de prélèvements sociaux** sont toujours dus sur ces gains, sans "
+            "aucun abattement.\n"
+            "- **Avant 8 ans** : 12,8 % d'impôt sur le revenu (régime du PFU), sans "
+            "abattement.\n"
+            "- **Après 8 ans** : un abattement annuel de **4 600 €** (personne seule) ou "
+            "**9 200 €** (couple marié ou pacsé) s'applique d'abord, puis le taux tombe à "
+            "**7,5 %** tant que les versements cumulés sur le contrat restent sous "
+            f"**{fmt_euro(SEUIL_VERSEMENTS_TAUX_REDUIT)}** - au-delà, le taux remonte à 12,8 % "
+            "sur la part de gains excédant ce seuil de versements.\n"
+            "- Ce module couvre les versements effectués à partir du 27/09/2017 (régime "
+            "très majoritaire aujourd'hui) - le régime antérieur (PFL dégressif ou option "
+            "barème de l'IR) n'est pas modélisé ici."
+        )
+
+    col_rachat1, col_rachat2 = st.columns(2)
+    with col_rachat1:
+        montant_gains_rachat = st.number_input(
+            "Part de gains comprise dans le rachat (€)", min_value=0, max_value=5_000_000,
+            value=20_000, step=1_000,
+        )
+        st.caption(f"→ {fmt_euro(montant_gains_rachat)}")
+        anciennete_contrat = st.slider("Ancienneté du contrat (années)", min_value=0, max_value=40, value=10)
+    with col_rachat2:
+        versements_cumules_rachat = st.number_input(
+            "Total des versements cumulés sur le contrat (€)", min_value=0, max_value=10_000_000,
+            value=100_000, step=10_000,
+        )
+        st.caption(f"→ {fmt_euro(versements_cumules_rachat)}")
+        abattement_foyer_rachat = st.radio(
+            "Abattement annuel (si contrat de 8 ans ou plus)", options=[4_600, 9_200],
+            format_func=lambda v: f"{fmt_euro(v)} (personne seule)" if v == 4_600 else f"{fmt_euro(v)} (couple marié/pacsé)",
+            horizontal=True,
+        )
+
+    resultat_rachat = net_apres_rachat(
+        montant_gains_rachat, anciennete_contrat, versements_cumules_rachat, abattement_foyer_rachat
+    )
+
+    col_kpi_r1, col_kpi_r2, col_kpi_r3 = st.columns(3)
+    with col_kpi_r1:
+        carte_kpi(
+            "Impôt sur le revenu", fmt_euro(resultat_rachat["ir"]), COULEUR_SALAIRE,
+            f"Taux de {resultat_rachat['taux_ir_applique']:.1%} appliqué sur "
+            f"{fmt_euro(resultat_rachat['base_imposable_ir'])} de base imposable.",
+        )
+    with col_kpi_r2:
+        carte_kpi(
+            "Prélèvements sociaux", fmt_euro(resultat_rachat["prelevements_sociaux"]), COULEUR_JAUNE,
+            "17,2 % sur la totalité des gains rachetés, sans abattement - toujours dus.",
+        )
+    with col_kpi_r3:
+        carte_kpi(
+            "Net perçu sur les gains", fmt_euro(resultat_rachat["net"]), COULEUR_DEMEMBREMENT,
+            f"Sur {fmt_euro(montant_gains_rachat)} de gains rachetés "
+            f"({resultat_rachat['net'] / montant_gains_rachat:.0%} conservé) - le capital "
+            f"versé initialement, lui, n'est jamais taxé.",
+        )
+
+    fig_rachat = go.Figure()
+    fig_rachat.add_bar(
+        x=["Gains rachetés", "Impôt sur le revenu", "Prélèvements sociaux", "Net perçu"],
+        y=[montant_gains_rachat, -resultat_rachat["ir"], -resultat_rachat["prelevements_sociaux"], resultat_rachat["net"]],
+        marker_color=[ENCRE_MUTED, COULEUR_SALAIRE, COULEUR_JAUNE, COULEUR_DEMEMBREMENT],
+        text=[fmt_euro(v) for v in [montant_gains_rachat, resultat_rachat["ir"], resultat_rachat["prelevements_sociaux"], resultat_rachat["net"]]],
+        textposition="outside", width=0.5,
+        hovertemplate="%{x} : %{y:,.0f} €<extra></extra>",
+    )
+    fig_rachat = _mise_en_forme_graphique(fig_rachat, "Décomposition du rachat", "Montant (€)")
+    fig_rachat.update_xaxes(showgrid=False)
+    st.plotly_chart(fig_rachat, width="stretch", config=CONFIG_GRAPHIQUE)
+
+    st.markdown('<hr class="filet">', unsafe_allow_html=True)
+    titre_sous_section("Transmission au décès")
+    with st.expander("Comment lire ce calcul", expanded=True):
+        st.markdown(
+            "- **Versements effectués avant les 70 ans du souscripteur (article 990 I du "
+            "CGI)** : abattement de **152 500 €**, individuel, **par bénéficiaire** — "
+            "capital et gains compris. Au-delà, 20 % jusqu'à 700 000 € de base taxable, "
+            "puis 31,25 %.\n"
+            "- **Versements effectués après les 70 ans du souscripteur (article 757 B du "
+            "CGI)** : seules les **primes versées** sont taxables (les gains sont "
+            "intégralement exonérés), après un abattement de **30 500 €** — celui-ci est "
+            "GLOBAL, partagé entre tous les bénéficiaires (et non individuel comme le "
+            "990 I). Le solde est ensuite réintégré dans la succession et taxé au même "
+            "barème que les droits de succession en ligne directe (voir l'onglet "
+            "« Démembrement de propriété »).\n"
+            "- C'est **l'âge au moment du VERSEMENT** qui compte, pas l'âge au décès : un "
+            "contrat ouvert à 60 ans avec des versements réguliers peut relever des deux "
+            "régimes à la fois, contrat par contrat, voire versement par versement.\n"
+            "- Ce module traite le contrat isolément, sans l'additionner à d'éventuels "
+            "autres biens déjà transmis au même bénéficiaire — il suppose l'abattement de "
+            "succession de 100 000 € (article 779 du CGI) encore disponible en totalité."
+        )
+
+    col_trans1, col_trans2 = st.columns(2)
+    with col_trans1:
+        capital_transmis = st.number_input(
+            "Capital transmis à ce bénéficiaire (€, versements + gains)", min_value=0, max_value=10_000_000,
+            value=400_000, step=10_000,
+        )
+        st.caption(f"→ {fmt_euro(capital_transmis)}")
+        age_versement = st.slider("Âge du souscripteur au moment des versements", min_value=18, max_value=99, value=65)
+    with col_trans2:
+        if age_versement >= 70:
+            part_primes_transmission = st.number_input(
+                "Dont part des primes versées (hors gains, €)", min_value=0, max_value=capital_transmis,
+                value=min(capital_transmis, int(capital_transmis * 0.85)), step=10_000,
+            )
+            st.caption(f"→ {fmt_euro(part_primes_transmission)}")
+            nombre_beneficiaires_transmission = st.number_input(
+                "Nombre de bénéficiaires (abattement de 30 500€ partagé entre eux)",
+                min_value=1, max_value=10, value=1, step=1,
+            )
+        else:
+            part_primes_transmission = None
+            nombre_beneficiaires_transmission = 1
+            st.caption(
+                f"Abattement de {fmt_euro(ABATTEMENT_990_I_PAR_BENEFICIAIRE)} par bénéficiaire "
+                "(article 990 I) - pas de répartition à saisir, il est individuel."
+            )
+
+    resultat_transmission = taxation_transmission(
+        capital_transmis, age_versement, part_primes_transmission, nombre_beneficiaires_transmission
+    )
+
+    col_kpi_t1, col_kpi_t2, col_kpi_t3 = st.columns(3)
+    with col_kpi_t1:
+        carte_kpi(
+            "Régime applicable", resultat_transmission["article"], NAVY,
+            f"Versements effectués à {age_versement} ans - "
+            + ("avant" if age_versement < 70 else "après") + " les 70 ans du souscripteur.",
+        )
+    with col_kpi_t2:
+        carte_kpi(
+            "Prélèvement total", fmt_euro(resultat_transmission["prelevement"]), COULEUR_SALAIRE,
+            "Droits dus par ce bénéficiaire sur ce contrat, tous abattements appliqués.",
+        )
+    with col_kpi_t3:
+        carte_kpi(
+            "Net pour le bénéficiaire", fmt_euro(resultat_transmission["net_beneficiaire"]), COULEUR_DEMEMBREMENT,
+            f"Sur {fmt_euro(capital_transmis)} transmis "
+            f"({resultat_transmission['net_beneficiaire'] / capital_transmis:.0%} conservé).",
+        )
+
+    fig_transmission = go.Figure()
+    fig_transmission.add_bar(
+        x=["Capital transmis", "Prélèvement", "Net bénéficiaire"],
+        y=[capital_transmis, -resultat_transmission["prelevement"], resultat_transmission["net_beneficiaire"]],
+        marker_color=[ENCRE_MUTED, COULEUR_SALAIRE, COULEUR_DEMEMBREMENT],
+        text=[fmt_euro(v) for v in [capital_transmis, resultat_transmission["prelevement"], resultat_transmission["net_beneficiaire"]]],
+        textposition="outside", width=0.5,
+        hovertemplate="%{x} : %{y:,.0f} €<extra></extra>",
+    )
+    fig_transmission = _mise_en_forme_graphique(
+        fig_transmission, f"Transmission par assurance-vie ({resultat_transmission['article']})", "Montant (€)"
+    )
+    fig_transmission.update_xaxes(showgrid=False)
+    st.plotly_chart(fig_transmission, width="stretch", config=CONFIG_GRAPHIQUE)
+
+    col_csv_av, col_pdf_av = st.columns(2)
+    df_assurance_vie = pd.DataFrame(
+        {
+            "Valeur": [
+                montant_gains_rachat,
+                resultat_rachat["ir"],
+                resultat_rachat["prelevements_sociaux"],
+                resultat_rachat["net"],
+                capital_transmis,
+                resultat_transmission["prelevement"],
+                resultat_transmission["net_beneficiaire"],
+            ]
+        },
+        index=[
+            "Rachat - part de gains rachetée",
+            "Rachat - impôt sur le revenu",
+            "Rachat - prélèvements sociaux",
+            "Rachat - net perçu",
+            "Transmission - capital transmis",
+            f"Transmission - prélèvement ({resultat_transmission['article']})",
+            "Transmission - net bénéficiaire",
+        ],
+    )
+    with col_csv_av:
+        st.download_button(
+            "Télécharger ce scénario (CSV)",
+            data=df_assurance_vie.to_csv().encode("utf-8"),
+            file_name=f"assurance_vie_{montant_gains_rachat}_{capital_transmis}.csv",
+            mime="text/csv",
+        )
+    with col_pdf_av:
+        lignes_pdf_av = [["Poste", "Valeur"]] + [
+            [str(poste), fmt_euro(valeur)] for poste, valeur in zip(df_assurance_vie.index, df_assurance_vie["Valeur"])
+        ]
+        pdf_bytes_av = generer_pdf_scenario(
+            titre="Assurance-vie : rachat et transmission",
+            sous_titre=f"Rachat de {fmt_euro(montant_gains_rachat)} de gains ({anciennete_contrat} ans) — transmission de {fmt_euro(capital_transmis)} ({resultat_transmission['article']})",
+            kpis=[
+                ("Net perçu au rachat", fmt_euro(resultat_rachat["net"])),
+                ("Régime de transmission", resultat_transmission["article"]),
+                ("Net pour le bénéficiaire", fmt_euro(resultat_transmission["net_beneficiaire"])),
+            ],
+            lignes_tableau=lignes_pdf_av,
+            hypotheses=[
+                "Rachat : seule la part de gains est taxée ; régime du PFU pour les versements "
+                "à partir du 27/09/2017 (12,8 % avant 8 ans ; 7,5 % après 8 ans sous "
+                f"{fmt_euro(SEUIL_VERSEMENTS_TAUX_REDUIT)} de versements cumulés, 12,8 % au-delà) ; "
+                "17,2 % de prélèvements sociaux toujours dus, sans abattement.",
+                "Transmission : article 990 I du CGI si les versements ont été faits avant les "
+                "70 ans du souscripteur (abattement de 152 500 € par bénéficiaire) ; article "
+                "757 B si après 70 ans (seules les primes sont taxables, abattement global de "
+                "30 500 € partagé entre bénéficiaires, puis barème des droits de succession).",
+                "Transmission : ce contrat est traité isolément, sans l'additionner à "
+                "d'éventuels autres biens déjà transmis au même bénéficiaire.",
+            ],
+        )
+        st.download_button(
+            "Télécharger la synthèse (PDF)",
+            data=pdf_bytes_av,
+            file_name=f"synthese_assurance_vie_{capital_transmis}.pdf",
+            mime="application/pdf",
+            type="primary",
+        )
+
+    glossaire_expander(
+        ["Rachat (assurance-vie)", "PFU (assurance-vie)", "Article 990 I du CGI", "Article 757 B du CGI", "Abattement"],
+        titre="Glossaire — Assurance-vie",
+    )
+
+
+# --- Onglet 5 : veille marchés & produits, calée sur les solutions GLP ---
+with tab5:
     entete_section(
         "Note Grand Large",
         "Veille marchés & produits, organisée autour des solutions affichées sur grandlargepatrimoine.fr",

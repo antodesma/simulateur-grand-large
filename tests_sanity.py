@@ -27,6 +27,14 @@ from demembrement import (
     pourcentage_usufruit,
     valeur_usufruit_nue_propriete,
 )
+from assurance_vie import (
+    ABATTEMENT_757_B_GLOBAL,
+    ABATTEMENT_990_I_PAR_BENEFICIAIRE,
+    net_apres_rachat,
+    prelevement_757_b,
+    prelevement_990_i,
+    taxation_transmission,
+)
 from fiscalite_tns import (
     cotisations_tns,
     net_apres_dividende_tns,
@@ -400,6 +408,76 @@ verifier(
     "simulation_comparaison : accepte est_sarl/capital_social sans erreur et modifie bien le résultat",
     simulation_comparaison(80_000, 0.05, 0.08, 10, nb_simulations=200, graine=1, est_sarl=True, capital_social=10_000)["directe"][50][-1]
     != simulation_comparaison(80_000, 0.05, 0.08, 10, nb_simulations=200, graine=1, est_sarl=False)["directe"][50][-1]
+)
+
+# --- Assurance-vie : rachat (task #28) ---
+verifier(
+    "net_apres_rachat, contrat < 8 ans : taux de 12,8% appliqué sans abattement",
+    abs(net_apres_rachat(10_000, anciennete_annees=5)["ir"] - 10_000 * 0.128) < 1e-6
+)
+verifier(
+    "net_apres_rachat, contrat >= 8 ans, sous le seuil de 150 000€ : taux réduit de 7,5% après abattement de 4 600€",
+    abs(net_apres_rachat(10_000, anciennete_annees=10, versements_cumules=100_000)["ir"] - (10_000 - 4_600) * 0.075) < 1e-6
+)
+verifier(
+    "net_apres_rachat, contrat >= 8 ans, au-delà du seuil de 150 000€ de versements : taux majoré de 12,8%",
+    abs(net_apres_rachat(10_000, anciennete_annees=10, versements_cumules=200_000)["ir"] - (10_000 - 4_600) * 0.128) < 1e-6
+)
+verifier(
+    "net_apres_rachat : prélèvements sociaux de 17,2% toujours dus sur la totalité des gains, sans abattement",
+    abs(net_apres_rachat(10_000, anciennete_annees=10)["prelevements_sociaux"] - 10_000 * 0.172) < 1e-6
+)
+verifier(
+    "net_apres_rachat : un contrat de plus de 8 ans laisse un net au moins aussi élevé qu'un contrat de moins de 8 ans, à gains identiques",
+    net_apres_rachat(10_000, anciennete_annees=10)["net"] >= net_apres_rachat(10_000, anciennete_annees=5)["net"]
+)
+verifier(
+    "net_apres_rachat : l'abattement de 9 200€ (couple) laisse un net au moins aussi élevé que celui de 4 600€ (personne seule), à gains identiques",
+    net_apres_rachat(10_000, anciennete_annees=10, abattement_annuel=9_200)["net"]
+    >= net_apres_rachat(10_000, anciennete_annees=10, abattement_annuel=4_600)["net"]
+)
+
+# --- Assurance-vie : transmission, articles 990 I et 757 B (task #28) ---
+verifier(
+    "prelevement_990_i : capital sous l'abattement de 152 500€ -> aucun prélèvement",
+    prelevement_990_i(100_000) == 0
+)
+verifier(
+    "prelevement_990_i : taux de 20% appliqué juste au-dessus de l'abattement",
+    abs(prelevement_990_i(ABATTEMENT_990_I_PAR_BENEFICIAIRE + 10_000) - 10_000 * 0.20) < 1e-6
+)
+verifier(
+    "prelevement_990_i : taux majoré de 31,25% au-delà de 700 000€ de base taxable",
+    abs(
+        prelevement_990_i(ABATTEMENT_990_I_PAR_BENEFICIAIRE + 700_000 + 10_000)
+        - (700_000 * 0.20 + 10_000 * 0.3125)
+    ) < 1e-6
+)
+verifier(
+    "prelevement_757_b : primes sous l'abattement global de 30 500€ -> aucun droit de succession",
+    prelevement_757_b(20_000)["droits_succession"] == 0
+)
+verifier(
+    "prelevement_757_b : l'abattement global se répartit entre les bénéficiaires (2 bénéficiaires -> moitié moins d'abattement chacun, donc des droits plus élevés sur une même part de primes)",
+    prelevement_757_b(150_000, nombre_beneficiaires=2)["droits_succession"]
+    > prelevement_757_b(150_000, nombre_beneficiaires=1)["droits_succession"]
+)
+verifier(
+    "taxation_transmission : versements avant 70 ans -> régime 990 I appliqué",
+    taxation_transmission(400_000, age_versement=65)["article"] == "990 I"
+)
+verifier(
+    "taxation_transmission : versements après 70 ans -> régime 757 B appliqué",
+    taxation_transmission(400_000, age_versement=75, part_primes_versees=350_000)["article"] == "757 B"
+)
+verifier(
+    "taxation_transmission 757 B : les gains (hors primes) sont intégralement exonérés, jamais taxés",
+    taxation_transmission(400_000, age_versement=75, part_primes_versees=350_000)["gains_exoneres"] == 50_000
+)
+verifier(
+    "taxation_transmission : à montant identique, le régime 990 I (abattement 152 500€) est toujours au moins aussi favorable que le 757 B (abattement 30 500€) sur la part primes",
+    taxation_transmission(400_000, age_versement=65)["net_beneficiaire"]
+    >= taxation_transmission(400_000, age_versement=75, part_primes_versees=400_000)["net_beneficiaire"]
 )
 
 print()

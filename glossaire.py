@@ -93,6 +93,33 @@ GLOSSAIRE = {
         "délimitent une fourchette où se trouvent 80 % des trajectoires "
         "simulées."
     ),
+    "Rachat (assurance-vie)": (
+        "Retrait (partiel ou total) effectué par le souscripteur de son "
+        "vivant sur un contrat d'assurance-vie. Seule la part de gains "
+        "(intérêts, plus-values) comprise dans le rachat est taxée - le "
+        "capital initialement versé ne l'est jamais."
+    ),
+    "PFU (assurance-vie)": (
+        "Régime d'imposition des gains rachetés sur un contrat "
+        "d'assurance-vie (versements à partir du 27/09/2017) : 12,8 % "
+        "avant 8 ans, ou 7,5 % après 8 ans dans la limite de 150 000 € de "
+        "versements cumulés - dans les deux cas, 17,2 % de prélèvements "
+        "sociaux s'ajoutent toujours, sans abattement."
+    ),
+    "Article 990 I du CGI": (
+        "Régime de taxation au décès des sommes transmises par "
+        "assurance-vie issues de versements effectués AVANT les 70 ans du "
+        "souscripteur : abattement de 152 500 € par bénéficiaire, puis "
+        "20 % jusqu'à 700 000 €, 31,25 % au-delà."
+    ),
+    "Article 757 B du CGI": (
+        "Régime de taxation au décès des sommes transmises par "
+        "assurance-vie issues de versements effectués APRÈS les 70 ans du "
+        "souscripteur : seules les primes versées sont taxables (les "
+        "gains sont exonérés), après un abattement de 30 500 € partagé "
+        "entre tous les bénéficiaires, puis taxation au barème des droits "
+        "de succession classique."
+    ),
 }
 
 
