@@ -52,18 +52,6 @@ SURFACE = "#fcfcfb"
 SURFACE_CARTE = "#ffffff"
 BORDURE = "rgba(3,0,28,0.10)"
 
-# --- Profils clients illustratifs (typologies affichées par Grand Large   ---
-# --- Patrimoine sur leur site : dirigeants en cession, familles           ---
-# --- patrimoniales, professions libérales). Chiffres d'exemple, aucune    ---
-# --- donnée réelle de client - juste pour pré-remplir une démo cohérente. ---
-PROFILS_CLIENT = {
-    "Dirigeant en cession": {"montant": 300_000, "profit_annuel": 80_000},
-    "Famille patrimoniale": {"montant": 80_000, "profit_annuel": 50_000},
-    "Profession libérale": {"montant": 60_000, "profit_annuel": 35_000},
-    "Cadre dirigeant salarié": {"montant": 50_000, "profit_annuel": 30_000},
-    "Entrepreneur en forte croissance": {"montant": 500_000, "profit_annuel": 150_000},
-}
-
 st.set_page_config(page_title="Grand Large · Simulateur patrimonial", layout="wide", page_icon="⛵")
 
 st.markdown(
@@ -321,13 +309,6 @@ def etapes_numerotees(etapes):
     st.markdown(f"<div>{lignes}</div>", unsafe_allow_html=True)
 
 
-def _appliquer_profil_client():
-    choix = st.session_state["persona_select"]
-    if choix in PROFILS_CLIENT:
-        st.session_state["montant_input"] = PROFILS_CLIENT[choix]["montant"]
-        st.session_state["profit_input"] = PROFILS_CLIENT[choix]["profit_annuel"]
-
-
 if "montant_input" not in st.session_state:
     st.session_state["montant_input"] = 80_000
 if "profit_input" not in st.session_state:
@@ -350,30 +331,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.markdown("**Pour quel profil client ?**")
-st.radio(
-    "Pour quel profil client ?",
-    ["Personnalisé"] + list(PROFILS_CLIENT.keys()),
-    key="persona_select",
-    on_change=_appliquer_profil_client,
-    horizontal=True,
-    label_visibility="collapsed",
-)
-profil_choisi = st.session_state["persona_select"]
-if profil_choisi in PROFILS_CLIENT:
-    p = PROFILS_CLIENT[profil_choisi]
-    st.caption(
-        f"→ Pré-remplit les deux premiers onglets pour ce profil : montant disponible à "
-        f"{fmt_euro(p['montant'])} (onglet 1), profit annuel réinvesti à {fmt_euro(p['profit_annuel'])} "
-        f"(onglet 2). Reste entièrement modifiable, et n'est tiré d'aucune donnée réelle de client."
-    )
-else:
-    st.caption(
-        "Archétypes illustratifs, calés sur les typologies affichées par Grand Large Patrimoine — "
-        "chacun pré-remplit le montant de l'onglet 1 et le profit annuel de l'onglet 2. Choisissez "
-        "« Personnalisé » pour saisir vos propres chiffres."
-    )
-
 st.markdown(
     '<div class="bloc-disclaimer">Outil informatif à usage pédagogique, construit sur des '
     'hypothèses explicites (détaillées dans chaque section). Il ne constitue ni un conseil '
@@ -384,8 +341,7 @@ st.markdown(
 
 with st.expander("Comment utiliser ce simulateur (à lire en premier)", expanded=True):
     etapes_numerotees([
-        "Choisissez un profil client ci-dessus, ou laissez « Personnalisé » pour saisir vos propres montants.",
-        "Onglet « Rémunération annuelle » : pour une année donnée, salaire ou dividende — lequel laisse le plus net en poche au dirigeant ?",
+        "Onglet « Rémunération annuelle » : pour une année donnée, salaire ou dividende — lequel laisse le plus net en poche au dirigeant ? Saisissez le montant réellement disponible du client.",
         "Onglet « Trajectoire pluriannuelle » : sur plusieurs années, vaut-il mieux sortir l'argent chaque année ou le laisser capitaliser dans une holding ? Avec l'incertitude du rendement (fourchette P10-P90), pas un chiffre unique.",
         "Onglet « Démembrement de propriété » : pour transmettre un bien aux enfants, comparez donation en pleine propriété et donation de la seule nue-propriété.",
         "Onglet « Note Grand Large » : les chiffres de marché et seuils réglementaires utilisés ailleurs dans l'outil, sourcés et datés.",
