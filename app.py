@@ -641,11 +641,37 @@ with tab1:
                 "il réduit la base imposable, pas directement la trésorerie."
             )
 
-        impot_total_dividende_tns = (
-            calcul_is(montant)
-            + resultat_div_tns["part_sous_seuil"] * TAUX_PFU
+        is_du_dividende_tns = calcul_is(montant)
+        impot_dividende_hors_is_tns = (
+            resultat_div_tns["part_sous_seuil"] * TAUX_PFU
             + resultat_div_tns["part_au_dela"] * TAUX_IR_SEUL_PFU
         )
+        cotisations_exces_tns = resultat_div_tns["cotisations_exces"]
+        impot_total_dividende_tns = is_du_dividende_tns + impot_dividende_hors_is_tns
+
+        with st.expander("Voir la cascade du calcul (du coût total entreprise au net en poche) ", expanded=False):
+            fig_cascade_div = go.Figure(go.Waterfall(
+                orientation="v",
+                measure=["absolute", "relative", "relative", "relative", "total"],
+                x=["Coût total\nentreprise", "IS\n(société)", "Impôt sur le\ndividende", "Cotisations TNS\n(part > seuil)", "Net en poche"],
+                y=[montant, -is_du_dividende_tns, -impot_dividende_hors_is_tns, -cotisations_exces_tns, net_dividende],
+                text=[fmt_euro(v) for v in [montant, is_du_dividende_tns, impot_dividende_hors_is_tns, cotisations_exces_tns, net_dividende]],
+                textposition="outside",
+                connector=dict(line=dict(color=GRILLE, width=1)),
+                decreasing=dict(marker=dict(color="#e34948")),
+                increasing=dict(marker=dict(color=COULEUR_DIVIDENDE)),
+                totals=dict(marker=dict(color=COULEUR_DIVIDENDE)),
+            ))
+            fig_cascade_div = _mise_en_forme_graphique(
+                fig_cascade_div, "De 100 % du coût entreprise au net réellement en poche (scénario dividende)", "Montant (€)"
+            )
+            fig_cascade_div.update_xaxes(showgrid=False)
+            st.plotly_chart(fig_cascade_div, width="stretch", config=CONFIG_GRAPHIQUE)
+            st.caption(
+                "« Cotisations TNS (part > seuil) » : uniquement la part du dividende qui dépasse "
+                "10 % du capital social (+ compte courant), réintégrée dans l'assiette TNS - nulle "
+                "si le dividende reste sous ce seuil."
+            )
         df_detail = pd.DataFrame(
             {
                 "Rémunération": [
@@ -694,6 +720,29 @@ with tab1:
             st.caption(
                 "L'abattement forfaitaire de 10 % n'apparaît pas ici : il réduit la base imposable, "
                 "pas directement la trésorerie — son effet est déjà intégré dans la barre « Impôt sur le revenu »."
+            )
+
+        with st.expander("Voir la cascade du calcul (du coût total entreprise au net en poche) ", expanded=False):
+            fig_cascade_div = go.Figure(go.Waterfall(
+                orientation="v",
+                measure=["absolute", "relative", "relative", "total"],
+                x=["Coût total\nentreprise", "IS\n(société)", "PFU sur le\ndividende (30 %)", "Net en poche"],
+                y=[montant, -is_du, -pfu_montant, net_dividende],
+                text=[fmt_euro(v) for v in [montant, is_du, pfu_montant, net_dividende]],
+                textposition="outside",
+                connector=dict(line=dict(color=GRILLE, width=1)),
+                decreasing=dict(marker=dict(color="#e34948")),
+                increasing=dict(marker=dict(color=COULEUR_DIVIDENDE)),
+                totals=dict(marker=dict(color=COULEUR_DIVIDENDE)),
+            ))
+            fig_cascade_div = _mise_en_forme_graphique(
+                fig_cascade_div, "De 100 % du coût entreprise au net réellement en poche (scénario dividende)", "Montant (€)"
+            )
+            fig_cascade_div.update_xaxes(showgrid=False)
+            st.plotly_chart(fig_cascade_div, width="stretch", config=CONFIG_GRAPHIQUE)
+            st.caption(
+                "Le PFU (prélèvement forfaitaire unique, 30 %) se décompose en 12,8 % d'impôt sur le "
+                "revenu et 17,2 % de prélèvements sociaux, prélevés en une fois sur le dividende versé."
             )
 
         df_detail = pd.DataFrame(
