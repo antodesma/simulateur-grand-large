@@ -33,6 +33,7 @@ from fiscalite_tns import (
 )
 from export_pdf import generer_pdf_scenario
 from glossaire import termes_glossaire
+from optimisation import repartition_optimale
 from regle_fiscale import regle_du_jour
 from veille import (
     CHECKLIST_RAFRAICHISSEMENT,
@@ -519,7 +520,10 @@ with tab1:
 
         net_salaire = net_apres_remuneration_tns(montant)
         resultat_div_tns = net_apres_dividende_tns(montant, capital_social, compte_courant_moyen)
-        net_dividende = resultat_div_tns["net_total"]
+        # net_total seul omet la cotisation TNS minimale forfaitaire, due même à
+        # rémunération nulle tant que le gérant reste affilié (cf. fiscalite_tns.py) :
+        # on la retranche ici pour que le scénario "100% dividende" soit réellement complet.
+        net_dividende = resultat_div_tns["net_total"] - cotisations_tns(0)
     else:
         net_salaire = net_apres_salaire(montant)
         net_dividende = net_apres_dividende(montant)
@@ -562,6 +566,92 @@ with tab1:
     fig1.update_xaxes(showgrid=False)
     st.plotly_chart(fig1, width="stretch", config=CONFIG_GRAPHIQUE)
 
+    # --- Optimiseur de répartition (pas forcément 100%/0%) ---
+    st.write("")
+    st.markdown("### Trouver la meilleure répartition entre les deux")
+    st.caption(
+        "Rien n'oblige à choisir 100 % d'un côté : à cause des effets de seuil (plafond "
+        "de la sécurité sociale, tranches de l'impôt, seuil de dividende non cotisé en "
+        "SARL), une répartition intermédiaire laisse parfois plus de net en poche que "
+        "les deux options pures."
+    )
+
+    libelle_opt_part = "rémunération" if est_sarl else "salaire"
+    capital_opt = capital_social if est_sarl else 10_000
+    compte_courant_opt = compte_courant_moyen if est_sarl else 0.0
+    resultat_opt = repartition_optimale(montant, est_sarl, capital_opt, compte_courant_opt)
+    pourcentages_opt = [p for p, _ in resultat_opt["points"]]
+    nets_opt = [n for _, n in resultat_opt["points"]]
+    gain_opt = resultat_opt["gain_vs_extremes"]
+    optimum_est_un_extreme = resultat_opt["meilleur_p_pct"] in (0, 100)
+
+    col_opt1, col_opt2 = st.columns(2)
+    with col_opt1:
+        carte_kpi(
+            "Répartition optimale",
+            f"{resultat_opt['meilleur_p_pct']} % {libelle_opt_part} / {100 - resultat_opt['meilleur_p_pct']} % dividende",
+            NAVY,
+            f"Pour {fmt_euro(montant)} disponibles, c'est la répartition qui laisse le plus de net en "
+            f"poche : {fmt_euro(resultat_opt['meilleur_net'])}.",
+        )
+    with col_opt2:
+        gain_relatif = gain_opt / montant if montant else 0
+        carte_kpi(
+            "Gain vs. la meilleure option pure",
+            fmt_euro(gain_opt) if gain_opt > 1 else "Aucun",
+            COULEUR_JAUNE if gain_opt > 1 else ENCRE_MUTED,
+            (
+                f"{fmt_euro(gain_opt)} de plus qu'en se limitant à la meilleure des deux options "
+                f"braquées (100 % {libelle_opt_part} ou 100 % dividende)."
+                + (
+                    " Gain modeste en proportion : l'intérêt est surtout de montrer l'effet de seuil, "
+                    "pas un levier à lui seul décisif."
+                    if 0 < gain_relatif < 0.005 else ""
+                )
+                if gain_opt > 1 else
+                f"Ici, une des deux options pures (100 % {libelle_opt_part} ou 100 % dividende) est "
+                f"déjà optimale - pas de gain à répartir pour ce montant."
+            ),
+        )
+
+    if not optimum_est_un_extreme:
+        fig_opt = go.Figure()
+        fig_opt.add_scatter(
+            x=pourcentages_opt, y=nets_opt, mode="lines",
+            line=dict(color=NAVY, width=3, shape="linear"),
+            showlegend=False,
+            hovertemplate=f"%{{x}} %% {libelle_opt_part} : %{{y:,.0f}} €<extra></extra>",
+        )
+        fig_opt.add_scatter(
+            x=[0], y=[resultat_opt["net_100_dividende"]], mode="markers",
+            marker=dict(size=9, color=COULEUR_DIVIDENDE, line=dict(color=SURFACE_CARTE, width=2)),
+            showlegend=False, hoverinfo="skip",
+        )
+        fig_opt.add_scatter(
+            x=[100], y=[resultat_opt["net_100_salaire"]], mode="markers",
+            marker=dict(size=9, color=COULEUR_SALAIRE, line=dict(color=SURFACE_CARTE, width=2)),
+            showlegend=False, hoverinfo="skip",
+        )
+        fig_opt.add_scatter(
+            x=[resultat_opt["meilleur_p_pct"]], y=[resultat_opt["meilleur_net"]], mode="markers+text",
+            marker=dict(size=12, symbol="diamond", color=NAVY, line=dict(color=SURFACE_CARTE, width=2)),
+            text=[f"  {fmt_euro(resultat_opt['meilleur_net'])}"], textposition="top right",
+            textfont=dict(size=14, color=NAVY),
+            showlegend=False, hoverinfo="skip", cliponaxis=False,
+        )
+        fig_opt.add_vline(x=resultat_opt["meilleur_p_pct"], line=dict(color=ENCRE_MUTED, width=1.2, dash="dot"))
+        fig_opt = _mise_en_forme_graphique(
+            fig_opt, f"Net en poche selon la part allouée en {libelle_opt_part}", "Net en poche (€)"
+        )
+        fig_opt.update_xaxes(title=f"% alloué en {libelle_opt_part}", ticksuffix=" %", range=[-2, 108])
+        fig_opt.update_layout(margin=dict(r=70))
+        st.plotly_chart(fig_opt, width="stretch", config=CONFIG_GRAPHIQUE)
+        st.caption(
+            f"Point dividende pur (0 %) en orange, {libelle_opt_part} pur (100 %) en bleu, optimum en "
+            f"losange marine. La courbe n'est pas lissée volontairement : les coudes marquent les "
+            f"effets de seuil (plafond de la sécurité sociale, tranches de l'impôt...)."
+        )
+
     # --- Comparateur direct des 4 scénarios (SASU et SARL), sans bascule ---
     if est_sarl:
         capital_social_comparateur = capital_social
@@ -576,7 +666,10 @@ with tab1:
         net_salaire_sasu = net_salaire
         net_dividende_sasu = net_dividende
         net_remuneration_sarl = net_apres_remuneration_tns(montant)
-        net_dividende_sarl = net_apres_dividende_tns(montant, capital_social_comparateur, compte_courant_comparateur)["net_total"]
+        net_dividende_sarl = (
+            net_apres_dividende_tns(montant, capital_social_comparateur, compte_courant_comparateur)["net_total"]
+            - cotisations_tns(0)
+        )
 
     with st.expander("Comparer les 4 scénarios (SASU et SARL) sans changer de forme juridique"):
         if not est_sarl:
@@ -647,15 +740,16 @@ with tab1:
             + resultat_div_tns["part_au_dela"] * TAUX_IR_SEUL_PFU
         )
         cotisations_exces_tns = resultat_div_tns["cotisations_exces"]
+        cotisation_minimale_tns = cotisations_tns(0)
         impot_total_dividende_tns = is_du_dividende_tns + impot_dividende_hors_is_tns
 
         with st.expander("Voir la cascade du calcul (du coût total entreprise au net en poche) ", expanded=False):
             fig_cascade_div = go.Figure(go.Waterfall(
                 orientation="v",
-                measure=["absolute", "relative", "relative", "relative", "total"],
-                x=["Coût total\nentreprise", "IS\n(société)", "Impôt sur le\ndividende", "Cotisations TNS\n(part > seuil)", "Net en poche"],
-                y=[montant, -is_du_dividende_tns, -impot_dividende_hors_is_tns, -cotisations_exces_tns, net_dividende],
-                text=[fmt_euro(v) for v in [montant, is_du_dividende_tns, impot_dividende_hors_is_tns, cotisations_exces_tns, net_dividende]],
+                measure=["absolute", "relative", "relative", "relative", "relative", "total"],
+                x=["Coût total\nentreprise", "IS\n(société)", "Impôt sur le\ndividende", "Cotisations TNS\n(part > seuil)", "Cotisation TNS\nminimale", "Net en poche"],
+                y=[montant, -is_du_dividende_tns, -impot_dividende_hors_is_tns, -cotisations_exces_tns, -cotisation_minimale_tns, net_dividende],
+                text=[fmt_euro(v) for v in [montant, is_du_dividende_tns, impot_dividende_hors_is_tns, cotisations_exces_tns, cotisation_minimale_tns, net_dividende]],
                 textposition="outside",
                 connector=dict(line=dict(color=GRILLE, width=1)),
                 decreasing=dict(marker=dict(color="#e34948")),
@@ -668,8 +762,11 @@ with tab1:
             fig_cascade_div.update_xaxes(showgrid=False)
             st.plotly_chart(fig_cascade_div, width="stretch", config=CONFIG_GRAPHIQUE)
             st.caption(
-                "« Cotisations TNS (part > seuil) » : uniquement la part du dividende qui dépasse "
-                "10 % du capital social (+ compte courant), réintégrée dans l'assiette TNS - nulle "
+                "« Cotisation TNS minimale » : due pour maintenir l'affiliation du gérant majoritaire "
+                "au régime TNS, même s'il ne se verse aucune rémunération - un dividende à 100 % ne "
+                "supprime pas cette cotisation plancher. « Cotisations TNS (part > seuil) » : uniquement "
+                "la part du dividende qui dépasse 10 % du capital social (+ compte courant), réintégrée "
+                "dans l'assiette TNS - nulle "
                 "si le dividende reste sous ce seuil."
             )
         df_detail = pd.DataFrame(
@@ -678,7 +775,7 @@ with tab1:
                     montant, cotisations_remuneration, abattement, ir_salaire, net_salaire,
                 ],
                 "Dividende": [
-                    montant, resultat_div_tns["cotisations_exces"], None,
+                    montant, resultat_div_tns["cotisations_exces"] + cotisation_minimale_tns, None,
                     impot_total_dividende_tns, net_dividende,
                 ],
             },
@@ -789,6 +886,9 @@ with tab1:
                 f"Seuil de dividende non réintégré dans l'assiette TNS : {fmt_euro(seuil_div)} par an "
                 f"(10 % du capital social + compte courant d'associé, article L131-6 du code de la "
                 f"sécurité sociale).",
+                f"Scénario dividende : inclut la cotisation TNS minimale forfaitaire "
+                f"({fmt_euro(cotisation_minimale_tns)}), due pour maintenir l'affiliation du gérant "
+                f"majoritaire même sans rémunération versée.",
                 "Simplifications documentées (progressivité maladie/famille interpolée, assiette "
                 "CSG-CRDS sans abattement non confirmé) : voir le code source, à vérifier avec un "
                 "expert-comptable.",

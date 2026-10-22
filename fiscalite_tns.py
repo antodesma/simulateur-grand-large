@@ -187,6 +187,22 @@ def net_apres_dividende_tns(montant_disponible, capital_social, compte_courant_m
     }
 
 
+def net_apres_dividende_tns_pur(montant_disponible, capital_social, compte_courant_moyen=0.0, primes_emission=0.0):
+    """
+    Net réel si le gérant majoritaire choisit de ne se verser AUCUNE
+    rémunération et de tout prendre en dividende (p=0% dans l'optimiseur de
+    répartition). Tant qu'il reste gérant majoritaire, il reste affilié au
+    régime TNS et doit la cotisation minimale forfaitaire même à
+    rémunération nulle (cf. cotisations_tns) : net_apres_dividende_tns()
+    seul l'omet, parce qu'il ne modélise que la fiscalité du dividende, pas
+    le coût de l'affiliation elle-même.
+    """
+    net_dividende = net_apres_dividende_tns(
+        montant_disponible, capital_social, compte_courant_moyen, primes_emission
+    )["net_total"]
+    return net_dividende - cotisations_tns(0)
+
+
 if __name__ == "__main__":
     montant = 80_000
     print(f"Montant disponible : {montant} €")

@@ -17,7 +17,9 @@ Un dirigeant de société qui se demande *« salaire ou dividende ? »*, *« je 
 ## Les 4 modules
 
 ### 1 — Rémunération annuelle
-Salaire vs dividende, avec un choix de la forme juridique du dirigeant : SASU (président, assimilé salarié — charges patronales et salariales par tranche de PASS) ou SARL (gérant majoritaire, travailleur non salarié — cotisations TNS, sans distinction patronal/salarial, et réintégration des dividendes excédant 10 % du capital social dans l'assiette des cotisations, article L131-6 du code de la sécurité sociale). Abattement de 10 % pour frais professionnels, IS à 15 %/25 %, barème IR progressif, PFU sur dividendes. Cascade interactive (waterfall) du coût total entreprise jusqu'au net en poche, détail du calcul étape par étape, comparateur direct des 4 scénarios (SASU/SARL × salaire/dividende) sans changer de réglage, export CSV et PDF (synthèse one-pager).
+Salaire vs dividende, avec un choix de la forme juridique du dirigeant : SASU (président, assimilé salarié — charges patronales et salariales par tranche de PASS) ou SARL (gérant majoritaire, travailleur non salarié — cotisations TNS, sans distinction patronal/salarial, et réintégration des dividendes excédant 10 % du capital social dans l'assiette des cotisations, article L131-6 du code de la sécurité sociale). Abattement de 10 % pour frais professionnels, IS à 15 %/25 %, barème IR progressif, PFU sur dividendes. Cascade interactive (waterfall) du coût total entreprise jusqu'au net en poche pour les deux scénarios (salaire et dividende), détail du calcul étape par étape, comparateur direct des 4 scénarios (SASU/SARL × salaire/dividende) sans changer de réglage, export CSV et PDF (synthèse one-pager).
+
+**Optimiseur de répartition** : plutôt que de choisir entre 100 % salaire et 100 % dividende, un balayage exhaustif de toutes les répartitions intermédiaires trouve le point qui laisse le plus de net en poche — parce que les effets de seuil (plafond de la sécurité sociale, tranches de l'IR, seuil de dividende non cotisé en SARL) rendent la fonction non monotone : l'optimum n'est pas toujours à une extrémité.
 
 ### 2 — Trajectoire pluriannuelle
 Garder l'argent en direct vs le faire capitaliser dans une holding, sur plusieurs années. Simulation Monte-Carlo (1500 tirages) avec trois profils de rendement/risque, affichée en fourchette P10–P90 plutôt qu'en point unique — pour ne jamais ressembler à une prévision de performance personnalisée. L'année de croisement (scénario central) est annotée directement sur le graphique.
@@ -30,7 +32,7 @@ Donation en pleine propriété vs donation de la nue-propriété (usufruit conse
 ![Démembrement de propriété](screenshots/03_demembrement.png)
 
 ### 4 — Note Grand Large (veille marchés & produits)
-Indicateurs de marché et seuils réglementaires organisés autour des 6 solutions réellement affichées sur grandlargepatrimoine.fr (placements financiers, immobilier, non coté, ingénierie fiscale du dirigeant, transmission), avec source et date pour chaque chiffre, un signal visuel sur les données à recouper avant diffusion, et une checklist de rafraîchissement explicite — ce n'est pas un flux temps réel, c'est un instantané assumé comme tel.
+Indicateurs de marché et seuils réglementaires organisés autour des 6 solutions réellement affichées sur grandlargepatrimoine.fr (placements financiers, immobilier, non coté, ingénierie fiscale du dirigeant, transmission), avec source et date pour chaque chiffre, un signal visuel sur les données à recouper avant diffusion, une ligne "en rendez-vous" par indicateur (ce qu'il change concrètement face à un client), et une checklist de rafraîchissement explicite — ce n'est pas un flux temps réel, c'est un instantané assumé comme tel. Une "règle fiscale niche du jour" (mécanismes patrimoniaux stables et sourcés, choisis pour être souvent mal connus plutôt que pour leur actualité) complète la page en rotation quotidienne.
 
 ![Note Grand Large](screenshots/04_veille.png)
 
@@ -39,7 +41,7 @@ Chaque onglet (sauf la veille) propose aussi un export PDF en plus du CSV, et un
 ## Rigueur méthodologique
 
 - **Aucune hypothèse inventée** : chaque seuil fiscal et chaque chiffre de marché est sourcé (CGI, ACPR, ASPIM, France Invest, France Assureurs, Banque de France...), avec sa date de validité.
-- **47 tests automatisés** (`tests_sanity.py`) : cas limites, monotonie, cohérence de la dichotomie brut ↔ coût total, reproductibilité de la simulation Monte-Carlo, cohérence du barème de démembrement, répartition de l'abattement de donation par enfant et par parent, et cohérence du régime TNS (SARL) face au régime assimilé salarié (SASU).
+- **59 tests automatisés** (`tests_sanity.py`) : cas limites, monotonie, cohérence de la dichotomie brut ↔ coût total, reproductibilité de la simulation Monte-Carlo, cohérence du barème de démembrement, répartition de l'abattement de donation par enfant et par parent, cohérence du régime TNS (SARL) face au régime assimilé salarié (SASU), et exactitude de l'optimiseur de répartition (recoupement exact avec les scénarios purs aux deux extrémités).
 - **Compliance-first** : bandeau de non-responsabilité sur chaque onglet, aucune recommandation de produit ou de montant, fourchettes de risque plutôt que performances ponctuelles.
 - **Charte graphique réelle** : couleurs et typographie extraites du site de Grand Large Patrimoine (et non inventées), palette de données validée accessibilité (contraste, daltonisme).
 
@@ -62,14 +64,16 @@ streamlit run app.py
 ```
 fiscalite.py          # charges sociales SASU (assimilé salarié), IS, IR, abattement 10 %, dichotomie brut ↔ coût total
 fiscalite_tns.py      # cotisations sociales SARL (gérant majoritaire, TNS) et réintégration des dividendes
+optimisation.py       # optimiseur de répartition salaire/rémunération vs dividende (balayage exhaustif)
 trajectoire.py       # comparaison directe vs holding, déterministe
 simulation.py        # même comparaison, Monte-Carlo (profils prudent/équilibre/dynamique)
 demembrement.py       # barème art. 669 CGI, droits de donation, pleine propriété vs démembrement
 veille.py             # indicateurs de marché et seuils réglementaires sourcés, organisés par solution GLP
+regle_fiscale.py      # catalogue de mécanismes patrimoniaux niches, rotation quotidienne déterministe
 export_pdf.py         # génération des exports PDF one-pager (un par scénario)
 glossaire.py          # définitions courtes des termes techniques, affichées par onglet
 app.py                # interface Streamlit (4 onglets), charte graphique Grand Large Patrimoine
-tests_sanity.py       # 47 vérifications automatisées sur les modules de calcul
+tests_sanity.py       # 59 vérifications automatisées sur les modules de calcul
 ```
 
 ## Méthodologie — conçu avec Claude (Anthropic)

@@ -28,9 +28,11 @@ from demembrement import (
 from fiscalite_tns import (
     cotisations_tns,
     net_apres_dividende_tns,
+    net_apres_dividende_tns_pur,
     net_apres_remuneration_tns,
     seuil_dividendes_sans_cotisations,
 )
+from optimisation import net_total_mix, repartition_optimale
 
 echecs = []
 
@@ -173,6 +175,52 @@ verifier(
     "net dividende avec capital social élevé (peu cotisé) > net dividende avec capital social quasi nul (tout cotisé)",
     net_apres_dividende_tns(80_000, capital_social=1_000_000)["net_total"]
     > net_apres_dividende_tns(80_000, capital_social=1)["net_total"]
+)
+
+res_sasu = repartition_optimale(80_000, est_sarl=False)
+verifier(
+    "optimiseur SASU : p=0% recoupe exactement le net dividende pur",
+    abs(res_sasu["net_100_dividende"] - net_apres_dividende(80_000)) < 0.01
+)
+verifier(
+    "optimiseur SASU : p=100% recoupe exactement le net salaire pur",
+    abs(res_sasu["net_100_salaire"] - net_apres_salaire(80_000)) < 0.01
+)
+verifier(
+    "optimiseur SASU : le point optimal n'est jamais pire que les deux extrêmes",
+    res_sasu["meilleur_net"] >= res_sasu["net_100_salaire"] - 0.01
+    and res_sasu["meilleur_net"] >= res_sasu["net_100_dividende"] - 0.01
+)
+verifier(
+    "optimiseur SASU : le gain par rapport aux extrêmes n'est jamais négatif",
+    res_sasu["gain_vs_extremes"] >= -0.01
+)
+verifier(
+    "optimiseur SASU à 80k€ : l'optimum est bien un point intermédiaire (effet de seuil), pas un extrême",
+    0 < res_sasu["meilleur_p_pct"] < 100
+)
+
+verifier(
+    "net_apres_dividende_tns_pur = net_total - cotisation TNS minimale (rémunération nulle)",
+    abs(
+        net_apres_dividende_tns_pur(80_000, capital_social=10_000)
+        - (net_apres_dividende_tns(80_000, capital_social=10_000)["net_total"] - cotisations_tns(0))
+    ) < 0.01
+)
+
+res_sarl = repartition_optimale(80_000, est_sarl=True, capital_social=10_000)
+verifier(
+    "optimiseur SARL : p=0% recoupe exactement le net dividende TNS pur (cotisation minimale incluse)",
+    abs(res_sarl["net_100_dividende"] - net_apres_dividende_tns_pur(80_000, capital_social=10_000)) < 0.01
+)
+verifier(
+    "optimiseur SARL : p=100% recoupe exactement le net rémunération TNS pur",
+    abs(res_sarl["net_100_salaire"] - net_apres_remuneration_tns(80_000)) < 0.01
+)
+verifier(
+    "net_total_mix(p=0) et net_total_mix(p=1) cohérents avec repartition_optimale",
+    abs(net_total_mix(80_000, 0.0, est_sarl=False) - res_sasu["net_100_dividende"]) < 0.01
+    and abs(net_total_mix(80_000, 1.0, est_sarl=False) - res_sasu["net_100_salaire"]) < 0.01
 )
 
 print()
