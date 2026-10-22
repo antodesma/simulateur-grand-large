@@ -561,13 +561,17 @@ tab1, tab2, tab3, tab4 = st.tabs(
     ["Rémunération annuelle", "Trajectoire pluriannuelle", "Démembrement de propriété", "Note Grand Large"]
 )
 
-# Barre d'outils Plotly activée (zoom molette/rectangle, panoramique, réinitialiser,
+# Barre d'outils Plotly activée (zoom rectangle, panoramique, réinitialiser,
 # export PNG) - seuls les boutons de sélection (lasso/rectangle de sélection
 # de points, inutiles sur des courbes/barres) et le logo Plotly sont retirés.
+# scrollZoom : zoom à la molette directement sur le graphique, en plus du
+# zoom rectangle de la barre d'outils - geste plus naturel que de devoir
+# d'abord cliquer l'icône loupe puis tracer un rectangle.
 CONFIG_GRAPHIQUE = {
     "displayModeBar": True,
     "displaylogo": False,
     "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d"],
+    "scrollZoom": True,
 }
 
 
@@ -584,9 +588,15 @@ def _mise_en_forme_graphique(fig, titre, y_titre):
         legend=dict(
             orientation="h", yanchor="bottom", y=1.08, xanchor="left", x=0,
             font=dict(family=POLICE_CORPS_GRAPHIQUE, color=ENCRE_SECONDAIRE, size=13),
+            # groupclick="togglegroup" : cliquer "Direct" ou "Holding" dans la
+            # légende masque/affiche toute la série (ligne + fourchette P10-P90),
+            # pas seulement la ligne médiane - un double-clic isole cette seule
+            # série en masquant toutes les autres (comportement natif Plotly).
+            groupclick="togglegroup",
         ),
         margin=dict(t=100, l=10, r=10, b=10),
         hovermode="x unified",
+        dragmode="zoom",
         # Infobulle en carte marine pleine plutôt que le cadre blanc/gris par
         # défaut de Plotly - qui est l'un des signaux les plus "logiciel de
         # calcul" d'un graphique autrement soigné.
@@ -1391,19 +1401,22 @@ with tab2:
             hovertemplate=f"{nom} (pessimiste, P10) : %{{y:,.0f}} €<extra></extra>",
         )
     # Points + étiquettes de valeur en bout de ligne - pour lire le résultat
-    # final sans survoler le graphique.
+    # final sans survoler le graphique. legendgroup="directe"/"holding" :
+    # indispensable pour qu'isoler une série depuis la légende (groupclick=
+    # "togglegroup") masque aussi son étiquette de fin de ligne, pas
+    # seulement sa courbe et sa fourchette.
     fig2.add_scatter(
-        x=[horizon], y=[valeur_finale_directe], mode="markers+text",
+        x=[horizon], y=[valeur_finale_directe], mode="markers+text", legendgroup="directe", showlegend=False,
         marker=dict(size=9, color=COULEUR_SALAIRE, line=dict(color=SURFACE_CARTE, width=2)),
         text=[f"  {fmt_euro(valeur_finale_directe)}"], textposition="middle right",
-        textfont=dict(size=14, color=COULEUR_SALAIRE), showlegend=False, hoverinfo="skip",
+        textfont=dict(size=14, color=COULEUR_SALAIRE), hoverinfo="skip",
         cliponaxis=False,
     )
     fig2.add_scatter(
-        x=[horizon], y=[valeur_finale_holding + decalage_label], mode="markers+text",
+        x=[horizon], y=[valeur_finale_holding + decalage_label], mode="markers+text", legendgroup="holding", showlegend=False,
         marker=dict(size=9, color=COULEUR_DIVIDENDE, line=dict(color=SURFACE_CARTE, width=2)),
         text=[f"  {fmt_euro(valeur_finale_holding)}"], textposition="middle right",
-        textfont=dict(size=14, color=COULEUR_DIVIDENDE), showlegend=False, hoverinfo="skip",
+        textfont=dict(size=14, color=COULEUR_DIVIDENDE), hoverinfo="skip",
         cliponaxis=False,
     )
     fig2 = _mise_en_forme_graphique(fig2, "Direct vs holding — médiane et fourchette de résultats (P10-P90)", "Net si sortie à cette date (€)")
