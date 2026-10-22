@@ -1091,28 +1091,52 @@ with tab2:
     profil_slug = {"Prudent": "prudent", "Équilibré": "equilibre", "Dynamique": "dynamique", "Sur mesure": "sur_mesure"}[profil]
 
     if profil == "Sur mesure":
-        st.caption("Répartition entre les 4 classes d'actifs (doit sommer à 100 %) :")
+        # Trois curseurs libres, la 4e classe (non coté) est LE RESTE calculé,
+        # jamais un 4e curseur indépendant. Avec 4 curseurs indépendants, rien
+        # n'empêchait de saisir une somme à 244 % et de renormaliser au
+        # prorata en silence - le client affiché (ex. 95 % non coté) ne
+        # correspondait alors plus du tout à ce qui était réellement simulé
+        # (39 % une fois renormalisé). Ici la somme fait toujours 100 % par
+        # construction : plus de renormalisation cachée à expliquer.
+        st.caption("Répartition entre les 4 classes d'actifs - le non coté complète automatiquement à 100 % :")
         col_p1, col_p2, col_p3, col_p4 = st.columns(4)
-        poids_bruts = {
-            "epargne_securisee": col_p1.slider("Épargne sécurisée (%)", 0, 100, 30),
-            "immobilier_non_cote": col_p2.slider("Immobilier (%)", 0, 100, 30),
-            "marches_financiers": col_p3.slider("Actions (%)", 0, 100, 25),
-            "investissements_non_cotes": col_p4.slider("Non coté (%)", 0, 100, 15),
+        epargne_pct = col_p1.slider("Épargne sécurisée (%)", 0, 100, 30)
+        immobilier_pct = col_p2.slider("Immobilier (%)", 0, 100, 30)
+        actions_pct = col_p3.slider("Actions (%)", 0, 100, 25)
+        reste_alloue = epargne_pct + immobilier_pct + actions_pct
+        non_cote_pct = max(0, 100 - reste_alloue)
+        with col_p4:
+            st.metric("Non coté (%) — calculé", non_cote_pct)
+        if reste_alloue > 100:
+            st.warning(
+                f"Épargne + immobilier + actions = {reste_alloue} % à eux seuls, déjà au-dessus de 100 % : "
+                f"le non coté est forcé à 0 %. Réduisez l'un des trois curseurs pour lui laisser une place."
+            )
+        ponderations = {
+            "epargne_securisee": epargne_pct / 100,
+            "immobilier_non_cote": immobilier_pct / 100,
+            "marches_financiers": actions_pct / 100,
+            "investissements_non_cotes": non_cote_pct / 100,
         }
-        total_pct = sum(poids_bruts.values())
-        if total_pct == 0:
-            st.warning("Au moins une classe d'actifs doit avoir un poids supérieur à 0 %.")
-            ponderations = {"epargne_securisee": 1.0, "immobilier_non_cote": 0, "marches_financiers": 0, "investissements_non_cotes": 0}
-        else:
-            ponderations = normaliser_ponderations(poids_bruts)
-            if total_pct != 100:
-                st.caption(f"Total saisi : {total_pct} % - renormalisé automatiquement à 100 % au prorata.")
+        if reste_alloue > 100:
+            # Les trois premiers curseurs dépassent déjà 100 % : on les
+            # renormalise entre eux (le non coté reste à 0, ce n'est pas lui
+            # qu'il faut artificiellement gonfler) pour que la somme totale
+            # retombe exactement sur 100 %, sans jamais revenir en silence -
+            # le warning ci-dessus a déjà prévenu l'utilisateur.
+            ponderations = normaliser_ponderations({
+                "epargne_securisee": epargne_pct,
+                "immobilier_non_cote": immobilier_pct,
+                "marches_financiers": actions_pct,
+                "investissements_non_cotes": 0,
+            })
     else:
         ponderations = PANIERS[profil]
-        libelles_composition = " / ".join(
-            f"{poids:.0%} {CLASSES_ACTIFS[cle].libelle}" for cle, poids in ponderations.items() if poids > 0
-        )
-        st.caption(f"Composition : {libelles_composition}")
+
+    libelles_composition = " / ".join(
+        f"{poids:.0%} {CLASSES_ACTIFS[cle].libelle}" for cle, poids in ponderations.items() if poids > 0.001
+    )
+    st.caption(f"Composition retenue pour la simulation : {libelles_composition}")
 
     resultat_panier = rendement_volatilite_panier(ponderations)
     rendement_moyen = resultat_panier["rendement_moyen"]
