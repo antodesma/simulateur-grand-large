@@ -87,9 +87,6 @@ st.markdown(
         box-shadow: none;
         height: 2.75rem;
     }}
-    [data-testid="stSidebarCollapseButton"] button {{
-        color: {NAVY};
-    }}
 
     .block-container {{ padding-top: 2rem; max-width: 1150px; }}
 
@@ -248,16 +245,6 @@ st.markdown(
         margin-top: 0.25rem;
     }}
 
-    section[data-testid="stSidebar"] {{
-        background: {CREME};
-        border-right: 1px solid {BORDURE};
-    }}
-    section[data-testid="stSidebar"] h3 {{
-        font-family: 'Libre Caslon Display', serif;
-        font-weight: 400;
-        color: {NAVY};
-    }}
-
     [data-testid="stMetricValue"] {{ font-variant-numeric: tabular-nums; }}
 
     h2, h3 {{ color: {ENCRE_PRIMAIRE}; font-family: 'Libre Caslon Display', serif; font-weight: 400; }}
@@ -344,28 +331,6 @@ if "montant_input" not in st.session_state:
 if "profit_input" not in st.session_state:
     st.session_state["profit_input"] = 50_000
 
-with st.sidebar:
-    st.markdown("### Grand Large Patrimoine")
-    st.caption("Outil de simulation patrimoniale — projet de stage")
-    st.markdown('<hr class="filet">', unsafe_allow_html=True)
-    st.selectbox(
-        "Profil client (pré-remplit les montants)",
-        ["Personnalisé"] + list(PROFILS_CLIENT.keys()),
-        key="persona_select",
-        on_change=_appliquer_profil_client,
-    )
-    st.caption("Archétypes illustratifs — aucune donnée réelle de client.")
-    st.markdown('<hr class="filet">', unsafe_allow_html=True)
-    with st.expander("Ce que fait / ne fait pas l'outil"):
-        st.markdown(
-            "Compare, pour un dirigeant de société, différentes façons de "
-            "sortir ou de conserver de l'argent dans l'entreprise, et "
-            "l'effet du temps et du risque sur ces choix.\n\n"
-            "**Il ne recommande aucune décision, aucun produit, aucun "
-            "montant.** Chaque hypothèse reste affichée et modifiable."
-        )
-    st.caption("Projet réalisé par Antonin Desmazures")
-
 st.markdown(
     """
     <div class="bandeau">
@@ -382,6 +347,22 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+col_profil, col_profil_note = st.columns([1, 2])
+with col_profil:
+    st.selectbox(
+        "Pour quel profil client ?",
+        ["Personnalisé"] + list(PROFILS_CLIENT.keys()),
+        key="persona_select",
+        on_change=_appliquer_profil_client,
+    )
+with col_profil_note:
+    st.markdown("<div style='height:1.85rem;'></div>", unsafe_allow_html=True)
+    st.caption(
+        "Archétypes illustratifs, calés sur les typologies affichées par Grand Large Patrimoine — "
+        "pré-remplit les montants, aucune donnée réelle de client. Choisissez « Personnalisé » pour saisir vos propres chiffres."
+    )
+
 st.markdown(
     '<div class="bloc-disclaimer">Outil informatif à usage pédagogique, construit sur des '
     'hypothèses explicites (détaillées dans chaque section). Il ne constitue ni un conseil '
@@ -392,7 +373,7 @@ st.markdown(
 
 with st.expander("Comment utiliser ce simulateur (à lire en premier)", expanded=True):
     etapes_numerotees([
-        "Choisissez un profil client dans la barre latérale, ou laissez « Personnalisé » pour saisir vos propres montants.",
+        "Choisissez un profil client ci-dessus, ou laissez « Personnalisé » pour saisir vos propres montants.",
         "Onglet « Rémunération annuelle » : pour une année donnée, salaire ou dividende — lequel laisse le plus net en poche au dirigeant ?",
         "Onglet « Trajectoire pluriannuelle » : sur plusieurs années, vaut-il mieux sortir l'argent chaque année ou le laisser capitaliser dans une holding ? Avec l'incertitude du rendement (fourchette P10-P90), pas un chiffre unique.",
         "Onglet « Démembrement de propriété » : pour transmettre un bien aux enfants, comparez donation en pleine propriété et donation de la seule nue-propriété.",
@@ -872,3 +853,6 @@ with tab4:
 
     with st.expander("Checklist de rafraîchissement — à suivre avant toute utilisation"):
         etapes_numerotees(CHECKLIST_RAFRAICHISSEMENT)
+
+st.markdown('<hr class="filet" style="margin-top:2.5rem;">', unsafe_allow_html=True)
+st.caption("Grand Large Patrimoine — simulateur patrimonial, projet réalisé par Antonin Desmazures.")
