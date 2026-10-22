@@ -30,6 +30,7 @@ class Indicateur:
     date_donnee: str
     source: str
     commentaire: str = ""
+    lecture: str = ""  # "pourquoi ça compte" - l'usage concret en rendez-vous, jamais un conseil en investissement
     fiable: bool = True  # False si les sources divergent significativement
 
 
@@ -55,6 +56,10 @@ SECTION_MARCHES = SectionVeille(
             date_donnee="21 octobre 2026",
             source="TradingEconomics (cotation CFD, à recouper avec une source officielle avant diffusion)",
             commentaire="Niveau proche des plus hauts historiques de l'indice.",
+            lecture=(
+                "Sert à répondre calmement à un client qui s'inquiète ou s'enthousiasme sur ses lignes "
+                "actions ; la proximité des plus hauts n'est ni un signal d'achat ni un signal de vente en soi."
+            ),
             fiable=False,
         ),
         Indicateur(
@@ -66,6 +71,10 @@ SECTION_MARCHES = SectionVeille(
                 "En nette hausse par rapport au début d'année 2026 (environ 3,6 % en janvier). "
                 "Pertinent pour la tarification des produits structurés et l'arbitrage fonds euros / obligataire direct."
             ),
+            lecture=(
+                "Utile pour expliquer pourquoi les nouveaux produits structurés affichent des taux garantis "
+                "plus attractifs qu'il y a un an."
+            ),
             fiable=False,
         ),
         Indicateur(
@@ -73,12 +82,14 @@ SECTION_MARCHES = SectionVeille(
             valeur="2,50 %",
             date_donnee="décision du 10 septembre 2026, effective au 16 septembre 2026",
             source="Banque de France (Taux_directeurs.pdf) ; relayé par la presse spécialisée crédit",
+            lecture="Point de repère pour toute discussion sur le coût du crédit (immobilier, avance sur titres) avec un client.",
         ),
         Indicateur(
             libelle="Fourchette cible Fed Funds (Réserve fédérale US)",
             valeur="3,75 % - 4,00 %",
             date_donnee="décision FOMC des 15-16 septembre 2026 (+25 pb)",
             source="Presse financière spécialisée (boursenews.ma), à recouper avec le communiqué officiel du FOMC",
+            lecture="Pertinent pour un client exposé aux marchés américains ou au dollar dans son allocation.",
         ),
     ],
     note_methodo=(
@@ -104,6 +115,10 @@ SECTION_IMMOBILIER = SectionVeille(
                 "de cette moyenne, à la hausse comme à la baisse : ce chiffre sert de repère de marché, pas "
                 "de performance d'un véhicule en particulier."
             ),
+            lecture=(
+                "Permet de resituer la performance d'une SCPI proposée face à la moyenne du marché, "
+                "sans se prononcer sur un véhicule en particulier."
+            ),
         ),
     ],
     note_methodo=(
@@ -122,6 +137,10 @@ SECTION_NON_COTE = SectionVeille(
             valeur="11,3 % par an",
             date_donnee="étude parue le 8 juillet 2025",
             source="France Invest / EY, étude annuelle de performance nette",
+            lecture=(
+                "Point de comparaison utile pour expliquer la logique de diversification vers le non coté, "
+                "en rappelant systématiquement l'horizon de blocage (8-12 ans) et le risque de perte en capital."
+            ),
         ),
         Indicateur(
             libelle="TRI net du capital-investissement français sur 10 ans",
@@ -134,6 +153,7 @@ SECTION_NON_COTE = SectionVeille(
                 "d'actifs, mais ne doit jamais être présenté sans rappeler l'horizon de blocage (8-12 ans) "
                 "et le risque de perte en capital."
             ),
+            lecture="Chiffre à manier avec précaution (incohérence interne à l'étude) ; illustre un écart de marché, pas une promesse de performance.",
             fiable=False,
         ),
     ],
@@ -159,6 +179,7 @@ SECTION_EPARGNE = SectionVeille(
                 "français ; Lombard International, OneLife, Wealins, Baloise Lux au Luxembourg) peuvent "
                 "verser des rendements différents de cette moyenne."
             ),
+            lecture="Point de départ pour toute conversation sur la part d'un contrat à garder en fonds euros plutôt qu'en unités de compte.",
         ),
     ],
     note_methodo="Donnée annuelle, stable jusqu'à la publication des chiffres 2026 (début 2027).",
@@ -181,42 +202,49 @@ SECTION_FISCALITE = SectionVeille(
             valeur="48 060 € / an (4 005 € / mois)",
             date_donnee="exercice 2026",
             source="Sécurité sociale - arrêté annuel (repris dans fiscalite.py : PASS_2026)",
+            lecture="Sert à recalculer rapidement un plafond de cotisation ou un seuil social pendant un rendez-vous.",
         ),
         Indicateur(
             libelle="Abattement forfaitaire 10 % frais professionnels",
             valeur="plancher 509 € - plafond 14 555 €",
             date_donnee="revenus 2025, déclaration 2026",
             source="Code général des impôts (repris dans fiscalite.py)",
+            lecture="Rarement déterminant seul, mais utile pour vérifier une déclaration de revenus d'un dirigeant assimilé salarié.",
         ),
         Indicateur(
             libelle="Exonération régime mère-fille (remontée de dividendes en holding)",
             valeur="95 % (quote-part de frais et charges de 5 % réintégrée)",
             date_donnee="en vigueur",
             source="Code général des impôts - cité sur la page GLP \"Ingénierie fiscale et sociale du dirigeant\"",
+            lecture="Argument clé pour expliquer l'intérêt d'une holding qui perçoit les dividendes de la société opérationnelle.",
         ),
         Indicateur(
             libelle="Pacte Dutreil - abattement transmission d'entreprise",
             valeur="75 % de la valeur transmise, sous engagement collectif puis individuel de conservation",
             date_donnee="en vigueur",
             source="Code général des impôts - cité sur la page GLP \"Transmission et structuration familiale\"",
+            lecture="À mentionner dès qu'un client évoque la transmission de son entreprise à ses enfants.",
         ),
         Indicateur(
             libelle="Apport-cession (article 150-0 B ter du CGI)",
             valeur="report d'imposition de la plus-value sous condition de réinvestissement de 60 % dans une activité économique sous 24 mois",
             date_donnee="en vigueur",
             source="Code général des impôts - cité sur la page GLP \"Ingénierie fiscale et sociale du dirigeant\"",
+            lecture="Utile quand un client envisage de céder des titres après les avoir apportés à une holding.",
         ),
         Indicateur(
             libelle="Abattement donation en ligne directe (parent → enfant)",
             valeur="100 000 € par parent et par enfant, renouvelable tous les 15 ans",
             date_donnee="en vigueur",
             source="Code général des impôts (repris dans demembrement.py : ABATTEMENT_DONATION_LIGNE_DIRECTE)",
+            lecture="Le chiffre le plus souvent cité en premier rendez-vous transmission.",
         ),
         Indicateur(
             libelle="Abattement donation grand-parent → petit-enfant",
             valeur="31 865 €, renouvelable tous les 15 ans",
             date_donnee="en vigueur",
             source="Code général des impôts - cité sur la page GLP \"Transmission et structuration familiale\"",
+            lecture="À mentionner quand un client veut aussi transmettre à ses petits-enfants, en plus de ses enfants.",
         ),
     ],
     note_methodo=(

@@ -33,6 +33,7 @@ from fiscalite_tns import (
 )
 from export_pdf import generer_pdf_scenario
 from glossaire import termes_glossaire
+from regle_fiscale import regle_du_jour
 from veille import (
     CHECKLIST_RAFRAICHISSEMENT,
     DATE_MISE_A_JOUR,
@@ -256,9 +257,15 @@ st.markdown(
 
     h2, h3 {{ color: {ENCRE_PRIMAIRE}; font-family: 'Libre Caslon Display', serif; font-weight: 400; }}
 
-    .stTabs [data-baseweb="tab"] {{ font-weight: 500; }}
+    .stTabs [data-baseweb="tab-list"] {{ gap: 8px; }}
+    .stTabs [data-baseweb="tab"] {{
+        font-weight: 600;
+        font-size: 1.05rem;
+        padding: 12px 20px 14px 20px;
+        height: auto;
+    }}
     .stTabs [aria-selected="true"] {{ color: {NAVY} !important; }}
-    .stTabs [data-baseweb="tab-highlight"] {{ background-color: {NAVY} !important; }}
+    .stTabs [data-baseweb="tab-highlight"] {{ background-color: {NAVY} !important; height: 3px; }}
 
     .stButton button, .stDownloadButton button {{
         border-radius: 0;
@@ -316,6 +323,21 @@ def entete_section(titre, sous_titre=""):
         <div class="entete-section">
             <div class="titre">{titre}</div>
             <div class="sous-titre">{sous_titre}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def pitch_usage(texte):
+    """Phrase d'accroche en haut d'un onglet : le problème concret que
+    rencontre le client, suivi de ce que fait cet onglet pour y répondre."""
+    st.markdown(
+        f"""
+        <div style="background:{SURFACE_CARTE}; border-left:3px solid {NAVY};
+                     padding:12px 18px; margin:0.6rem 0 1.1rem 0; font-size:0.95rem;
+                     color:{ENCRE_SECONDAIRE}; line-height:1.5;">
+            {texte}
         </div>
         """,
         unsafe_allow_html=True,
@@ -424,6 +446,12 @@ with tab1:
     entete_section(
         "Salaire vs dividende, sur une année",
         "Part fiscale unique — barèmes 2026 (revenus 2025)",
+    )
+    pitch_usage(
+        "<strong>Vous dirigez une entreprise et hésitez sur la manière de vous verser de "
+        "l'argent ?</strong> Salaire ou dividende ne laissent pas le même montant net en "
+        "poche, pour un même coût pour l'entreprise. Entrez un montant, cet onglet calcule "
+        "les deux et vous montre lequel est le plus avantageux, et de combien."
     )
 
     forme_juridique = st.radio(
@@ -735,6 +763,13 @@ with tab2:
         "Garder l'argent en direct vs le laisser capitaliser dans une holding",
         "Simulation Monte-Carlo, fourchette P10–P90, sur plusieurs années",
     )
+    pitch_usage(
+        "<strong>Faut-il sortir l'argent de l'entreprise chaque année, ou le laisser "
+        "capitaliser dans une holding ?</strong> Sur plusieurs années, la fiscalité et le "
+        "rendement du placement changent la donne. Cet onglet compare les deux trajectoires "
+        "dans le temps, avec l'incertitude du marché incluse — pas un chiffre unique, une "
+        "fourchette réaliste."
+    )
 
     with st.expander("Hypothèses de ce scénario (à lire avant de tirer des conclusions)", expanded=True):
         st.markdown(
@@ -950,6 +985,13 @@ with tab3:
         "Donation en pleine propriété vs donation de la nue-propriété",
         "Ligne directe, abattement de 100 000 € disponible — barème de l'article 669 du CGI",
     )
+    pitch_usage(
+        "<strong>Vous voulez transmettre un bien à vos enfants sans attendre, en limitant "
+        "les droits à payer ?</strong> Donner seulement la nue-propriété (et garder "
+        "l'usufruit) coûte moins cher en droits de donation que donner le bien en pleine "
+        "propriété. Cet onglet chiffre l'économie exacte, selon l'âge du donateur et la "
+        "valeur du bien."
+    )
 
     with st.expander("Comment lire ce scénario", expanded=True):
         st.markdown(
@@ -1135,6 +1177,26 @@ with tab4:
         "Note Grand Large",
         "Veille marchés & produits, organisée autour des solutions affichées sur grandlargepatrimoine.fr",
     )
+    pitch_usage(
+        "<strong>Avant un rendez-vous client ou un point avec Pierre, besoin des derniers chiffres "
+        "qui parlent directement de ses solutions ?</strong> Cette page les rassemble, sourcés, datés, "
+        "classés par solution Grand Large Patrimoine - avec pour chacun une ligne sur ce qu'il change "
+        "concrètement en entretien."
+    )
+
+    regle = regle_du_jour()
+    st.markdown(
+        f"""
+        <div style="background:#ffffff; border:1px dashed {NAVY}; padding:14px 18px; margin-bottom:1rem;">
+            <div style="font-size:0.78rem; color:{ENCRE_MUTED}; text-transform:uppercase;
+                        letter-spacing:0.04em; margin-bottom:4px;">Règle fiscale niche du jour</div>
+            <div style="font-weight:600; font-size:0.98rem; color:{ENCRE_PRIMAIRE};">{regle['titre']}</div>
+            <div style="font-size:0.88rem; color:{ENCRE_SECONDAIRE}; margin-top:4px; line-height:1.45;">{regle['explication']}</div>
+            <div style="font-size:0.78rem; color:{ENCRE_MUTED}; margin-top:6px;">Référence : {regle['reference']}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     col_instantane, col_action = st.columns([3, 1])
     with col_instantane:
@@ -1204,6 +1266,12 @@ with tab4:
                 if ind.commentaire
                 else ""
             )
+            lecture_html = (
+                f'<div style="font-size:0.82rem; color:{NAVY}; margin-top:6px; line-height:1.4; font-style:italic;">'
+                f'En rendez-vous : {ind.lecture}</div>'
+                if ind.lecture
+                else ""
+            )
             # Tout sur une seule ligne, sans retour à la ligne ni indentation :
             # une ligne blanche (ou seulement des espaces, comme {etiquette} vide)
             # au milieu d'un bloc HTML coupe le bloc pour le parseur Markdown de
@@ -1218,6 +1286,7 @@ with tab4:
                 f'<div style="font-size:1.4rem; font-family:\'Libre Caslon Display\', serif; '
                 f'color:{ENCRE_PRIMAIRE}; margin-top:4px;">{ind.valeur}</div>'
                 f'{commentaire_html}'
+                f'{lecture_html}'
                 f'<div style="font-size:0.78rem; color:{ENCRE_MUTED}; margin-top:8px; border-top:1px solid {GRILLE}; padding-top:6px;">'
                 f'Source : {ind.source} — {ind.date_donnee}'
                 f'</div>'
