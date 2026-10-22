@@ -24,6 +24,13 @@ from fiscalite import (
 from simulation import PROFILS, simulation_comparaison
 from trajectoire import comparer
 from demembrement import comparer_transmission, pourcentage_usufruit
+from fiscalite_tns import (
+    TAUX_IR_SEUL_PFU,
+    cotisations_tns,
+    net_apres_dividende_tns,
+    net_apres_remuneration_tns,
+    seuil_dividendes_sans_cotisations,
+)
 from veille import (
     CHECKLIST_RAFRAICHISSEMENT,
     DATE_MISE_A_JOUR,
@@ -375,7 +382,25 @@ def _mise_en_forme_graphique(fig, titre, y_titre):
 with tab1:
     entete_section(
         "Salaire vs dividende, sur une année",
-        "Dirigeant de SASU, assimilé salarié, part fiscale unique — barèmes 2026 (revenus 2025)",
+        "Part fiscale unique — barèmes 2026 (revenus 2025)",
+    )
+
+    forme_juridique = st.radio(
+        "Forme juridique du dirigeant",
+        ["SASU (président, assimilé salarié)", "SARL (gérant majoritaire, TNS)"],
+        horizontal=True,
+    )
+    est_sarl = forme_juridique.startswith("SARL")
+    st.caption(
+        "Le régime social change tout : le président de SASU est assimilé salarié (charges "
+        "patronales + salariales), le gérant majoritaire de SARL est travailleur non salarié "
+        "- TNS (cotisations propres, globalement moins élevées, pour des droits sociaux moindres)."
+        if not est_sarl else
+        "Travailleur non salarié (TNS) : pas de distinction charges patronales/salariales, le "
+        "gérant paie lui-même ses cotisations sur la rémunération versée par la société. Les "
+        "dividendes au-delà de 10% du capital social (+ compte courant + primes d'émission) "
+        "sont réintégrés dans l'assiette des cotisations (article L131-6 du code de la sécurité "
+        "sociale) : voir « Comment lire ce scénario »."
     )
 
     montant = st.number_input(
@@ -384,14 +409,42 @@ with tab1:
     )
     st.caption(f"→ {fmt_euro(montant)}")
 
-    net_salaire = net_apres_salaire(montant)
-    net_dividende = net_apres_dividende(montant)
-    meilleur = "le salaire" if net_salaire > net_dividende else "le dividende"
+    if est_sarl:
+        with st.expander("Comment lire ce scénario (SARL / gérant majoritaire)"):
+            st.markdown(
+                "- **Rémunération** : la société verse une rémunération au gérant, intégralement "
+                "déductible de l'IS - pas de charges patronales séparées comme en SASU, le gérant "
+                "paie lui-même l'ensemble de ses cotisations TNS dessus.\n"
+                "- **Dividende** : l'IS est payé d'abord, puis le dividende distribuable est séparé "
+                "en deux parts - celle sous le seuil des 10% du capital social (+ compte courant + "
+                "primes d'émission) reste au PFU classique (31,4%), celle au-delà est réintégrée "
+                "dans l'assiette des cotisations TNS (et ne supporte plus que 12,8% d'impôt sur le "
+                "revenu, la CSG-CRDS étant déjà comprise dans les cotisations).\n"
+                "- **Capital social faible** (cas fréquent en SARL) → le seuil des 10% est vite "
+                "atteint, et une grande partie du dividende finit cotisée comme un revenu "
+                "professionnel : saisissez le capital réel du client ci-dessous, ça change beaucoup "
+                "le résultat."
+            )
+        col_cap1, col_cap2 = st.columns(2)
+        capital_social = col_cap1.number_input("Capital social de la SARL (€)", min_value=1, max_value=5_000_000, value=10_000, step=1_000)
+        compte_courant_moyen = col_cap2.number_input("Solde moyen du compte courant d'associé (€, optionnel)", min_value=0, max_value=5_000_000, value=0, step=5_000)
+        seuil_div = seuil_dividendes_sans_cotisations(capital_social, compte_courant_moyen)
+        st.caption(f"→ Seuil de dividende non cotisé : {fmt_euro(seuil_div)} par an (10% de {fmt_euro(capital_social + compte_courant_moyen)}).")
+
+        net_salaire = net_apres_remuneration_tns(montant)
+        resultat_div_tns = net_apres_dividende_tns(montant, capital_social, compte_courant_moyen)
+        net_dividende = resultat_div_tns["net_total"]
+    else:
+        net_salaire = net_apres_salaire(montant)
+        net_dividende = net_apres_dividende(montant)
+
+    meilleur = "la rémunération" if est_sarl and net_salaire > net_dividende else "le salaire" if net_salaire > net_dividende else "le dividende"
     ecart = abs(net_salaire - net_dividende)
+    libelle_salaire = "Net en poche si rémunération" if est_sarl else "Net en poche si salaire"
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        carte_kpi("Net en poche si salaire", fmt_euro(net_salaire), COULEUR_SALAIRE)
+        carte_kpi(libelle_salaire, fmt_euro(net_salaire), COULEUR_SALAIRE)
     with col2:
         carte_kpi("Net en poche si dividende", fmt_euro(net_dividende), COULEUR_DIVIDENDE)
     with col3:
@@ -401,7 +454,7 @@ with tab1:
 
     fig1 = go.Figure()
     fig1.add_bar(
-        x=["Salaire", "Dividende"], y=[net_salaire, net_dividende],
+        x=["Rémunération" if est_sarl else "Salaire", "Dividende"], y=[net_salaire, net_dividende],
         marker_color=[COULEUR_SALAIRE, COULEUR_DIVIDENDE],
         text=[fmt_euro(net_salaire), fmt_euro(net_dividende)],
         textposition="outside", width=0.5,
@@ -411,55 +464,107 @@ with tab1:
     fig1.update_xaxes(showgrid=False)
     st.plotly_chart(fig1, width="stretch", config=CONFIG_GRAPHIQUE)
 
-    brut = brut_depuis_cout_total(montant)
-    charges_employeur, charges_salarie = charges_sur_brut(brut)
-    net_avant_abattement = brut - charges_salarie
-    net_imposable = applique_abattement_salaire(net_avant_abattement)
-    abattement = net_avant_abattement - net_imposable
-    ir_salaire = calcul_ir(net_imposable)
+    if est_sarl:
+        cotisations_remuneration = cotisations_tns(montant)
+        net_avant_abattement = montant - cotisations_remuneration
+        net_imposable = applique_abattement_salaire(net_avant_abattement)
+        abattement = net_avant_abattement - net_imposable
+        ir_salaire = calcul_ir(net_imposable)
 
-    is_du = calcul_is(montant)
-    distribuable = montant - is_du
-    pfu_montant = distribuable * TAUX_PFU
+        with st.expander("Voir la cascade du calcul (du coût total entreprise au net en poche)", expanded=False):
+            fig_cascade = go.Figure(go.Waterfall(
+                orientation="v",
+                measure=["absolute", "relative", "relative", "total"],
+                x=["Coût total\nentreprise", "Cotisations\nTNS", "Impôt sur\nle revenu", "Net en poche"],
+                y=[montant, -cotisations_remuneration, -ir_salaire, net_salaire],
+                text=[fmt_euro(v) for v in [montant, cotisations_remuneration, ir_salaire, net_salaire]],
+                textposition="outside",
+                connector=dict(line=dict(color=GRILLE, width=1)),
+                decreasing=dict(marker=dict(color="#e34948")),
+                increasing=dict(marker=dict(color=COULEUR_DIVIDENDE)),
+                totals=dict(marker=dict(color=COULEUR_SALAIRE)),
+            ))
+            fig_cascade = _mise_en_forme_graphique(
+                fig_cascade, "De 100 % du coût entreprise au net réellement en poche (scénario rémunération)", "Montant (€)"
+            )
+            fig_cascade.update_xaxes(showgrid=False)
+            st.plotly_chart(fig_cascade, width="stretch", config=CONFIG_GRAPHIQUE)
+            st.caption(
+                "Pas de distinction charges patronales/salariales en TNS : une seule cotisation "
+                "globale, payée par le gérant. L'abattement forfaitaire de 10 % n'apparaît pas ici : "
+                "il réduit la base imposable, pas directement la trésorerie."
+            )
 
-    with st.expander("Voir la cascade du calcul (du coût total entreprise au net en poche)", expanded=False):
-        fig_cascade = go.Figure(go.Waterfall(
-            orientation="v",
-            measure=["absolute", "relative", "relative", "relative", "total"],
-            x=["Coût total\nentreprise", "Charges\npatronales", "Charges\nsalariales", "Impôt sur\nle revenu", "Net en poche"],
-            y=[montant, -charges_employeur, -charges_salarie, -ir_salaire, net_salaire],
-            text=[fmt_euro(v) for v in [montant, charges_employeur, charges_salarie, ir_salaire, net_salaire]],
-            textposition="outside",
-            connector=dict(line=dict(color=GRILLE, width=1)),
-            decreasing=dict(marker=dict(color="#e34948")),
-            increasing=dict(marker=dict(color=COULEUR_DIVIDENDE)),
-            totals=dict(marker=dict(color=COULEUR_SALAIRE)),
-        ))
-        fig_cascade = _mise_en_forme_graphique(
-            fig_cascade, "De 100 % du coût entreprise au net réellement en poche (scénario salaire)", "Montant (€)"
+        impot_total_dividende_tns = (
+            calcul_is(montant)
+            + resultat_div_tns["part_sous_seuil"] * TAUX_PFU
+            + resultat_div_tns["part_au_dela"] * TAUX_IR_SEUL_PFU
         )
-        fig_cascade.update_xaxes(showgrid=False)
-        st.plotly_chart(fig_cascade, width="stretch", config=CONFIG_GRAPHIQUE)
-        st.caption(
-            "L'abattement forfaitaire de 10 % n'apparaît pas ici : il réduit la base imposable, "
-            "pas directement la trésorerie — son effet est déjà intégré dans la barre « Impôt sur le revenu »."
+        df_detail = pd.DataFrame(
+            {
+                "Rémunération": [
+                    montant, cotisations_remuneration, abattement, ir_salaire, net_salaire,
+                ],
+                "Dividende": [
+                    montant, resultat_div_tns["cotisations_exces"], None,
+                    impot_total_dividende_tns, net_dividende,
+                ],
+            },
+            index=[
+                "Coût total entreprise", "Cotisations TNS", "Abattement 10% frais pro.",
+                "Impôt total (IR seul en rémunération, IS + IR en dividende)", "Net final en poche",
+            ],
         )
+    else:
+        brut = brut_depuis_cout_total(montant)
+        charges_employeur, charges_salarie = charges_sur_brut(brut)
+        net_avant_abattement = brut - charges_salarie
+        net_imposable = applique_abattement_salaire(net_avant_abattement)
+        abattement = net_avant_abattement - net_imposable
+        ir_salaire = calcul_ir(net_imposable)
 
-    df_detail = pd.DataFrame(
-        {
-            "Salaire": [
-                montant, charges_employeur, brut, charges_salarie, abattement, ir_salaire, net_salaire,
+        is_du = calcul_is(montant)
+        distribuable = montant - is_du
+        pfu_montant = distribuable * TAUX_PFU
+
+        with st.expander("Voir la cascade du calcul (du coût total entreprise au net en poche)", expanded=False):
+            fig_cascade = go.Figure(go.Waterfall(
+                orientation="v",
+                measure=["absolute", "relative", "relative", "relative", "total"],
+                x=["Coût total\nentreprise", "Charges\npatronales", "Charges\nsalariales", "Impôt sur\nle revenu", "Net en poche"],
+                y=[montant, -charges_employeur, -charges_salarie, -ir_salaire, net_salaire],
+                text=[fmt_euro(v) for v in [montant, charges_employeur, charges_salarie, ir_salaire, net_salaire]],
+                textposition="outside",
+                connector=dict(line=dict(color=GRILLE, width=1)),
+                decreasing=dict(marker=dict(color="#e34948")),
+                increasing=dict(marker=dict(color=COULEUR_DIVIDENDE)),
+                totals=dict(marker=dict(color=COULEUR_SALAIRE)),
+            ))
+            fig_cascade = _mise_en_forme_graphique(
+                fig_cascade, "De 100 % du coût entreprise au net réellement en poche (scénario salaire)", "Montant (€)"
+            )
+            fig_cascade.update_xaxes(showgrid=False)
+            st.plotly_chart(fig_cascade, width="stretch", config=CONFIG_GRAPHIQUE)
+            st.caption(
+                "L'abattement forfaitaire de 10 % n'apparaît pas ici : il réduit la base imposable, "
+                "pas directement la trésorerie — son effet est déjà intégré dans la barre « Impôt sur le revenu »."
+            )
+
+        df_detail = pd.DataFrame(
+            {
+                "Salaire": [
+                    montant, charges_employeur, brut, charges_salarie, abattement, ir_salaire, net_salaire,
+                ],
+                "Dividende": [
+                    montant, None, None, None, None, is_du + pfu_montant, net_dividende,
+                ],
+            },
+            index=[
+                "Coût total entreprise", "Charges patronales (déduites)", "Salaire brut",
+                "Charges salariales", "Abattement 10% frais pro.", "Impôt total",
+                "Net final en poche",
             ],
-            "Dividende": [
-                montant, None, None, None, None, is_du + pfu_montant, net_dividende,
-            ],
-        },
-        index=[
-            "Coût total entreprise", "Charges patronales (déduites)", "Salaire brut",
-            "Charges salariales", "Abattement 10% frais pro.", "Impôt total",
-            "Net final en poche",
-        ],
-    )
+        )
 
     with st.expander("Voir le détail du calcul, étape par étape"):
         # Pré-formatage en chaînes : st.dataframe (grille interactive) n'honore

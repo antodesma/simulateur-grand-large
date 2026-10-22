@@ -25,6 +25,12 @@ from demembrement import (
     pourcentage_usufruit,
     valeur_usufruit_nue_propriete,
 )
+from fiscalite_tns import (
+    cotisations_tns,
+    net_apres_dividende_tns,
+    net_apres_remuneration_tns,
+    seuil_dividendes_sans_cotisations,
+)
 
 echecs = []
 
@@ -138,6 +144,35 @@ verifier(
 verifier(
     "nombre_enfants=1 et nombre_donateurs=1 : comportement identique à l'ancienne API (non-régression)",
     comparer_transmission(400_000, 65, 1, 1)["economie_droits"] == comparer_transmission(400_000, 65)["economie_droits"]
+)
+
+# --- régime TNS (gérant majoritaire de SARL) ---
+verifier(
+    "cotisation minimale TNS due même à rémunération nulle (plancher forfaitaire, affiliation maintenue)",
+    cotisations_tns(0) > 0
+)
+verifier("cotisations TNS strictement positives et inférieures à la rémunération (80k€)", 0 < cotisations_tns(80_000) < 80_000)
+verifier("cotisations TNS croissantes avec la rémunération", cotisations_tns(100_000) > cotisations_tns(50_000))
+verifier(
+    "le régime TNS laisse plus de net que le régime assimilé salarié à montant égal (charges TNS globalement plus légères)",
+    net_apres_remuneration_tns(80_000) > net_apres_salaire(80_000)
+)
+verifier(
+    "seuil de dividende non cotisé = 10% de (capital + compte courant)",
+    abs(seuil_dividendes_sans_cotisations(100_000, 20_000) - 12_000) < 0.01
+)
+verifier(
+    "dividende entièrement sous le seuil des 10% : pas de cotisations TNS dessus",
+    net_apres_dividende_tns(50_000, capital_social=1_000_000)["cotisations_exces"] == 0
+)
+verifier(
+    "dividende très au-delà du seuil des 10% (capital quasi nul) : des cotisations TNS s'appliquent",
+    net_apres_dividende_tns(80_000, capital_social=1)["cotisations_exces"] > 0
+)
+verifier(
+    "net dividende avec capital social élevé (peu cotisé) > net dividende avec capital social quasi nul (tout cotisé)",
+    net_apres_dividende_tns(80_000, capital_social=1_000_000)["net_total"]
+    > net_apres_dividende_tns(80_000, capital_social=1)["net_total"]
 )
 
 print()

@@ -17,7 +17,7 @@ Un dirigeant de société qui se demande *« salaire ou dividende ? »*, *« je 
 ## Les 4 modules
 
 ### 1 — Rémunération annuelle
-Salaire vs dividende pour un dirigeant de SASU assimilé salarié : charges patronales et salariales calculées par tranche de PASS (sans approximation forfaitaire), abattement de 10 % pour frais professionnels, IS à 15 %/25 %, barème IR progressif, PFU sur dividendes. Cascade interactive (waterfall) du coût total entreprise jusqu'au net en poche, détail du calcul étape par étape, export CSV.
+Salaire vs dividende, avec un choix de la forme juridique du dirigeant : SASU (président, assimilé salarié — charges patronales et salariales par tranche de PASS) ou SARL (gérant majoritaire, travailleur non salarié — cotisations TNS, sans distinction patronal/salarial, et réintégration des dividendes excédant 10 % du capital social dans l'assiette des cotisations, article L131-6 du code de la sécurité sociale). Abattement de 10 % pour frais professionnels, IS à 15 %/25 %, barème IR progressif, PFU sur dividendes. Cascade interactive (waterfall) du coût total entreprise jusqu'au net en poche, détail du calcul étape par étape, export CSV.
 
 ### 2 — Trajectoire pluriannuelle
 Garder l'argent en direct vs le faire capitaliser dans une holding, sur plusieurs années. Simulation Monte-Carlo (1500 tirages) avec trois profils de rendement/risque, affichée en fourchette P10–P90 plutôt qu'en point unique — pour ne jamais ressembler à une prévision de performance personnalisée. L'année de croisement (scénario central) est annotée directement sur le graphique.
@@ -37,7 +37,7 @@ Indicateurs de marché et seuils réglementaires organisés autour des 6 solutio
 ## Rigueur méthodologique
 
 - **Aucune hypothèse inventée** : chaque seuil fiscal et chaque chiffre de marché est sourcé (CGI, ACPR, ASPIM, France Invest, France Assureurs, Banque de France...), avec sa date de validité.
-- **39 tests automatisés** (`tests_sanity.py`) : cas limites, monotonie, cohérence de la dichotomie brut ↔ coût total, reproductibilité de la simulation Monte-Carlo, cohérence du barème de démembrement et de la répartition de l'abattement de donation par enfant et par parent.
+- **47 tests automatisés** (`tests_sanity.py`) : cas limites, monotonie, cohérence de la dichotomie brut ↔ coût total, reproductibilité de la simulation Monte-Carlo, cohérence du barème de démembrement, répartition de l'abattement de donation par enfant et par parent, et cohérence du régime TNS (SARL) face au régime assimilé salarié (SASU).
 - **Compliance-first** : bandeau de non-responsabilité sur chaque onglet, aucune recommandation de produit ou de montant, fourchettes de risque plutôt que performances ponctuelles.
 - **Charte graphique réelle** : couleurs et typographie extraites du site de Grand Large Patrimoine (et non inventées), palette de données validée accessibilité (contraste, daltonisme).
 
@@ -58,13 +58,14 @@ streamlit run app.py
 ## Structure du repo
 
 ```
-fiscalite.py        # charges sociales, IS, IR, abattement 10 %, dichotomie brut ↔ coût total
+fiscalite.py          # charges sociales SASU (assimilé salarié), IS, IR, abattement 10 %, dichotomie brut ↔ coût total
+fiscalite_tns.py      # cotisations sociales SARL (gérant majoritaire, TNS) et réintégration des dividendes
 trajectoire.py       # comparaison directe vs holding, déterministe
 simulation.py        # même comparaison, Monte-Carlo (profils prudent/équilibre/dynamique)
 demembrement.py       # barème art. 669 CGI, droits de donation, pleine propriété vs démembrement
 veille.py             # indicateurs de marché et seuils réglementaires sourcés, organisés par solution GLP
 app.py                # interface Streamlit (4 onglets), charte graphique Grand Large Patrimoine
-tests_sanity.py       # 39 vérifications automatisées sur les 4 modules de calcul
+tests_sanity.py       # 47 vérifications automatisées sur les modules de calcul
 ```
 
 ## Méthodologie — conçu avec Claude (Anthropic)
