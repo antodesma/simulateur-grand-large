@@ -13,7 +13,8 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.lib.utils import ImageReader
+from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 NAVY = colors.HexColor("#03001C")
 ENCRE_SECONDAIRE = colors.HexColor("#4a4860")
@@ -43,7 +44,11 @@ def _styles():
     return eyebrow, titre, sous_titre, corps, disclaimer
 
 
-def generer_pdf_scenario(titre, sous_titre, kpis, lignes_tableau, hypotheses):
+def generer_pdf_scenario(
+    titre, sous_titre, kpis, lignes_tableau, hypotheses,
+    image_png=None, legende_image="",
+    titre_tableau_secondaire="", lignes_tableau_secondaire=None,
+):
     """
     Construit un PDF one-pager générique pour un scénario de l'outil.
 
@@ -54,6 +59,12 @@ def generer_pdf_scenario(titre, sous_titre, kpis, lignes_tableau, hypotheses):
       déjà formatée en chaînes (pas de calcul fait ici).
     - hypotheses : liste de phrases (les mêmes avertissements que l'onglet
       correspondant dans l'interface).
+    - image_png : bytes PNG optionnels (ex. le donut de composition d'un
+      panier), insérés après le tableau principal, avec sa legende_image en
+      légende sous l'image.
+    - titre_tableau_secondaire, lignes_tableau_secondaire : second tableau
+      optionnel (ex. détail par classe d'actifs), affiché après l'image,
+      même format que lignes_tableau.
 
     Renvoie les bytes du PDF, à passer tels quels à st.download_button.
     """
@@ -104,6 +115,43 @@ def generer_pdf_scenario(titre, sous_titre, kpis, lignes_tableau, hypotheses):
             ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
         ]))
         elements.append(table_detail)
+        elements.append(Spacer(1, 16))
+
+    if image_png:
+        # Largeur fixe, hauteur recalculée pour garder les proportions du
+        # PNG d'origine (le donut Plotly est généré en 420x320, mais on ne
+        # dépend pas de ce chiffre en dur ici).
+        image_io = io.BytesIO(image_png)
+        largeur_cible = 8.5 * cm
+        lecteur_taille = ImageReader(image_io)
+        largeur_px, hauteur_px = lecteur_taille.getSize()
+        hauteur_cible = largeur_cible * (hauteur_px / largeur_px)
+        image_io.seek(0)
+        image_pdf = Image(image_io, width=largeur_cible, height=hauteur_cible)
+        image_pdf.hAlign = "CENTER"
+        elements.append(image_pdf)
+        if legende_image:
+            elements.append(Paragraph(legende_image, disclaimer_style))
+        elements.append(Spacer(1, 14))
+
+    if lignes_tableau_secondaire:
+        if titre_tableau_secondaire:
+            elements.append(Paragraph(f"<b>{titre_tableau_secondaire}</b>", corps_style))
+            elements.append(Spacer(1, 4))
+        lignes_secondaires_formatees = [
+            [Paragraph(str(cellule), corps_style) for cellule in ligne]
+            for ligne in lignes_tableau_secondaire
+        ]
+        table_secondaire = Table(lignes_secondaires_formatees, hAlign="LEFT")
+        table_secondaire.setStyle(TableStyle([
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("TEXTCOLOR", (0, 0), (-1, 0), NAVY),
+            ("LINEBELOW", (0, 0), (-1, 0), 0.9, NAVY),
+            ("LINEBELOW", (0, 1), (-1, -1), 0.4, GRILLE),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ]))
+        elements.append(table_secondaire)
         elements.append(Spacer(1, 16))
 
     if hypotheses:

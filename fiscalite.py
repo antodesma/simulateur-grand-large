@@ -82,14 +82,17 @@ TAUX_SALARIE_T2 = (
 )
 
 
-def charges_sur_brut(brut):
+def charges_sur_brut(brut, pass_value=PASS_2026):
     """
     Calcule les charges patronales et salariales pour un brut annuel donné,
     en tenant compte du seuil PASS (tranche 1 / tranche 2).
+    pass_value : surcharge du PASS, uniquement pour tester la sensibilité du
+    résultat à ce seuil (graphique tornado) - la valeur réelle PASS_2026
+    reste le défaut partout ailleurs dans l'outil.
     Renvoie (charges_employeur, charges_salarie).
     """
-    tranche1 = min(brut, PASS_2026)
-    tranche2 = max(0, brut - PASS_2026)
+    tranche1 = min(brut, pass_value)
+    tranche2 = max(0, brut - pass_value)
 
     charges_employeur = (
         brut * TAUX_EMPLOYEUR_FLAT

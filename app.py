@@ -7,9 +7,21 @@ une interface cliquable. Outil informatif uniquement - voir le bandeau de
 non-responsabilité en haut de page.
 """
 
+import os
+
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+
+# Export PNG des graphiques (synthèse PDF) : kaleido a besoin d'un Chrome.
+# Sur l'environnement de développement Claude, un Chromium est déjà
+# installé à ce chemin précis mais jamais détecté automatiquement par
+# kaleido - on ne force BROWSER_PATH que si ce chemin existe vraiment, pour
+# ne jamais interférer avec le Chrome que kaleido trouve normalement sur la
+# machine d'Antonin (ou n'importe quelle autre machine de déploiement).
+_CHROMIUM_SANDBOX_DEV = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+if "BROWSER_PATH" not in os.environ and os.path.exists(_CHROMIUM_SANDBOX_DEV):
+    os.environ["BROWSER_PATH"] = _CHROMIUM_SANDBOX_DEV
 
 from fiscalite import (
     applique_abattement_salaire,
@@ -1363,6 +1375,38 @@ with tab2:
         graine=42,
     )
 
+    # Comparateur optionnel avec un second panier : pour montrer l'arbitrage
+    # risque/rendement directement sur le graphique, sans dupliquer tout le
+    # dispositif (profit/horizon restent ceux du panier principal ci-dessus -
+    # seuls le rendement moyen et la volatilité changent). Les paniers fixes
+    # autres que celui déjà sélectionné comme panier principal, jamais "Sur
+    # mesure" (propre à l'utilisateur, pas une référence stable à comparer).
+    titre_sous_section("Comparer avec un second panier (optionnel)")
+    paniers_comparables = [nom for nom in PANIERS if nom != profil]
+    panier_comparaison = st.segmented_control(
+        "Comparer avec un second panier",
+        ["Aucun"] + paniers_comparables,
+        default="Aucun",
+        label_visibility="collapsed",
+        key="panier_comparaison",
+    )
+    resultat_simu_cmp = None
+    if panier_comparaison and panier_comparaison != "Aucun":
+        resultat_panier_cmp = rendement_volatilite_panier(PANIERS[panier_comparaison])
+        resultat_simu_cmp = simulation_comparaison(
+            profit_annuel=profit_annuel,
+            rendement_moyen=resultat_panier_cmp["rendement_moyen"],
+            volatilite=resultat_panier_cmp["volatilite"],
+            horizon_annees=horizon,
+            nb_simulations=1500,
+            graine=42,  # même graine : les deux paniers sont comparés sur les mêmes tirages de marché
+        )
+        st.caption(
+            f"Panier « {panier_comparaison} » affiché en tirets, pour comparaison - rendement moyen "
+            f"{resultat_panier_cmp['rendement_moyen']:.1%}, volatilité {resultat_panier_cmp['volatilite']:.1%}. "
+            f"Seules ses médianes sont affichées (pas sa fourchette P10-P90), pour que le graphique reste lisible."
+        )
+
     annees = list(range(1, horizon + 1))
 
     valeur_finale_directe = resultat_simu["directe"][50][-1]
@@ -1404,6 +1448,33 @@ with tab2:
             fillcolor=rgba_depuis_hex(couleur, 0.12), legendgroup=cle, showlegend=False,
             hovertemplate=f"{nom} (pessimiste, P10) : %{{y:,.0f}} €<extra></extra>",
         )
+
+    # Panier de comparaison (optionnel) : seulement les médianes, en tirets,
+    # sans fourchette P10-P90 ni remplissage - sinon 4 bandes superposées
+    # rendraient le graphique illisible. Même logique de tri par valeur
+    # finale décroissante que pour le panier principal.
+    if resultat_simu_cmp is not None:
+        series_fig2_cmp = [
+            {"cle": "directe", "nom": "Direct", "couleur": COULEUR_SALAIRE, "valeur_finale": resultat_simu_cmp["directe"][50][-1]},
+            {"cle": "holding", "nom": "Holding", "couleur": COULEUR_DIVIDENDE, "valeur_finale": resultat_simu_cmp["holding"][50][-1]},
+        ]
+        series_fig2_cmp.sort(key=lambda s: s["valeur_finale"], reverse=True)
+        for serie in series_fig2_cmp:
+            cle, nom, couleur = serie["cle"], serie["nom"], serie["couleur"]
+            fig2.add_scatter(
+                x=annees, y=resultat_simu_cmp[cle][50], mode="lines",
+                name=f"{nom} ({panier_comparaison})", legendgroup=f"{cle}_cmp",
+                line=dict(color=couleur, width=2, dash="dot", shape="spline", smoothing=0.3),
+                hovertemplate=f"{nom} ({panier_comparaison}, médiane) : %{{y:,.0f}} €<extra></extra>",
+            )
+            fig2.add_scatter(
+                x=[horizon], y=[serie["valeur_finale"]], mode="markers+text",
+                legendgroup=f"{cle}_cmp", showlegend=False,
+                marker=dict(size=7, symbol="diamond", color=couleur, line=dict(color=SURFACE_CARTE, width=1.5)),
+                text=[f"  {fmt_euro(serie['valeur_finale'])}"], textposition="middle right",
+                textfont=dict(size=12, color=couleur), hoverinfo="skip", cliponaxis=False,
+            )
+
     # Points + étiquettes de valeur en bout de ligne - pour lire le résultat
     # final sans survoler le graphique. legendgroup="directe"/"holding" :
     # indispensable pour qu'isoler une série depuis la légende (groupclick=
@@ -1506,6 +1577,34 @@ with tab2:
             ]
             for annee in annees_cles
         ]
+
+        # Détail par classe d'actifs du panier retenu - même contenu que
+        # l'expander "Hypothèses de rendement" de l'interface, pour que la
+        # synthèse PDF emportée en rendez-vous tienne seule, sans écran.
+        lignes_pdf_classes = [["Classe d'actifs", "Poids", "Rendement moyen", "Source"]]
+        for cle_classe, classe in CLASSES_ACTIFS.items():
+            poids_classe = ponderations.get(cle_classe, 0)
+            if poids_classe <= 0.001:
+                continue
+            rendement_classe = classe.rendement_moyen
+            source_classe = classe.source_rendement
+            if rendements_personnalises and abs(rendements_personnalises.get(cle_classe, rendement_classe) - rendement_classe) > 0.0005:
+                rendement_classe = rendements_personnalises[cle_classe]
+                source_classe = "Hypothèse manuelle (modifiée par l'utilisateur)"
+            lignes_pdf_classes.append([
+                classe.libelle, f"{poids_classe:.0%}", f"{rendement_classe:.1%}", source_classe,
+            ])
+
+        # Image du donut de composition - best-effort : l'export PNG dépend
+        # d'un Chrome que kaleido sait trouver (présent sur la plupart des
+        # machines, ou téléchargeable via `plotly_get_chrome`). S'il est
+        # introuvable, la synthèse PDF reste générée, simplement sans image.
+        image_panier_png = None
+        try:
+            image_panier_png = fig_panier.to_image(format="png", width=420, height=340, scale=2)
+        except Exception:
+            image_panier_png = None
+
         pdf_bytes_trajectoire = generer_pdf_scenario(
             titre="Direct vs holding, sur plusieurs années",
             sous_titre=f"Profit annuel {fmt_euro(profit_annuel)} — horizon {horizon} ans — panier {profil}",
@@ -1517,6 +1616,14 @@ with tab2:
                 ("Écart médian en fin d'horizon", fmt_euro(ecart_mediane_final, signe=True)),
             ],
             lignes_tableau=lignes_pdf_trajectoire,
+            image_png=image_panier_png,
+            legende_image=(
+                f"Composition du panier « {profil} » retenu pour cette simulation - rendement moyen "
+                f"pondéré {rendement_moyen:.1%}, volatilité {volatilite:.1%} (répartition illustrative, "
+                f"pas la grille réelle de Grand Large Patrimoine)."
+            ),
+            titre_tableau_secondaire="Détail par classe d'actifs",
+            lignes_tableau_secondaire=lignes_pdf_classes,
             hypotheses=[
                 "Profit annuel avant impôt supposé constant sur tout l'horizon.",
                 "Scénario direct : profit distribué en dividende chaque année (IS puis PFU), "

@@ -3,3 +3,4 @@ pandas>=3.0
 plotly>=7.1
 numpy>=2.5
 reportlab>=4.0
+kaleido>=1.0  # export des graphiques Plotly en PNG, utilisé dans la synthèse PDF
