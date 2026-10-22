@@ -46,6 +46,7 @@ from paniers import CLASSES_ACTIFS, PANIERS, rendement_volatilite_panier
 from trajectoire import comparer
 from demembrement import comparer_transmission, pourcentage_usufruit
 from succession import ABATTEMENT_TIERS, comparer_liens_parente
+from ifi import ABATTEMENT_RESIDENCE_PRINCIPALE, BAREME_IFI, SEUIL_ASSUJETTISSEMENT_IFI, synthese_ifi
 from pacte_dutreil import (
     calcul_transmission_dutreil,
     CONDITIONS_PACTE_DUTREIL,
@@ -576,12 +577,13 @@ with st.expander("Comment utiliser ce simulateur (à lire en premier)", expanded
         "Onglet « Démembrement de propriété » : pour transmettre un bien aux enfants, comparez donation en pleine propriété et donation de la seule nue-propriété.",
         "Onglet « Succession » : au décès, combien reste-t-il net selon qui hérite - conjoint, enfant, frère ou sœur, ou un tiers sans lien de parenté ?",
         "Onglet « Assurance-vie » : combien reste-t-il net lors d'un rachat, ou pour les bénéficiaires à la transmission - selon l'âge du souscripteur au moment des versements ?",
+        "Onglet « IFI » : le patrimoine immobilier (hors résidence principale partiellement abattue, hors biens professionnels) dépasse-t-il le seuil d'assujettissement, et pour combien ?",
         "Onglet « Note Grand Large » : les chiffres de marché et seuils réglementaires utilisés ailleurs dans l'outil, sourcés et datés.",
         "Dans chaque onglet, les montants se modifient librement — aucun résultat n'est figé, tout se recalcule en direct.",
     ])
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-    ["Rémunération annuelle", "Trajectoire pluriannuelle", "Démembrement de propriété", "Succession", "Assurance-vie", "Note Grand Large"]
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+    ["Rémunération annuelle", "Trajectoire pluriannuelle", "Démembrement de propriété", "Succession", "Assurance-vie", "IFI", "Note Grand Large"]
 )
 
 # Barre d'outils Plotly activée (zoom rectangle, panoramique, réinitialiser,
@@ -2564,8 +2566,168 @@ with tab5:
     )
 
 
-# --- Onglet 6 : veille marchés & produits, calée sur les solutions GLP ---
+# --- Onglet 6 : IFI (impôt sur la fortune immobilière) ---
 with tab6:
+    entete_section(
+        "IFI : patrimoine immobilier et seuil d'assujettissement",
+        "Barème progressif, décote et abattement de 30 % sur la résidence principale — articles 964, 973 et 977 du CGI",
+    )
+    pitch_usage(
+        "<strong>Le client a un patrimoine immobilier conséquent et se demande s'il est "
+        "assujetti à l'IFI, et pour combien ?</strong> Le seuil (1,3 M€) et le barème "
+        "progressif (qui démarre, lui, à 800 000 €) sont deux choses différentes - cet "
+        "onglet calcule l'un et l'autre, avec l'abattement de 30 % sur la résidence "
+        "principale et la décote qui lisse l'entrée dans l'impôt."
+    )
+
+    with st.expander("Comment lire ce calcul", expanded=True):
+        st.markdown(
+            "- **Seuil d'assujettissement : 1 300 000 €** de patrimoine immobilier net "
+            "taxable (article 964 du CGI) - en-dessous, aucun IFI, même pas sur la "
+            "fraction au-dessus de 800 000 €.\n"
+            "- **Une fois ce seuil franchi**, le barème progressif s'applique dès "
+            "**800 001 €** (article 977 du CGI) : 0,5 % jusqu'à 1,3 M€, 0,7 % jusqu'à "
+            "2,57 M€, 1 % jusqu'à 5 M€, 1,25 % jusqu'à 10 M€, 1,5 % au-delà.\n"
+            "- **Résidence principale** : abattement de **30 %** sur sa valeur (article "
+            "973 du CGI) - uniquement si détenue en direct, pas via une SCI. Les autres "
+            "biens immobiliers (résidences secondaires, locatifs, parts de SCI non "
+            "professionnelle) sont retenus à 100 %.\n"
+            "- **Décote** entre 1,3 M€ et 1,4 M€ de patrimoine net taxable : lisse l'effet "
+            "de seuil à l'entrée dans l'IFI.\n"
+            "- **Biens professionnels** (ex. une holding animatrice où le dirigeant exerce "
+            "sa fonction principale) : **exclus de l'assiette**, sous conditions précises "
+            "- ce module suppose que ce tri est déjà fait et ne demande que le patrimoine "
+            "immobilier NON professionnel.\n"
+            "- Ce module ne modélise pas le plafonnement de l'IFI (IFI + IR de l'année "
+            "précédente ≤ 75 % des revenus de cette même année, article 979 du CGI), qui "
+            "dépend de l'ensemble des revenus du foyer."
+        )
+
+    col_ifi1, col_ifi2 = st.columns(2)
+    with col_ifi1:
+        valeur_residence_ifi = st.number_input(
+            "Valeur de la résidence principale (€, détenue en direct)", min_value=0, max_value=20_000_000,
+            value=1_200_000, step=50_000,
+        )
+        st.caption(f"→ {fmt_euro(valeur_residence_ifi)}")
+        valeur_autres_biens_ifi = st.number_input(
+            "Autres biens immobiliers (€, résidences secondaires, locatifs, parts de SCI non professionnelle)",
+            min_value=0, max_value=50_000_000, value=800_000, step=50_000,
+        )
+        st.caption(f"→ {fmt_euro(valeur_autres_biens_ifi)}")
+    with col_ifi2:
+        dettes_ifi = st.number_input(
+            "Dettes déductibles (€, emprunts immobiliers restant dus...)", min_value=0, max_value=20_000_000,
+            value=300_000, step=25_000,
+        )
+        st.caption(f"→ {fmt_euro(dettes_ifi)}")
+        st.caption(
+            f"L'abattement de {ABATTEMENT_RESIDENCE_PRINCIPALE:.0%} ne s'applique qu'à la "
+            f"résidence principale détenue en direct ; le seuil d'assujettissement est de "
+            f"{fmt_euro(SEUIL_ASSUJETTISSEMENT_IFI)}."
+        )
+
+    resultat_ifi = synthese_ifi(valeur_residence_ifi, valeur_autres_biens_ifi, dettes_ifi)
+
+    col_kpi_ifi1, col_kpi_ifi2, col_kpi_ifi3 = st.columns(3)
+    with col_kpi_ifi1:
+        carte_kpi(
+            "Patrimoine net taxable", fmt_euro(resultat_ifi["assiette"]), ENCRE_MUTED,
+            f"Après abattement de 30 % sur la résidence principale et déduction des dettes - "
+            + ("assujetti à l'IFI." if resultat_ifi["assujetti"] else "sous le seuil de 1 300 000 €, pas d'IFI."),
+        )
+    with col_kpi_ifi2:
+        carte_kpi(
+            "IFI brut (avant décote)", fmt_euro(resultat_ifi["ifi_brut"]), COULEUR_SALAIRE,
+            f"Décote appliquée : {fmt_euro(resultat_ifi['decote'])}." if resultat_ifi["decote"] > 0
+            else "Pas de décote (hors de la fourchette 1,3 M€ - 1,4 M€).",
+        )
+    with col_kpi_ifi3:
+        carte_kpi(
+            "IFI net dû", fmt_euro(resultat_ifi["ifi_net"]), COULEUR_DEMEMBREMENT,
+            "Montant dû au titre de l'IFI, décote déduite.",
+        )
+
+    fig_ifi = go.Figure()
+    fig_ifi.add_bar(
+        x=["Patrimoine net taxable", "IFI brut", "Décote", "IFI net dû"],
+        y=[resultat_ifi["assiette"], resultat_ifi["ifi_brut"], -resultat_ifi["decote"], resultat_ifi["ifi_net"]],
+        marker_color=[ENCRE_MUTED, COULEUR_SALAIRE, COULEUR_JAUNE, COULEUR_DEMEMBREMENT],
+        text=[fmt_euro(v) for v in [resultat_ifi["assiette"], resultat_ifi["ifi_brut"], resultat_ifi["decote"], resultat_ifi["ifi_net"]]],
+        textposition="outside", width=0.5,
+        hovertemplate="%{x} : %{y:,.0f} €<extra></extra>",
+    )
+    fig_ifi = _mise_en_forme_graphique(fig_ifi, "Décomposition de l'IFI", "Montant (€)")
+    fig_ifi.update_xaxes(showgrid=False)
+    st.plotly_chart(fig_ifi, width="stretch", config=CONFIG_GRAPHIQUE)
+
+    with st.expander("Voir le barème officiel (article 977 du CGI)"):
+        df_bareme_ifi = pd.DataFrame(
+            {"Taux": [f"{taux:.2%}" for _, taux in BAREME_IFI]},
+            index=[
+                "Jusqu'à 800 000 €", "De 800 001 € à 1 300 000 €", "De 1 300 001 € à 2 570 000 €",
+                "De 2 570 001 € à 5 000 000 €", "De 5 000 001 € à 10 000 000 €", "Au-delà de 10 000 000 €",
+            ],
+        )
+        st.dataframe(df_bareme_ifi, width="stretch")
+
+    col_csv_ifi, col_pdf_ifi = st.columns(2)
+    df_ifi = pd.DataFrame(
+        {
+            "Valeur": [
+                valeur_residence_ifi, valeur_autres_biens_ifi, dettes_ifi,
+                resultat_ifi["assiette"], resultat_ifi["ifi_brut"], resultat_ifi["decote"], resultat_ifi["ifi_net"],
+            ]
+        },
+        index=[
+            "Résidence principale (valeur brute)", "Autres biens immobiliers", "Dettes déductibles",
+            "Patrimoine net taxable", "IFI brut", "Décote", "IFI net dû",
+        ],
+    )
+    with col_csv_ifi:
+        st.download_button(
+            "Télécharger ce scénario (CSV)",
+            data=df_ifi.to_csv().encode("utf-8"),
+            file_name=f"ifi_{int(resultat_ifi['assiette'])}.csv",
+            mime="text/csv",
+        )
+    with col_pdf_ifi:
+        lignes_pdf_ifi = [["Poste", "Valeur"]] + [
+            [str(poste), fmt_euro(valeur)] for poste, valeur in zip(df_ifi.index, df_ifi["Valeur"])
+        ]
+        pdf_bytes_ifi = generer_pdf_scenario(
+            titre="IFI : patrimoine immobilier et seuil d'assujettissement",
+            sous_titre=f"Patrimoine net taxable de {fmt_euro(resultat_ifi['assiette'])} — articles 964, 973 et 977 du CGI",
+            kpis=[
+                ("Patrimoine net taxable", fmt_euro(resultat_ifi["assiette"])),
+                ("IFI brut", fmt_euro(resultat_ifi["ifi_brut"])),
+                ("IFI net dû", fmt_euro(resultat_ifi["ifi_net"])),
+            ],
+            lignes_tableau=lignes_pdf_ifi,
+            hypotheses=[
+                f"Seuil d'assujettissement de {fmt_euro(SEUIL_ASSUJETTISSEMENT_IFI)} (article 964 du CGI) ; "
+                "au-delà, barème progressif à partir de 800 000 € (article 977 du CGI).",
+                f"Abattement de {ABATTEMENT_RESIDENCE_PRINCIPALE:.0%} sur la résidence principale détenue en "
+                "direct (article 973 du CGI) ; autres biens immobiliers retenus à 100 %.",
+                "Décote appliquée entre 1,3 M€ et 1,4 M€ de patrimoine net taxable pour lisser l'entrée dans l'impôt.",
+                "Les biens professionnels (ex. holding animatrice) sont supposés déjà exclus du montant saisi - "
+                "ce module ne les qualifie pas lui-même.",
+                "Le plafonnement de l'IFI (article 979 du CGI, lié aux revenus du foyer) n'est pas modélisé ici.",
+            ],
+        )
+        st.download_button(
+            "Télécharger la synthèse (PDF)",
+            data=pdf_bytes_ifi,
+            file_name=f"synthese_ifi_{int(resultat_ifi['assiette'])}.pdf",
+            mime="application/pdf",
+            type="primary",
+        )
+
+    glossaire_expander(["IFI", "Décote (IFI)", "Biens professionnels (IFI)", "Abattement"], titre="Glossaire — IFI")
+
+
+# --- Onglet 7 : veille marchés & produits, calée sur les solutions GLP ---
+with tab7:
     entete_section(
         "Note Grand Large",
         "Veille marchés & produits, organisée autour des solutions affichées sur grandlargepatrimoine.fr",

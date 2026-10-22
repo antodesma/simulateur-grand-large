@@ -1,6 +1,6 @@
 # Simulateur patrimonial — Grand Large Patrimoine
 
-**Rémunération du dirigeant, trajectoire holding, démembrement de propriété, succession, assurance-vie et veille marchés — dans un seul outil, avec chaque hypothèse sourcée et modifiable.**
+**Rémunération du dirigeant, trajectoire holding, démembrement de propriété, succession, assurance-vie, IFI et veille marchés — dans un seul outil, avec chaque hypothèse sourcée et modifiable.**
 
 Projet réalisé par Antonin Desmazures pendant un stage chez Happy Capital / My Capital Immo, pour démontrer une approche d'ingénierie patrimoniale à [Grand Large Patrimoine](https://grandlargepatrimoine.fr) (family office, Paris).
 
@@ -14,7 +14,7 @@ Un dirigeant de société qui se demande *« salaire ou dividende ? »*, *« je 
 
 **Ce que l'outil ne fait pas** : il ne recommande aucune décision, aucun produit, aucun montant. Chaque hypothèse est affichée et modifiable. Il ne remplace pas l'analyse d'un professionnel — voir [Limites et avertissements](#limites-et-avertissements).
 
-## Les 6 modules
+## Les 7 modules
 
 ### 1 — Rémunération annuelle
 Salaire vs dividende, avec un choix de la forme juridique du dirigeant : SASU (président, assimilé salarié — charges patronales et salariales par tranche de PASS) ou SARL (gérant majoritaire, travailleur non salarié — cotisations TNS, sans distinction patronal/salarial, et réintégration des dividendes excédant 10 % du capital social dans l'assiette des cotisations, article L131-6 du code de la sécurité sociale). Abattement de 10 % pour frais professionnels, IS à 15 %/25 %, barème IR progressif, PFU sur dividendes. Cascade interactive (waterfall) du coût total entreprise jusqu'au net en poche pour les deux scénarios (salaire et dividende), détail du calcul étape par étape, comparateur direct des 4 scénarios (SASU/SARL × salaire/dividende) sans changer de réglage, export CSV et PDF (synthèse one-pager).
@@ -45,17 +45,20 @@ Au décès (hors donation), les droits dus dépendent avant tout du lien de pare
 ### 5 — Assurance-vie
 Fiscalité du rachat (retrait du vivant) et de la transmission au décès. Pour un rachat, seule la part de gains comprise dans le retrait est taxée : régime du PFU pour les versements à partir du 27/09/2017 (12,8 % avant 8 ans, 7,5 % après 8 ans dans la limite de 150 000 € de versements cumulés, 12,8 % au-delà), abattement annuel de 4 600 €/9 200 € après 8 ans, et 17,2 % de prélèvements sociaux toujours dus sans abattement. Pour la transmission, c'est l'âge du souscripteur au moment de CHAQUE versement qui détermine le régime applicable : article 990 I avant 70 ans (abattement de 152 500 € par bénéficiaire, puis 20 %/31,25 % selon le seuil de 700 000 €) ou article 757 B après 70 ans (seules les primes versées sont taxables, les gains étant intégralement exonérés, après un abattement de 30 500 € cette fois GLOBAL - partagé entre tous les bénéficiaires - puis taxation du solde au même barème progressif des droits de succession en ligne directe que le module de démembrement et de succession, réutilisé tel quel plutôt que dupliqué).
 
-### 6 — Note Grand Large (veille marchés & produits)
+### 6 — IFI
+Impôt sur la fortune immobilière : patrimoine immobilier net taxable (abattement de 30 % sur la résidence principale détenue en direct, dettes déductibles), seuil d'assujettissement de 1 300 000 € (en-deçà, aucun IFI, même pas sur la fraction au-dessus de 800 000 €), barème progressif à 6 tranches (article 977 du CGI) et décote qui lisse l'entrée dans l'impôt entre 1,3 M€ et 1,4 M€. Les biens professionnels (ex. une holding animatrice) sont supposés déjà exclus du montant saisi — ce module ne les qualifie pas lui-même, ce tri restant un sujet à conditions précises et souvent contentieux.
+
+### 7 — Note Grand Large (veille marchés & produits)
 Indicateurs de marché et seuils réglementaires organisés autour des 6 solutions réellement affichées sur grandlargepatrimoine.fr (placements financiers, immobilier, non coté, ingénierie fiscale du dirigeant, transmission), avec source et date pour chaque chiffre, un signal visuel sur les données à recouper avant diffusion, une ligne "en rendez-vous" par indicateur (ce qu'il change concrètement face à un client), et une checklist de rafraîchissement explicite — ce n'est pas un flux temps réel, c'est un instantané assumé comme tel. Une "règle fiscale niche du jour" (mécanismes patrimoniaux stables et sourcés, choisis pour être souvent mal connus plutôt que pour leur actualité) complète la page en rotation quotidienne.
 
 ![Note Grand Large](screenshots/04_veille.png)
 
-Chaque onglet (sauf la veille) propose aussi un export PDF en plus du CSV, et un glossaire dépliable des termes techniques employés (PASS, TNS, PFU, démembrement, usufruit, article 990 I, article 757 B, lien de parenté...), pour un lecteur non-initié.
+Chaque onglet (sauf la veille) propose aussi un export PDF en plus du CSV, et un glossaire dépliable des termes techniques employés (PASS, TNS, PFU, démembrement, usufruit, article 990 I, article 757 B, lien de parenté, IFI, décote...), pour un lecteur non-initié.
 
 ## Rigueur méthodologique
 
 - **Aucune hypothèse inventée** : chaque seuil fiscal et chaque chiffre de marché est sourcé (CGI, ACPR, ASPIM, France Invest, France Assureurs, Banque de France...), avec sa date de validité.
-- **114 tests automatisés** (`tests_sanity.py`) : cas limites, monotonie, cohérence de la dichotomie brut ↔ coût total, reproductibilité de la simulation Monte-Carlo, cohérence du barème de démembrement, répartition de l'abattement de donation par enfant et par parent, cohérence du régime TNS (SARL) face au régime assimilé salarié (SASU) sur la rémunération annuelle ET sur la trajectoire pluriannuelle (recoupement exact entre la version scalaire et la version vectorisée Monte-Carlo), exactitude de l'optimiseur de répartition (recoupement exact avec les scénarios purs aux deux extrémités), cohérence de l'analyse de sensibilité (tri par amplitude, recoupement avec l'optimiseur), cohérence du calculateur Pacte Dutreil (conservation de la valeur, économie strictement positive), cohérence des paniers de solutions (répartitions qui somment à 100 %, rendement pondéré correct, normalisation d'une saisie imparfaite), cohérence de la fiscalité de l'assurance-vie (rachat : seuils de 8 ans et de 150 000 € de versements, abattements annuels, prélèvements sociaux toujours dus ; transmission : bascule 990 I / 757 B selon l'âge au versement, répartition de l'abattement 757 B entre bénéficiaires, exonération totale des gains sous ce régime), et cohérence des droits de succession par lien de parenté (exonération totale du conjoint, abattements et barèmes propres à chaque lien, classement croissant des droits dus du conjoint vers le tiers sans lien de parenté).
+- **124 tests automatisés** (`tests_sanity.py`) : cas limites, monotonie, cohérence de la dichotomie brut ↔ coût total, reproductibilité de la simulation Monte-Carlo, cohérence du barème de démembrement, répartition de l'abattement de donation par enfant et par parent, cohérence du régime TNS (SARL) face au régime assimilé salarié (SASU) sur la rémunération annuelle ET sur la trajectoire pluriannuelle (recoupement exact entre la version scalaire et la version vectorisée Monte-Carlo), exactitude de l'optimiseur de répartition (recoupement exact avec les scénarios purs aux deux extrémités), cohérence de l'analyse de sensibilité (tri par amplitude, recoupement avec l'optimiseur), cohérence du calculateur Pacte Dutreil (conservation de la valeur, économie strictement positive), cohérence des paniers de solutions (répartitions qui somment à 100 %, rendement pondéré correct, normalisation d'une saisie imparfaite), cohérence de la fiscalité de l'assurance-vie (rachat : seuils de 8 ans et de 150 000 € de versements, abattements annuels, prélèvements sociaux toujours dus ; transmission : bascule 990 I / 757 B selon l'âge au versement, répartition de l'abattement 757 B entre bénéficiaires, exonération totale des gains sous ce régime), cohérence des droits de succession par lien de parenté (exonération totale du conjoint, abattements et barèmes propres à chaque lien, classement croissant des droits dus du conjoint vers le tiers sans lien de parenté), et cohérence de l'IFI (seuil d'assujettissement distinct du début du barème, valeurs de référence de la décote à 1,3/1,35/1,4 M€, effet de l'abattement de 30 % sur la résidence principale).
 - **Compliance-first** : bandeau de non-responsabilité sur chaque onglet, aucune recommandation de produit ou de montant, fourchettes de risque plutôt que performances ponctuelles.
 - **Charte graphique réelle** : couleurs et typographie extraites du site de Grand Large Patrimoine (et non inventées), palette de données validée accessibilité (contraste, daltonisme).
 
@@ -86,12 +89,13 @@ demembrement.py       # barème art. 669 CGI, droits de donation, pleine propri�
 pacte_dutreil.py      # exonération Dutreil (art. 787 B CGI) pour la transmission d'entreprise
 succession.py         # droits de succession par lien de parenté (conjoint, enfant, frère/sœur, neveu, tiers)
 assurance_vie.py      # rachat (régime du PFU) et transmission (art. 990 I / 757 B du CGI) en assurance-vie
+ifi.py                # impôt sur la fortune immobilière (barème, décote, abattement résidence principale)
 veille.py             # indicateurs de marché et seuils réglementaires sourcés, organisés par solution GLP
 regle_fiscale.py      # catalogue de mécanismes patrimoniaux niches, rotation quotidienne déterministe
 export_pdf.py         # génération des exports PDF one-pager (un par scénario)
 glossaire.py          # définitions courtes des termes techniques, affichées par onglet
-app.py                # interface Streamlit (6 onglets), charte graphique Grand Large Patrimoine
-tests_sanity.py       # 114 vérifications automatisées sur les modules de calcul
+app.py                # interface Streamlit (7 onglets), charte graphique Grand Large Patrimoine
+tests_sanity.py       # 124 vérifications automatisées sur les modules de calcul
 ```
 
 ## Méthodologie — conçu avec Claude (Anthropic)

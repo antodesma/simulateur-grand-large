@@ -35,6 +35,15 @@ from assurance_vie import (
     prelevement_990_i,
     taxation_transmission,
 )
+from ifi import (
+    ABATTEMENT_RESIDENCE_PRINCIPALE,
+    SEUIL_ASSUJETTISSEMENT_IFI,
+    assiette_ifi,
+    calcul_ifi,
+    calcul_ifi_brut,
+    decote_ifi,
+    synthese_ifi,
+)
 from succession import (
     ABATTEMENT_FRERE_SOEUR,
     ABATTEMENT_NEVEU_NIECE,
@@ -539,6 +548,45 @@ verifier(
 verifier(
     "comparer_liens_parente : le net perçu décroît (au sens large) du conjoint vers le tiers sans lien de parenté",
     [r["net"] for r in comparer_liens_parente(500_000)] == sorted([r["net"] for r in comparer_liens_parente(500_000)], reverse=True)
+)
+
+# --- IFI (task #30) ---
+verifier(
+    "assiette_ifi : abattement de 30% bien appliqué sur la résidence principale seule",
+    assiette_ifi(valeur_residence_principale=1_000_000) == 1_000_000 * (1 - ABATTEMENT_RESIDENCE_PRINCIPALE)
+)
+verifier(
+    "assiette_ifi : les dettes déductibles diminuent bien l'assiette, sans jamais la rendre négative",
+    assiette_ifi(valeur_autres_biens_immobiliers=100_000, dettes_deductibles=500_000) == 0
+)
+verifier(
+    "calcul_ifi : patrimoine sous le seuil d'assujettissement de 1 300 000€ -> aucun IFI, même si > 800 000€",
+    calcul_ifi(1_000_000) == 0 and calcul_ifi(SEUIL_ASSUJETTISSEMENT_IFI - 1) == 0
+)
+verifier(
+    "calcul_ifi_brut : tranche à 0% bien appliquée jusqu'à 800 000€",
+    calcul_ifi_brut(800_000) == 0
+)
+verifier(
+    "calcul_ifi_brut : taux de 0,5% appliqué juste au-dessus de 800 000€",
+    abs(calcul_ifi_brut(810_000) - 10_000 * 0.005) < 1e-6
+)
+verifier(
+    "decote_ifi : nulle en-dessous de 1 300 000€ et au-dessus de 1 400 000€, non nulle entre les deux",
+    decote_ifi(1_200_000) == 0 and decote_ifi(1_450_000) == 0 and decote_ifi(1_350_000) > 0
+)
+verifier(
+    "synthese_ifi : au seuil de 1 300 001€, IFI brut de 2 500€ et décote de 1 250€ (valeurs de référence)",
+    abs(synthese_ifi(0, 1_300_001, 0)["ifi_brut"] - 2_500) < 1
+    and abs(synthese_ifi(0, 1_300_001, 0)["decote"] - 1_250) < 1
+)
+verifier(
+    "synthese_ifi : l'IFI net croît (au sens large) avec le patrimoine net taxable",
+    synthese_ifi(0, 2_000_000)["ifi_net"] < synthese_ifi(0, 3_000_000)["ifi_net"] < synthese_ifi(0, 6_000_000)["ifi_net"]
+)
+verifier(
+    "synthese_ifi : à patrimoine identique, détenir sa résidence principale (abattement 30%) laisse un IFI net au plus égal à celui d'un même montant détenu en résidence secondaire (sans abattement)",
+    synthese_ifi(valeur_residence_principale=2_000_000)["ifi_net"] <= synthese_ifi(valeur_autres_biens_immobiliers=2_000_000)["ifi_net"]
 )
 
 print()

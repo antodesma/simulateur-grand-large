@@ -133,6 +133,24 @@ GLOSSAIRE = {
         "survivant et le partenaire de PACS, quel que soit le montant "
         "hérité - instaurée par la loi TEPA de 2007."
     ),
+    "IFI": (
+        "Impôt sur la fortune immobilière - remplace l'ISF depuis 2018. "
+        "Ne porte plus que sur le patrimoine immobilier (hors biens "
+        "professionnels), dû dès que ce patrimoine net taxable dépasse "
+        "1 300 000 € au 1er janvier."
+    ),
+    "Décote (IFI)": (
+        "Mécanisme qui lisse l'entrée dans l'IFI pour un patrimoine net "
+        "taxable compris entre 1 300 000 € et 1 400 000 € - sans elle, "
+        "franchir le seuil de quelques euros ferait basculer "
+        "immédiatement dans tout le barème progressif."
+    ),
+    "Biens professionnels (IFI)": (
+        "Biens exclus de l'assiette de l'IFI lorsqu'ils sont affectés à "
+        "l'activité professionnelle principale du dirigeant (ex. une "
+        "holding animatrice de son groupe) - sous conditions précises, "
+        "souvent source de contentieux avec l'administration fiscale."
+    ),
 }
 
 
