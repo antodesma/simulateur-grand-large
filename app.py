@@ -596,7 +596,11 @@ def _mise_en_forme_graphique(fig, titre, y_titre):
         ),
         margin=dict(t=100, l=10, r=10, b=10),
         hovermode="x unified",
-        dragmode="zoom",
+        # dragmode=False : cliquer-glisser sur le graphique ne déclenche plus
+        # de rectangle de sélection/zoom accidentel (gênant en usage normal,
+        # ex. en essayant juste de survoler le graphique). Le zoom molette
+        # (scrollZoom, dans CONFIG_GRAPHIQUE) reste le moyen de zoomer.
+        dragmode=False,
         # Infobulle en carte marine pleine plutôt que le cadre blanc/gris par
         # défaut de Plotly - qui est l'un des signaux les plus "logiciel de
         # calcul" d'un graphique autrement soigné.
