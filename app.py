@@ -21,7 +21,8 @@ from fiscalite import (
     net_apres_salaire,
     TAUX_PFU,
 )
-from simulation import PROFILS, simulation_comparaison
+from simulation import simulation_comparaison
+from paniers import CLASSES_ACTIFS, PANIERS, normaliser_ponderations, rendement_volatilite_panier
 from trajectoire import comparer
 from demembrement import comparer_transmission, pourcentage_usufruit
 from pacte_dutreil import (
@@ -1075,15 +1076,69 @@ with tab2:
         profit_annuel = st.number_input("Profit annuel réinvesti (€)", min_value=1_000, max_value=500_000, step=1_000, key="profit_input")
         st.caption(f"→ {fmt_euro(profit_annuel)}")
     horizon = col2.slider("Horizon (années)", min_value=2, max_value=25, value=10)
-    profil = col3.selectbox("Profil de rendement (hypothèse, pas une recommandation)", list(PROFILS.keys()) + ["personnalisé"])
+    profil = col3.selectbox(
+        "Panier de solutions (hypothèse, pas une recommandation)",
+        list(PANIERS.keys()) + ["Sur mesure"],
+    )
 
-    if profil == "personnalisé":
-        rendement_moyen = st.slider("Rendement moyen hypothétique (%)", 0.0, 15.0, 5.0) / 100
-        volatilite = st.slider("Volatilité hypothétique (%)", 0.0, 25.0, 8.0) / 100
+    st.caption(
+        "Chaque panier combine les 4 grandes familles de solutions Grand Large Patrimoine (épargne "
+        "sécurisée, immobilier, placements financiers, non coté), avec un rendement moyen sourcé par "
+        "classe - la répartition entre classes reste une illustration pédagogique, pas la grille de "
+        "gestion réelle de Grand Large Patrimoine."
+    )
+
+    profil_slug = {"Prudent": "prudent", "Équilibré": "equilibre", "Dynamique": "dynamique", "Sur mesure": "sur_mesure"}[profil]
+
+    if profil == "Sur mesure":
+        st.caption("Répartition entre les 4 classes d'actifs (doit sommer à 100 %) :")
+        col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+        poids_bruts = {
+            "epargne_securisee": col_p1.slider("Épargne sécurisée (%)", 0, 100, 30),
+            "immobilier_non_cote": col_p2.slider("Immobilier (%)", 0, 100, 30),
+            "marches_financiers": col_p3.slider("Actions (%)", 0, 100, 25),
+            "investissements_non_cotes": col_p4.slider("Non coté (%)", 0, 100, 15),
+        }
+        total_pct = sum(poids_bruts.values())
+        if total_pct == 0:
+            st.warning("Au moins une classe d'actifs doit avoir un poids supérieur à 0 %.")
+            ponderations = {"epargne_securisee": 1.0, "immobilier_non_cote": 0, "marches_financiers": 0, "investissements_non_cotes": 0}
+        else:
+            ponderations = normaliser_ponderations(poids_bruts)
+            if total_pct != 100:
+                st.caption(f"Total saisi : {total_pct} % - renormalisé automatiquement à 100 % au prorata.")
     else:
-        rendement_moyen = PROFILS[profil]["rendement_moyen"]
-        volatilite = PROFILS[profil]["volatilite"]
-        st.caption(f"Profil {profil} : rendement moyen {rendement_moyen:.0%}, volatilité {volatilite:.0%} (hypothèses illustratives)")
+        ponderations = PANIERS[profil]
+        libelles_composition = " / ".join(
+            f"{poids:.0%} {CLASSES_ACTIFS[cle].libelle}" for cle, poids in ponderations.items() if poids > 0
+        )
+        st.caption(f"Composition : {libelles_composition}")
+
+    resultat_panier = rendement_volatilite_panier(ponderations)
+    rendement_moyen = resultat_panier["rendement_moyen"]
+    volatilite = resultat_panier["volatilite"]
+    st.caption(
+        f"Rendement moyen pondéré : {rendement_moyen:.1%} (sourcé par classe d'actifs, voir le détail ci-dessous) - "
+        f"volatilité : {volatilite:.1%} (approximation prudente, voir note méthodologique)."
+    )
+
+    with st.expander("Hypothèses de rendement par classe d'actifs (sourcées)", expanded=False):
+        for cle, classe in CLASSES_ACTIFS.items():
+            poids_classe = ponderations.get(cle, 0)
+            if poids_classe <= 0:
+                continue
+            st.markdown(
+                f"**{classe.libelle}** — poids {poids_classe:.0%} dans ce panier · "
+                f"rendement moyen {classe.rendement_moyen:.1%} · volatilité illustrative {classe.volatilite:.0%}  \n"
+                f"Source : {classe.source_rendement}."
+                + (f"  \n⚠️ {classe.avertissement}" if classe.avertissement else "")
+            )
+        st.caption(
+            "La volatilité du panier est une simple moyenne pondérée des volatilités par classe, pas un vrai "
+            "calcul de variance de portefeuille (il faudrait une matrice de corrélations entre classes). "
+            "C'est une approximation prudente : la volatilité réelle d'un portefeuille diversifié est en "
+            "général inférieure à cette moyenne (effet de la diversification), jamais supérieure."
+        )
 
     resultat_simu = simulation_comparaison(
         profit_annuel=profit_annuel,
@@ -1217,7 +1272,7 @@ with tab2:
         st.download_button(
             "Télécharger cette trajectoire (CSV)",
             data=df_trajectoire.to_csv(index=False).encode("utf-8"),
-            file_name=f"trajectoire_{profil}_{horizon}ans.csv",
+            file_name=f"trajectoire_{profil_slug}_{horizon}ans.csv",
             mime="text/csv",
         )
     with col_pdf2:
@@ -1232,7 +1287,7 @@ with tab2:
         ]
         pdf_bytes_trajectoire = generer_pdf_scenario(
             titre="Direct vs holding, sur plusieurs années",
-            sous_titre=f"Profit annuel {fmt_euro(profit_annuel)} — horizon {horizon} ans — profil {profil}",
+            sous_titre=f"Profit annuel {fmt_euro(profit_annuel)} — horizon {horizon} ans — panier {profil}",
             kpis=[
                 (
                     "Croisement (scénario central)",
@@ -1255,7 +1310,7 @@ with tab2:
         st.download_button(
             "Télécharger la synthèse (PDF)",
             data=pdf_bytes_trajectoire,
-            file_name=f"synthese_trajectoire_{profil}_{horizon}ans.pdf",
+            file_name=f"synthese_trajectoire_{profil_slug}_{horizon}ans.pdf",
             mime="application/pdf",
             type="primary",
         )

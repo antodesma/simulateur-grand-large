@@ -22,7 +22,9 @@ Salaire vs dividende, avec un choix de la forme juridique du dirigeant : SASU (p
 **Optimiseur de répartition** : plutôt que de choisir entre 100 % salaire et 100 % dividende, un balayage exhaustif de toutes les répartitions intermédiaires trouve le point qui laisse le plus de net en poche — parce que les effets de seuil (plafond de la sécurité sociale, tranches de l'IR, seuil de dividende non cotisé en SARL) rendent la fonction non monotone : l'optimum n'est pas toujours à une extrémité.
 
 ### 2 — Trajectoire pluriannuelle
-Garder l'argent en direct vs le faire capitaliser dans une holding, sur plusieurs années. Simulation Monte-Carlo (1500 tirages) avec trois profils de rendement/risque, affichée en fourchette P10–P90 plutôt qu'en point unique — pour ne jamais ressembler à une prévision de performance personnalisée. L'année de croisement (scénario central) est annotée directement sur le graphique.
+Garder l'argent en direct vs le faire capitaliser dans une holding, sur plusieurs années. Simulation Monte-Carlo (1500 tirages), affichée en fourchette P10–P90 plutôt qu'en point unique — pour ne jamais ressembler à une prévision de performance personnalisée. L'année de croisement (scénario central) est annotée directement sur le graphique.
+
+**Paniers de solutions Grand Large** : plutôt que des profils abstraits ("prudent/équilibré/dynamique" détachés de toute classe d'actifs), la simulation combine les 4 grandes familles de solutions réellement proposées par Grand Large Patrimoine (épargne sécurisée, immobilier patrimonial, placements financiers, investissements non cotés), avec un rendement moyen sourcé par classe (ASPIM, France Assureurs, France Invest/EY) — la répartition entre classes reste une construction pédagogique pour cet outil, explicitement présentée comme telle, jamais comme la grille de gestion réelle et confidentielle de Grand Large Patrimoine. Un mode "sur mesure" permet de composer sa propre répartition.
 
 ![Trajectoire pluriannuelle](screenshots/02_trajectoire.png)
 
@@ -43,7 +45,7 @@ Chaque onglet (sauf la veille) propose aussi un export PDF en plus du CSV, et un
 ## Rigueur méthodologique
 
 - **Aucune hypothèse inventée** : chaque seuil fiscal et chaque chiffre de marché est sourcé (CGI, ACPR, ASPIM, France Invest, France Assureurs, Banque de France...), avec sa date de validité.
-- **65 tests automatisés** (`tests_sanity.py`) : cas limites, monotonie, cohérence de la dichotomie brut ↔ coût total, reproductibilité de la simulation Monte-Carlo, cohérence du barème de démembrement, répartition de l'abattement de donation par enfant et par parent, cohérence du régime TNS (SARL) face au régime assimilé salarié (SASU), exactitude de l'optimiseur de répartition (recoupement exact avec les scénarios purs aux deux extrémités), et cohérence du calculateur Pacte Dutreil (conservation de la valeur, économie strictement positive).
+- **76 tests automatisés** (`tests_sanity.py`) : cas limites, monotonie, cohérence de la dichotomie brut ↔ coût total, reproductibilité de la simulation Monte-Carlo, cohérence du barème de démembrement, répartition de l'abattement de donation par enfant et par parent, cohérence du régime TNS (SARL) face au régime assimilé salarié (SASU), exactitude de l'optimiseur de répartition (recoupement exact avec les scénarios purs aux deux extrémités), cohérence du calculateur Pacte Dutreil (conservation de la valeur, économie strictement positive), et cohérence des paniers de solutions (répartitions qui somment à 100 %, rendement pondéré correct, normalisation d'une saisie imparfaite).
 - **Compliance-first** : bandeau de non-responsabilité sur chaque onglet, aucune recommandation de produit ou de montant, fourchettes de risque plutôt que performances ponctuelles.
 - **Charte graphique réelle** : couleurs et typographie extraites du site de Grand Large Patrimoine (et non inventées), palette de données validée accessibilité (contraste, daltonisme).
 
@@ -68,7 +70,8 @@ fiscalite.py          # charges sociales SASU (assimilé salarié), IS, IR, abat
 fiscalite_tns.py      # cotisations sociales SARL (gérant majoritaire, TNS) et réintégration des dividendes
 optimisation.py       # optimiseur de répartition salaire/rémunération vs dividende (balayage exhaustif)
 trajectoire.py       # comparaison directe vs holding, déterministe
-simulation.py        # même comparaison, Monte-Carlo (profils prudent/équilibre/dynamique)
+simulation.py        # même comparaison, Monte-Carlo (rendement/volatilité en paramètres)
+paniers.py            # paniers de solutions GLP (épargne, immobilier, actions, non coté) pour la simulation
 demembrement.py       # barème art. 669 CGI, droits de donation, pleine propriété vs démembrement
 pacte_dutreil.py      # exonération Dutreil (art. 787 B CGI) pour la transmission d'entreprise
 veille.py             # indicateurs de marché et seuils réglementaires sourcés, organisés par solution GLP
@@ -76,7 +79,7 @@ regle_fiscale.py      # catalogue de mécanismes patrimoniaux niches, rotation q
 export_pdf.py         # génération des exports PDF one-pager (un par scénario)
 glossaire.py          # définitions courtes des termes techniques, affichées par onglet
 app.py                # interface Streamlit (4 onglets), charte graphique Grand Large Patrimoine
-tests_sanity.py       # 65 vérifications automatisées sur les modules de calcul
+tests_sanity.py       # 76 vérifications automatisées sur les modules de calcul
 ```
 
 ## Méthodologie — conçu avec Claude (Anthropic)

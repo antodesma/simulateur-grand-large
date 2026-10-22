@@ -18,6 +18,7 @@ from fiscalite import (
     PASS_2026,
 )
 from simulation import PROFILS, simulation_comparaison
+from paniers import CLASSES_ACTIFS, PANIERS, normaliser_ponderations, rendement_volatilite_panier
 from trajectoire import comparer
 from demembrement import (
     calcul_droits_donation,
@@ -44,6 +45,17 @@ def verifier(nom, condition):
     if not condition:
         echecs.append(nom)
     print(f"[{statut}] {nom}")
+
+
+def _leve_exception(fonction):
+    """True si l'appel de fonction() lève bien une exception - utile pour
+    vérifier qu'un cas invalide est rejeté plutôt que silencieusement mal
+    calculé (ex. une division par zéro masquée)."""
+    try:
+        fonction()
+        return False
+    except Exception:
+        return True
 
 
 # --- Cas limites évidents ---
@@ -250,6 +262,44 @@ verifier(
 verifier(
     "Dutreil : valeur transmise nulle -> aucun droit, aucune économie",
     calcul_transmission_dutreil(0, 2, 2)["economie"] == 0
+)
+
+for nom_panier, ponderations in PANIERS.items():
+    verifier(
+        f"panier {nom_panier} : la répartition somme à 100 % (±0,1 point)",
+        abs(sum(ponderations.values()) - 1.0) < 0.001,
+    )
+verifier(
+    "panier 100 % épargne sécurisée : rendement/volatilité du panier = ceux de la classe seule",
+    abs(
+        rendement_volatilite_panier({"epargne_securisee": 1.0})["rendement_moyen"]
+        - CLASSES_ACTIFS["epargne_securisee"].rendement_moyen
+    ) < 1e-9
+)
+verifier(
+    "panier 50/50 de deux classes : rendement = moyenne simple des deux rendements",
+    abs(
+        rendement_volatilite_panier({"epargne_securisee": 0.5, "marches_financiers": 0.5})["rendement_moyen"]
+        - (CLASSES_ACTIFS["epargne_securisee"].rendement_moyen + CLASSES_ACTIFS["marches_financiers"].rendement_moyen) / 2
+    ) < 1e-9
+)
+verifier(
+    "panier Dynamique : rendement moyen supérieur au panier Prudent (plus de non coté/actions, moins d'épargne)",
+    rendement_volatilite_panier(PANIERS["Dynamique"])["rendement_moyen"]
+    > rendement_volatilite_panier(PANIERS["Prudent"])["rendement_moyen"]
+)
+verifier(
+    "panier Dynamique : volatilité supérieure au panier Prudent",
+    rendement_volatilite_panier(PANIERS["Dynamique"])["volatilite"]
+    > rendement_volatilite_panier(PANIERS["Prudent"])["volatilite"]
+)
+verifier(
+    "normaliser_ponderations : une répartition saisie à 90 (pas 100) est bien remise à somme 1.0",
+    abs(sum(normaliser_ponderations({"epargne_securisee": 60, "marches_financiers": 30}).values()) - 1.0) < 1e-9
+)
+verifier(
+    "normaliser_ponderations : poids tous nuls -> erreur plutôt qu'une division silencieuse par zéro",
+    _leve_exception(lambda: normaliser_ponderations({"epargne_securisee": 0, "marches_financiers": 0}))
 )
 
 print()
