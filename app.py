@@ -65,6 +65,7 @@ from fiscalite_tns import (
     net_apres_remuneration_tns,
     seuil_dividendes_sans_cotisations,
 )
+from copilote import cle_api_configuree, repondre
 from export_pdf import generer_pdf_scenario
 from glossaire import termes_glossaire
 from optimisation import analyse_sensibilite, repartition_optimale
@@ -604,11 +605,12 @@ with st.expander("Comment utiliser ce simulateur (à lire en premier)", expanded
         "Onglet « SCI (IS vs IR) » : pour détenir un bien locatif en société, IS (amortissement, double imposition) ou IR (pas d'amortissement, abattement durée de détention) - lequel laisse le plus au terme ?",
         "Onglet « PER » : verser sur un plan d'épargne retraite plutôt que percevoir en net - troisième levier d'arbitrage de la rémunération, à côté du salaire et du dividende.",
         "Onglet « Note Grand Large » : les chiffres de marché et seuils réglementaires utilisés ailleurs dans l'outil, sourcés et datés.",
+        "Onglet « Copilote IA » : pose une question sur un mécanisme fiscal ou la logique d'un module - réponses appuyées sur le glossaire sourcé de l'outil, jamais un conseil personnalisé.",
         "Dans chaque onglet, les montants se modifient librement — aucun résultat n'est figé, tout se recalcule en direct.",
     ])
 
-tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(
-    ["Rémunération annuelle", "Trajectoire pluriannuelle", "Démembrement de propriété", "Succession", "Assurance-vie", "IFI", "SCI (IS vs IR)", "PER", "Note Grand Large"]
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = st.tabs(
+    ["Rémunération annuelle", "Trajectoire pluriannuelle", "Démembrement de propriété", "Succession", "Assurance-vie", "IFI", "SCI (IS vs IR)", "PER", "Note Grand Large", "Copilote IA"]
 )
 
 # Barre d'outils Plotly activée (zoom rectangle, panoramique, réinitialiser,
@@ -3272,6 +3274,70 @@ with tab9:
 
     with st.expander("Checklist de rafraîchissement — à suivre avant toute utilisation", expanded=True):
         etapes_numerotees(CHECKLIST_RAFRAICHISSEMENT)
+
+with tab10:
+    entete_section(
+        "Copilote IA",
+        "Assistant pédagogique sur les mécanismes fiscaux et la logique de calcul de l'outil",
+    )
+    pitch_usage(
+        "<strong>Une question sur un mécanisme fiscal, ou sur la façon dont un module calcule "
+        "son résultat ?</strong> Demande ici - les réponses s'appuient sur le glossaire sourcé du "
+        "simulateur, pas sur un conseil personnalisé."
+    )
+
+    st.markdown(
+        f"""
+        <div style="background:#ffffff; border:1px solid {BORDURE}; border-left:3px solid {NAVY};
+                    padding:14px 18px; border-radius:0; font-size:0.9rem; color:{ENCRE_SECONDAIRE};
+                    margin-bottom:1rem;">
+            Outil pédagogique interne - ne constitue ni un conseil en investissement, ni un conseil
+            fiscal personnalisé. Le copilote ne voit pas les montants saisis dans les autres onglets :
+            pour une question sur un résultat précis, copie-colle les chiffres affichés à l'écran.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if not cle_api_configuree(st.secrets):
+        st.warning(
+            "Clef API non configurée. Pour activer le copilote, ajoute ta clef Anthropic dans "
+            "`.streamlit/secrets.toml` sous la forme `ANTHROPIC_API_KEY = \"sk-ant-...\"`, "
+            "puis relance l'application.",
+        )
+    else:
+        if "copilote_messages" not in st.session_state:
+            st.session_state.copilote_messages = []
+
+        col_exemples, col_vider = st.columns([4, 1])
+        with col_exemples:
+            st.caption("Exemples : « Quelle différence entre 990 I et 757 B ? », « Comment se calcule l'abattement IFI sur la résidence principale ? »")
+        with col_vider:
+            if st.button("Vider la conversation", use_container_width=True):
+                st.session_state.copilote_messages = []
+                st.rerun()
+
+        for message in st.session_state.copilote_messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+        question = st.chat_input("Pose ta question sur un mécanisme fiscal du simulateur…")
+        if question:
+            st.session_state.copilote_messages.append({"role": "user", "content": question})
+            with st.chat_message("user"):
+                st.markdown(question)
+            with st.chat_message("assistant"):
+                with st.spinner("Réflexion…"):
+                    try:
+                        reponse = repondre(st.session_state.copilote_messages, st.secrets["ANTHROPIC_API_KEY"])
+                    except Exception:
+                        reponse = (
+                            "Désolé, l'appel au copilote a échoué (clef invalide, quota dépassé, ou "
+                            "problème réseau). Réessaie dans un instant, ou vérifie la clef dans "
+                            "`.streamlit/secrets.toml`."
+                        )
+                st.markdown(reponse)
+            st.session_state.copilote_messages.append({"role": "assistant", "content": reponse})
 
 st.markdown('<hr class="filet" style="margin-top:2.5rem;">', unsafe_allow_html=True)
 st.caption("Grand Large Patrimoine — simulateur patrimonial, projet réalisé par Antonin Desmazures.")

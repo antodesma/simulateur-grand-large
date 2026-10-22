@@ -4,3 +4,4 @@ plotly>=7.1
 numpy>=2.5
 reportlab>=4.0
 kaleido>=1.0  # export des graphiques Plotly en PNG, utilisé dans la synthèse PDF
+anthropic>=0.40  # copilote IA (onglet "Copilote IA") - nécessite une clef dans .streamlit/secrets.toml

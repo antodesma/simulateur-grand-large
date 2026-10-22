@@ -71,6 +71,9 @@ Indicateurs de marché et seuils réglementaires organisés autour des 6 solutio
 
 Chaque onglet (sauf la veille) propose aussi un export PDF en plus du CSV, et un glossaire dépliable des termes techniques employés (PASS, TNS, PFU, démembrement, usufruit, article 990 I, article 757 B, lien de parenté, IFI, décote, PER, TMI...), pour un lecteur non-initié.
 
+### Copilote IA
+Assistant pédagogique (onglet « Copilote IA ») qui répond aux questions sur les mécanismes fiscaux couverts par l'outil et sur la logique de calcul de chaque module, via l'API Anthropic (modèle Claude Sonnet 5). Garde-fous volontaires : les réponses s'appuient sur le glossaire déjà vérifié et sourcé de l'outil plutôt que sur la mémoire générale du modèle pour les chiffres, jamais de conseil en investissement personnalisé ni de recommandation de produit ou de prestataire, et le copilote ne voit pas les montants saisis dans les autres onglets (l'utilisateur copie-colle les chiffres affichés pour une question précise). Nécessite une clef API Anthropic dans `.streamlit/secrets.toml` (non versionnée) - sans clef, l'onglet affiche un message explicatif plutôt que de planter.
+
 ## Rigueur méthodologique
 
 - **Aucune hypothèse inventée** : chaque seuil fiscal et chaque chiffre de marché est sourcé (CGI, ACPR, ASPIM, France Invest, France Assureurs, Banque de France...), avec sa date de validité.
@@ -84,12 +87,19 @@ Chaque onglet (sauf la veille) propose aussi un export PDF en plus du CSV, et un
 - **Streamlit** — interface interactive
 - **Plotly** — graphiques
 - **NumPy / pandas** — simulation Monte-Carlo et tableaux de détail
+- **API Anthropic (Claude Sonnet 5)** — copilote IA pédagogique
 
 ## Lancer en local
 
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
+```
+
+Pour activer le copilote IA (optionnel, le reste de l'outil fonctionne sans), créer `.streamlit/secrets.toml` (non versionné) avec :
+
+```toml
+ANTHROPIC_API_KEY = "sk-ant-..."
 ```
 
 ## Structure du repo
@@ -112,7 +122,8 @@ veille.py             # indicateurs de marché et seuils réglementaires sourcé
 regle_fiscale.py      # catalogue de mécanismes patrimoniaux niches, rotation quotidienne déterministe
 export_pdf.py         # génération des exports PDF one-pager (un par scénario)
 glossaire.py          # définitions courtes des termes techniques, affichées par onglet
-app.py                # interface Streamlit (9 onglets), charte graphique Grand Large Patrimoine
+copilote.py           # copilote IA pédagogique (API Anthropic), grounded sur le glossaire
+app.py                # interface Streamlit (10 onglets), charte graphique Grand Large Patrimoine
 tests_sanity.py       # 146 vérifications automatisées sur les modules de calcul
 ```
 
