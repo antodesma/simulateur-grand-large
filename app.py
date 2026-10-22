@@ -53,6 +53,13 @@ CREME = "#f7f5ef"
 COULEUR_SALAIRE = "#2a78d6"    # slot catégoriel 1 - bleu
 COULEUR_DIVIDENDE = "#eb6834"  # slot catégoriel 2 - orange
 COULEUR_DEMEMBREMENT = "#1baf7a"  # slot catégoriel 3 - aqua
+COULEUR_JAUNE = "#eda100"      # slot catégoriel 4 - jaune
+COULEUR_MAGENTA = "#e87ba4"    # slot catégoriel 5 - magenta
+# Une couleur par section de la Note Grand Large (même ordre que
+# TOUTES_SECTIONS), pour que chaque solution GLP garde la même identité
+# visuelle partout dans l'onglet - jamais recyclée, jamais au hasard.
+COULEURS_SECTIONS_VEILLE = [COULEUR_SALAIRE, COULEUR_DIVIDENDE, COULEUR_DEMEMBREMENT, COULEUR_JAUNE, COULEUR_MAGENTA]
+COULEUR_ALERTE = "#fab219"  # accent uniquement (texte en noir dessus pour le contraste) - cf. skill dataviz
 ENCRE_PRIMAIRE = NAVY
 ENCRE_SECONDAIRE = "#4a4860"
 ENCRE_MUTED = "#8b899c"
@@ -269,6 +276,15 @@ st.markdown(
 )
 
 
+def rgba_depuis_hex(hex_color, alpha):
+    """Convertit une couleur hexadécimale (#rrggbb) en chaîne rgba(...) avec
+    la transparence demandée - utilisé pour les zones remplies (bandes
+    P10-P90, aires) à une opacité cohérente avec le reste de l'outil."""
+    hex_color = hex_color.lstrip("#")
+    r, g, b = (int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+    return f"rgba({r},{g},{b},{alpha})"
+
+
 def fmt_euro(montant, signe=False):
     """Formate un montant en euros à la française : espace fine insécable
     comme séparateur de milliers (40 288 €), pas de virgule anglo-saxonne
@@ -398,6 +414,8 @@ def _mise_en_forme_graphique(fig, titre, y_titre):
     # sans devoir s'approcher de l'écran. N'affecte que les traces qui
     # affichent du texte (bar, waterfall) - sans effet sur les courbes.
     fig.update_traces(textfont=dict(size=15, color=ENCRE_PRIMAIRE))
+    # Coins arrondis sur les barres - rendu plus actuel qu'un rectangle plein.
+    fig.update_traces(marker=dict(cornerradius=6), selector=dict(type="bar"))
     return fig
 
 
@@ -761,19 +779,62 @@ with tab2:
 
     annees = list(range(1, horizon + 1))
 
+    valeur_finale_directe = resultat_simu["directe"][50][-1]
+    valeur_finale_holding = resultat_simu["holding"][50][-1]
+    # Les deux étiquettes de fin de ligne : si les valeurs finales sont trop
+    # proches l'une de l'autre, les décaler verticalement pour qu'elles ne se
+    # chevauchent pas (sinon illisible quand direct et holding convergent).
+    ecart_relatif_final = abs(valeur_finale_holding - valeur_finale_directe) / max(valeur_finale_directe, 1)
+    decalage_label = 0 if ecart_relatif_final > 0.04 else (valeur_finale_directe + valeur_finale_holding) * 0.018
+
     fig2 = go.Figure()
-    fig2.add_scatter(x=annees, y=resultat_simu["holding"][90], mode="lines", line=dict(width=0), showlegend=False, hoverinfo="skip")
-    fig2.add_scatter(x=annees, y=resultat_simu["holding"][10], mode="lines", line=dict(width=0), fill="tonexty",
-                      fillcolor="rgba(235,104,52,0.15)", name="Holding (P10-P90)", hoverinfo="skip")
-    fig2.add_scatter(x=annees, y=resultat_simu["directe"][90], mode="lines", line=dict(width=0), showlegend=False, hoverinfo="skip")
-    fig2.add_scatter(x=annees, y=resultat_simu["directe"][10], mode="lines", line=dict(width=0), fill="tonexty",
-                      fillcolor="rgba(42,120,214,0.15)", name="Direct (P10-P90)", hoverinfo="skip")
-    fig2.add_scatter(x=annees, y=resultat_simu["directe"][50], mode="lines", name="Direct (médiane)",
-                      line=dict(color=COULEUR_SALAIRE, width=2.5), hovertemplate="Direct : %{y:,.0f} €<extra></extra>")
-    fig2.add_scatter(x=annees, y=resultat_simu["holding"][50], mode="lines", name="Holding (médiane)",
-                      line=dict(color=COULEUR_DIVIDENDE, width=2.5), hovertemplate="Holding : %{y:,.0f} €<extra></extra>")
+    # Bandes P10-P90 : un seul liséré par série dans la légende (le lien
+    # entre bande et médiane se fait par la couleur, pas par deux entrées).
+    fig2.add_scatter(
+        x=annees, y=resultat_simu["holding"][90], mode="lines", line=dict(width=0),
+        legendgroup="holding", showlegend=False, hoverinfo="skip",
+    )
+    fig2.add_scatter(
+        x=annees, y=resultat_simu["holding"][10], mode="lines", line=dict(width=0), fill="tonexty",
+        fillcolor=rgba_depuis_hex(COULEUR_DIVIDENDE, 0.12), legendgroup="holding", showlegend=False, hoverinfo="skip",
+    )
+    fig2.add_scatter(
+        x=annees, y=resultat_simu["directe"][90], mode="lines", line=dict(width=0),
+        legendgroup="direct", showlegend=False, hoverinfo="skip",
+    )
+    fig2.add_scatter(
+        x=annees, y=resultat_simu["directe"][10], mode="lines", line=dict(width=0), fill="tonexty",
+        fillcolor=rgba_depuis_hex(COULEUR_SALAIRE, 0.12), legendgroup="direct", showlegend=False, hoverinfo="skip",
+    )
+    fig2.add_scatter(
+        x=annees, y=resultat_simu["directe"][50], mode="lines", name="Direct", legendgroup="direct",
+        line=dict(color=COULEUR_SALAIRE, width=3, shape="spline", smoothing=0.3),
+        hovertemplate="Direct : %{y:,.0f} €<extra></extra>",
+    )
+    fig2.add_scatter(
+        x=annees, y=resultat_simu["holding"][50], mode="lines", name="Holding", legendgroup="holding",
+        line=dict(color=COULEUR_DIVIDENDE, width=3, shape="spline", smoothing=0.3),
+        hovertemplate="Holding : %{y:,.0f} €<extra></extra>",
+    )
+    # Points + étiquettes de valeur en bout de ligne - pour lire le résultat
+    # final sans survoler le graphique.
+    fig2.add_scatter(
+        x=[horizon], y=[valeur_finale_directe], mode="markers+text",
+        marker=dict(size=9, color=COULEUR_SALAIRE, line=dict(color=SURFACE_CARTE, width=2)),
+        text=[f"  {fmt_euro(valeur_finale_directe)}"], textposition="middle right",
+        textfont=dict(size=14, color=COULEUR_SALAIRE), showlegend=False, hoverinfo="skip",
+        cliponaxis=False,
+    )
+    fig2.add_scatter(
+        x=[horizon], y=[valeur_finale_holding + decalage_label], mode="markers+text",
+        marker=dict(size=9, color=COULEUR_DIVIDENDE, line=dict(color=SURFACE_CARTE, width=2)),
+        text=[f"  {fmt_euro(valeur_finale_holding)}"], textposition="middle right",
+        textfont=dict(size=14, color=COULEUR_DIVIDENDE), showlegend=False, hoverinfo="skip",
+        cliponaxis=False,
+    )
     fig2 = _mise_en_forme_graphique(fig2, "Direct vs holding — médiane et fourchette de résultats (P10-P90)", "Net si sortie à cette date (€)")
-    fig2.update_xaxes(title="Année")
+    fig2.update_xaxes(title="Année", range=[annees[0] - 0.3, horizon + horizon * 0.22])
+    fig2.update_layout(margin=dict(r=90))
 
     resultat_det = comparer(profit_annuel, rendement_moyen, horizon)
     if resultat_det["annee_croisement"]:
@@ -782,10 +843,14 @@ with tab2:
             line=dict(color=ENCRE_MUTED, width=1.4, dash="dot"),
             annotation_text=f"  Croisement : année {resultat_det['annee_croisement']}",
             annotation_position="top right" if resultat_det["annee_croisement"] <= horizon / 2 else "top left",
-            annotation=dict(font=dict(size=11, color=ENCRE_SECONDAIRE), yshift=-6),
+            annotation=dict(font=dict(size=12, color=ENCRE_SECONDAIRE), yshift=-6),
         )
 
     st.plotly_chart(fig2, width="stretch", config=CONFIG_GRAPHIQUE)
+    st.caption(
+        "Les zones autour des lignes montrent la fourchette P10-P90 (80 % des trajectoires simulées) - "
+        "la ligne pleine est la médiane, pas une prévision garantie."
+    )
 
     ecart_mediane_final = resultat_simu["holding"][50][-1] - resultat_simu["directe"][50][-1]
 
@@ -1071,42 +1136,71 @@ with tab4:
         "Veille marchés & produits, organisée autour des solutions affichées sur grandlargepatrimoine.fr",
     )
 
-    st.markdown(
-        f"""
-        <div style="background:#ffffff; border:1px solid {BORDURE}; border-left:3px solid {NAVY};
-                    padding:14px 18px; border-radius:0; margin-bottom:18px; font-size:0.92rem;
-                    color:{ENCRE_SECONDAIRE};">
-            <strong>Instantané du {DATE_MISE_A_JOUR}</strong> — données publiques, sourcées, figées à cette
-            date. Pas un flux en direct : voir la checklist de rafraîchissement en bas de page avant toute
-            réutilisation. Aucun de ces chiffres ne constitue un conseil en investissement ; les acteurs
-            cités sont ceux que Grand Large Patrimoine mentionne lui-même sur son site (architecture
-            ouverte, aucun produit maison).
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    COULEUR_ALERTE = "#fab219"  # accent uniquement (texte en noir dessus pour le contraste) - cf. skill dataviz
-
-    for section in TOUTES_SECTIONS:
-        st.markdown('<hr class="filet">', unsafe_allow_html=True)
+    col_instantane, col_action = st.columns([3, 1])
+    with col_instantane:
         st.markdown(
-            f'<div style="font-family:\'Libre Caslon Display\', serif; font-weight:400; '
-            f'font-size:1.2rem; color:{NAVY}; margin-bottom:0.1rem;">{section.titre}</div>',
+            f"""
+            <div style="background:#ffffff; border:1px solid {BORDURE}; border-left:3px solid {NAVY};
+                        padding:14px 18px; border-radius:0; font-size:0.92rem;
+                        color:{ENCRE_SECONDAIRE}; height:100%;">
+                <strong>Instantané du {DATE_MISE_A_JOUR}</strong> — données publiques, sourcées, figées à cette
+                date. Pas un flux en direct : chaque chiffre vient d'une source citée, vérifiée à la main.
+                Aucun de ces chiffres ne constitue un conseil en investissement ; les acteurs cités sont ceux
+                que Grand Large Patrimoine mentionne lui-même sur son site (architecture ouverte, aucun
+                produit maison).
+            </div>
+            """,
             unsafe_allow_html=True,
         )
-        st.caption(f"Solution Grand Large Patrimoine concernée : {section.solution_glp}")
+    with col_action:
+        st.markdown(
+            f"""
+            <div style="border:1px dashed {BORDURE}; padding:14px 16px; height:100%;
+                        display:flex; flex-direction:column; justify-content:center; text-align:center;">
+                <div style="font-size:0.78rem; color:{ENCRE_MUTED}; text-transform:uppercase;
+                            letter-spacing:0.04em; margin-bottom:4px;">Pas un flux en direct</div>
+                <div style="font-size:0.85rem; color:{ENCRE_SECONDAIRE};">Pour rafraîchir : checklist ci-dessous ↓</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.write("")
+
+    def entete_sous_section(titre, solution_glp, couleur):
+        st.markdown(
+            f"""
+            <div style="margin-top:0.3rem;">
+                <div style="width:32px; height:4px; background:{couleur}; margin-bottom:0.5rem;"></div>
+                <div style="font-family:'Libre Caslon Display', serif; font-weight:400;
+                            font-size:1.55rem; color:{NAVY}; line-height:1.15;">{titre}</div>
+                <div style="display:inline-flex; align-items:center; gap:6px; margin-top:0.35rem;
+                            font-size:0.82rem; color:{ENCRE_SECONDAIRE};">
+                    <span style="width:7px; height:7px; border-radius:50%; background:{couleur};
+                                 display:inline-block;"></span>
+                    Solution Grand Large Patrimoine concernée : <strong>{solution_glp}</strong>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    for i, section in enumerate(TOUTES_SECTIONS):
+        couleur_section = COULEURS_SECTIONS_VEILLE[i % len(COULEURS_SECTIONS_VEILLE)]
+        st.markdown('<hr class="filet">', unsafe_allow_html=True)
+        entete_sous_section(section.titre, section.solution_glp, couleur_section)
+        st.write("")
 
         for ind in section.indicateurs:
-            bordure = COULEUR_ALERTE if not ind.fiable else GRILLE
+            bordure = COULEUR_ALERTE if not ind.fiable else couleur_section
             etiquette = (
                 '<span style="background:#fff4de; color:#6b4a00; font-size:0.72rem; font-weight:600; '
-                'padding:2px 8px; border-radius:10px; margin-left:8px;">À RECOUPER AVANT DIFFUSION</span>'
+                'padding:2px 8px; border-radius:10px; margin-left:8px; white-space:nowrap;">À RECOUPER AVANT DIFFUSION</span>'
                 if not ind.fiable
                 else ""
             )
             commentaire_html = (
-                f'<div style="font-size:0.85rem; color:{ENCRE_SECONDAIRE}; margin-top:4px;">{ind.commentaire}</div>'
+                f'<div style="font-size:0.85rem; color:{ENCRE_SECONDAIRE}; margin-top:6px; line-height:1.4;">{ind.commentaire}</div>'
                 if ind.commentaire
                 else ""
             )
@@ -1116,13 +1210,15 @@ with tab4:
             # Streamlit, et le reste s'affiche alors en texte brut échappé.
             carte_html = (
                 f'<div style="background:#ffffff; border:1px solid {GRILLE}; '
-                f'border-left:3px solid {bordure}; border-radius:0; padding:12px 16px; margin-bottom:8px;">'
-                f'<div style="display:flex; align-items:center; flex-wrap:wrap;">'
-                f'<span style="font-weight:600; color:{ENCRE_PRIMAIRE};">{ind.libelle}</span>{etiquette}'
+                f'border-left:3px solid {bordure}; border-radius:0; padding:14px 18px; margin-bottom:10px; '
+                f'box-shadow:0 1px 2px rgba(3,0,28,0.03);">'
+                f'<div style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;">'
+                f'<span style="font-weight:600; font-size:0.95rem; color:{ENCRE_PRIMAIRE};">{ind.libelle}</span>{etiquette}'
                 f'</div>'
-                f'<div style="font-size:1.05rem; color:{ENCRE_PRIMAIRE}; margin-top:2px;">{ind.valeur}</div>'
+                f'<div style="font-size:1.4rem; font-family:\'Libre Caslon Display\', serif; '
+                f'color:{ENCRE_PRIMAIRE}; margin-top:4px;">{ind.valeur}</div>'
                 f'{commentaire_html}'
-                f'<div style="font-size:0.78rem; color:{ENCRE_MUTED}; margin-top:6px;">'
+                f'<div style="font-size:0.78rem; color:{ENCRE_MUTED}; margin-top:8px; border-top:1px solid {GRILLE}; padding-top:6px;">'
                 f'Source : {ind.source} — {ind.date_donnee}'
                 f'</div>'
                 f'</div>'
@@ -1130,7 +1226,7 @@ with tab4:
             st.markdown(carte_html, unsafe_allow_html=True)
 
         if section.note_methodo:
-            st.caption(f"Fraîcheur des données : {section.note_methodo}")
+            st.caption(f"🕒 Fraîcheur des données : {section.note_methodo}")
 
         st.write("")
 
@@ -1157,7 +1253,7 @@ with tab4:
                 unsafe_allow_html=True,
             )
 
-    with st.expander("Checklist de rafraîchissement — à suivre avant toute utilisation"):
+    with st.expander("Checklist de rafraîchissement — à suivre avant toute utilisation", expanded=True):
         etapes_numerotees(CHECKLIST_RAFRAICHISSEMENT)
 
 st.markdown('<hr class="filet" style="margin-top:2.5rem;">', unsafe_allow_html=True)
