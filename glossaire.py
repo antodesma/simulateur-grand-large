@@ -75,6 +75,12 @@ GLOSSAIRE = {
         "faire capitaliser des bénéfices sans les distribuer immédiatement "
         "au dirigeant - et donc sans frottement fiscal personnel annuel."
     ),
+    "Pacte Dutreil": (
+        "Dispositif (article 787 B du CGI) qui exonère 75 % de la valeur d'une entreprise transmise "
+        "par donation ou succession, sous conditions de conservation des titres (engagement collectif "
+        "puis individuel) et d'exercice d'une fonction de direction - seul le quart restant est soumis "
+        "aux droits de donation classiques."
+    ),
     "Monte-Carlo (simulation)": (
         "Méthode qui teste des centaines de trajectoires de rendement "
         "tirées au hasard autour d'une moyenne et d'une volatilité "

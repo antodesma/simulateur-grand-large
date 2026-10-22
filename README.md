@@ -29,6 +29,8 @@ Garder l'argent en direct vs le faire capitaliser dans une holding, sur plusieur
 ### 3 — Démembrement de propriété
 Donation en pleine propriété vs donation de la nue-propriété (usufruit conservé par le donateur) : barème de l'article 669 du CGI, abattements de donation en ligne directe, calcul exact des droits de donation par tranche. L'abattement de 100 000 € (article 779 du CGI) s'applique par enfant et par parent — l'outil répartit donc la valeur transmise selon le nombre d'enfants et le nombre de parents donateurs, au lieu d'un abattement unique global. Courbe interactive du barème officiel avec le donateur positionné sur sa tranche d'âge.
 
+**Pacte Dutreil** : pour la transmission d'une entreprise (et non d'un bien), calcul de l'économie de droits permise par l'exonération de 75 % de la valeur transmise (article 787 B du CGI), avec le détail des conditions à vérifier (seuils de détention, durées d'engagement de conservation, fonction de direction) — le module chiffre l'économie *si* les conditions sont réunies, il ne les vérifie pas.
+
 ![Démembrement de propriété](screenshots/03_demembrement.png)
 
 ### 4 — Note Grand Large (veille marchés & produits)
@@ -41,7 +43,7 @@ Chaque onglet (sauf la veille) propose aussi un export PDF en plus du CSV, et un
 ## Rigueur méthodologique
 
 - **Aucune hypothèse inventée** : chaque seuil fiscal et chaque chiffre de marché est sourcé (CGI, ACPR, ASPIM, France Invest, France Assureurs, Banque de France...), avec sa date de validité.
-- **59 tests automatisés** (`tests_sanity.py`) : cas limites, monotonie, cohérence de la dichotomie brut ↔ coût total, reproductibilité de la simulation Monte-Carlo, cohérence du barème de démembrement, répartition de l'abattement de donation par enfant et par parent, cohérence du régime TNS (SARL) face au régime assimilé salarié (SASU), et exactitude de l'optimiseur de répartition (recoupement exact avec les scénarios purs aux deux extrémités).
+- **65 tests automatisés** (`tests_sanity.py`) : cas limites, monotonie, cohérence de la dichotomie brut ↔ coût total, reproductibilité de la simulation Monte-Carlo, cohérence du barème de démembrement, répartition de l'abattement de donation par enfant et par parent, cohérence du régime TNS (SARL) face au régime assimilé salarié (SASU), exactitude de l'optimiseur de répartition (recoupement exact avec les scénarios purs aux deux extrémités), et cohérence du calculateur Pacte Dutreil (conservation de la valeur, économie strictement positive).
 - **Compliance-first** : bandeau de non-responsabilité sur chaque onglet, aucune recommandation de produit ou de montant, fourchettes de risque plutôt que performances ponctuelles.
 - **Charte graphique réelle** : couleurs et typographie extraites du site de Grand Large Patrimoine (et non inventées), palette de données validée accessibilité (contraste, daltonisme).
 
@@ -68,12 +70,13 @@ optimisation.py       # optimiseur de répartition salaire/rémunération vs div
 trajectoire.py       # comparaison directe vs holding, déterministe
 simulation.py        # même comparaison, Monte-Carlo (profils prudent/équilibre/dynamique)
 demembrement.py       # barème art. 669 CGI, droits de donation, pleine propriété vs démembrement
+pacte_dutreil.py      # exonération Dutreil (art. 787 B CGI) pour la transmission d'entreprise
 veille.py             # indicateurs de marché et seuils réglementaires sourcés, organisés par solution GLP
 regle_fiscale.py      # catalogue de mécanismes patrimoniaux niches, rotation quotidienne déterministe
 export_pdf.py         # génération des exports PDF one-pager (un par scénario)
 glossaire.py          # définitions courtes des termes techniques, affichées par onglet
 app.py                # interface Streamlit (4 onglets), charte graphique Grand Large Patrimoine
-tests_sanity.py       # 59 vérifications automatisées sur les modules de calcul
+tests_sanity.py       # 65 vérifications automatisées sur les modules de calcul
 ```
 
 ## Méthodologie — conçu avec Claude (Anthropic)

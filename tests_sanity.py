@@ -21,6 +21,7 @@ from simulation import PROFILS, simulation_comparaison
 from trajectoire import comparer
 from demembrement import (
     calcul_droits_donation,
+    calcul_droits_donation_famille,
     comparer_transmission,
     pourcentage_usufruit,
     valeur_usufruit_nue_propriete,
@@ -33,6 +34,7 @@ from fiscalite_tns import (
     seuil_dividendes_sans_cotisations,
 )
 from optimisation import net_total_mix, repartition_optimale
+from pacte_dutreil import calcul_transmission_dutreil, TAUX_EXONERATION_DUTREIL
 
 echecs = []
 
@@ -221,6 +223,33 @@ verifier(
     "net_total_mix(p=0) et net_total_mix(p=1) cohérents avec repartition_optimale",
     abs(net_total_mix(80_000, 0.0, est_sarl=False) - res_sasu["net_100_dividende"]) < 0.01
     and abs(net_total_mix(80_000, 1.0, est_sarl=False) - res_sasu["net_100_salaire"]) < 0.01
+)
+
+res_dutreil = calcul_transmission_dutreil(2_000_000, nombre_enfants=2, nombre_donateurs=2)
+verifier(
+    "Dutreil : valeur exonérée = 75% exactement de la valeur transmise",
+    abs(res_dutreil["valeur_exoneree"] - 2_000_000 * TAUX_EXONERATION_DUTREIL) < 0.01
+)
+verifier(
+    "Dutreil : valeur exonérée + valeur taxable = valeur totale (pas de valeur perdue)",
+    abs(res_dutreil["valeur_exoneree"] + res_dutreil["valeur_taxable_apres_dutreil"] - 2_000_000) < 0.01
+)
+verifier(
+    "Dutreil : les droits avec Dutreil sont strictement inférieurs aux droits sans Dutreil",
+    res_dutreil["droits_avec_dutreil"] < res_dutreil["droits_sans_dutreil"]
+)
+verifier(
+    "Dutreil : l'économie annoncée est cohérente avec la différence des deux droits",
+    abs(res_dutreil["economie"] - (res_dutreil["droits_sans_dutreil"] - res_dutreil["droits_avec_dutreil"])) < 0.01
+)
+verifier(
+    "Dutreil : sans exonération (taux à 0), les droits avec/sans Dutreil sont strictement identiques",
+    calcul_transmission_dutreil(2_000_000, 2, 2)["droits_sans_dutreil"]
+    == calcul_droits_donation_famille(2_000_000, 2, 2)
+)
+verifier(
+    "Dutreil : valeur transmise nulle -> aucun droit, aucune économie",
+    calcul_transmission_dutreil(0, 2, 2)["economie"] == 0
 )
 
 print()

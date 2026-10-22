@@ -24,6 +24,15 @@ from fiscalite import (
 from simulation import PROFILS, simulation_comparaison
 from trajectoire import comparer
 from demembrement import comparer_transmission, pourcentage_usufruit
+from pacte_dutreil import (
+    calcul_transmission_dutreil,
+    CONDITIONS_PACTE_DUTREIL,
+    DUREE_ENGAGEMENT_COLLECTIF_ANNEES,
+    DUREE_ENGAGEMENT_INDIVIDUEL_ANNEES,
+    DUREE_FONCTION_DIRECTION_APRES_TRANSMISSION_ANNEES,
+    SEUILS_ENGAGEMENT_COLLECTIF,
+    TAUX_EXONERATION_DUTREIL,
+)
 from fiscalite_tns import (
     TAUX_IR_SEUL_PFU,
     cotisations_tns,
@@ -1335,6 +1344,152 @@ with tab3:
         )
 
     glossaire_expander(["Démembrement de propriété", "Usufruit", "Nue-propriété", "Abattement"])
+
+    st.markdown('<hr class="filet">', unsafe_allow_html=True)
+    st.markdown("### Transmettre une entreprise : le Pacte Dutreil")
+    pitch_usage(
+        "<strong>Le client veut transmettre son entreprise à ses enfants, pas un bien "
+        "immobilier ou financier ?</strong> Le Pacte Dutreil exonère 75 % de la valeur "
+        "transmise avant tout calcul de droits, sous conditions de conservation des titres "
+        "et de direction effective. Cet onglet chiffre l'économie - il ne vérifie pas que "
+        "les conditions sont réunies."
+    )
+
+    col_dut1, col_dut2 = st.columns(2)
+    with col_dut1:
+        valeur_entreprise = st.number_input(
+            "Valeur de l'entreprise transmise (€)", min_value=0, max_value=50_000_000,
+            value=2_000_000, step=50_000,
+        )
+        st.caption(f"→ {fmt_euro(valeur_entreprise)}")
+    with col_dut2:
+        st.caption(
+            f"Répartition réutilisée depuis la transmission de bien ci-dessus : "
+            f"{nombre_enfants} enfant(s), {nombre_donateurs} donateur(s) "
+            f"({fmt_euro(100_000 * nombre_enfants * nombre_donateurs)} d'abattement total, "
+            f"renouvelable tous les 15 ans)."
+        )
+
+    resultat_dutreil = calcul_transmission_dutreil(valeur_entreprise, nombre_enfants, nombre_donateurs)
+
+    col_dut_kpi1, col_dut_kpi2, col_dut_kpi3 = st.columns(3)
+    with col_dut_kpi1:
+        carte_kpi(
+            "Droits sans le Pacte Dutreil", fmt_euro(resultat_dutreil["droits_sans_dutreil"]), ENCRE_MUTED,
+            "Ce que la famille paierait si l'entreprise était transmise comme un bien ordinaire, sans "
+            "aucune exonération particulière.",
+        )
+    with col_dut_kpi2:
+        carte_kpi(
+            "Droits avec le Pacte Dutreil", fmt_euro(resultat_dutreil["droits_avec_dutreil"]), COULEUR_DEMEMBREMENT,
+            f"Seuls {fmt_euro(resultat_dutreil['valeur_taxable_apres_dutreil'])} restent taxables "
+            f"({100 - TAUX_EXONERATION_DUTREIL*100:.0f} % de la valeur), le reste étant exonéré.",
+        )
+    with col_dut_kpi3:
+        carte_kpi(
+            "Économie de droits", fmt_euro(resultat_dutreil["economie"]), NAVY,
+            f"Ce que le Pacte Dutreil fait économiser à la famille, si les conditions ci-dessous sont "
+            f"réunies.",
+        )
+
+    fig_dutreil = go.Figure()
+    fig_dutreil.add_bar(
+        x=["Sans Pacte Dutreil", "Avec Pacte Dutreil"],
+        y=[resultat_dutreil["droits_sans_dutreil"], resultat_dutreil["droits_avec_dutreil"]],
+        marker_color=[ENCRE_MUTED, COULEUR_DEMEMBREMENT],
+        text=[fmt_euro(resultat_dutreil["droits_sans_dutreil"]), fmt_euro(resultat_dutreil["droits_avec_dutreil"])],
+        textposition="outside", width=0.5,
+        hovertemplate="%{x} : %{y:,.0f} €<extra></extra>",
+    )
+    fig_dutreil = _mise_en_forme_graphique(
+        fig_dutreil, f"Droits de donation pour {fmt_euro(valeur_entreprise)} d'entreprise transmise", "Droits de donation (€)"
+    )
+    fig_dutreil.update_xaxes(showgrid=False)
+    st.plotly_chart(fig_dutreil, width="stretch", config=CONFIG_GRAPHIQUE)
+
+    with st.expander("Conditions à vérifier avant toute mise en œuvre", expanded=True):
+        st.markdown(
+            f"- Seuils de détention pour l'engagement collectif : **"
+            f"{SEUILS_ENGAGEMENT_COLLECTIF['non cotée']['droits_financiers']:.0%} des droits financiers et "
+            f"{SEUILS_ENGAGEMENT_COLLECTIF['non cotée']['droits_de_vote']:.0%} des droits de vote** pour une "
+            f"société non cotée (**"
+            f"{SEUILS_ENGAGEMENT_COLLECTIF['cotée']['droits_financiers']:.0%}** et **"
+            f"{SEUILS_ENGAGEMENT_COLLECTIF['cotée']['droits_de_vote']:.0%}** si elle est cotée).\n"
+            f"- Engagement collectif de conservation : **{DUREE_ENGAGEMENT_COLLECTIF_ANNEES} ans** minimum, "
+            f"puis engagement individuel de **{DUREE_ENGAGEMENT_INDIVIDUEL_ANNEES} ans** par donataire "
+            f"(ce délai individuel est passé de 4 à 6 ans pour les transmissions à compter du "
+            f"21 février 2026 - à vérifier si l'acte est antérieur).\n"
+            f"- Fonction de direction exercée par l'un des signataires pendant l'engagement collectif, "
+            f"puis par l'un des donataires (ou un signataire) pendant les "
+            f"**{DUREE_FONCTION_DIRECTION_APRES_TRANSMISSION_ANNEES} ans** suivant la transmission.\n"
+            f"- Un engagement « réputé acquis » dispense de pacte signé si le dirigeant détient seul, ou "
+            f"avec son foyer fiscal, les seuils requis depuis plus de 2 ans et exerce depuis plus de "
+            f"2 ans une fonction de direction."
+        )
+        st.caption(
+            "Ce module calcule l'économie SI ces conditions sont réunies - il ne les vérifie pas. "
+            "Chaque situation doit être validée avec un avocat fiscaliste ou un notaire avant toute "
+            "mise en œuvre (article 787 B du CGI)."
+        )
+
+    col_csv_dut, col_pdf_dut = st.columns(2)
+    df_dutreil = pd.DataFrame(
+        {
+            "Valeur": [
+                resultat_dutreil["valeur_entreprise"],
+                resultat_dutreil["valeur_exoneree"],
+                resultat_dutreil["valeur_taxable_apres_dutreil"],
+                resultat_dutreil["droits_sans_dutreil"],
+                resultat_dutreil["droits_avec_dutreil"],
+                resultat_dutreil["economie"],
+            ]
+        },
+        index=[
+            "Valeur de l'entreprise transmise",
+            f"Valeur exonérée ({TAUX_EXONERATION_DUTREIL:.0%})",
+            "Valeur taxable après Dutreil",
+            "Droits sans le Pacte Dutreil",
+            "Droits avec le Pacte Dutreil",
+            "Économie de droits",
+        ],
+    )
+    with col_csv_dut:
+        st.download_button(
+            "Télécharger ce scénario (CSV)",
+            data=df_dutreil.to_csv().encode("utf-8"),
+            file_name=f"pacte_dutreil_{valeur_entreprise}.csv",
+            mime="text/csv",
+        )
+    with col_pdf_dut:
+        lignes_pdf_dutreil = [["Poste", "Valeur"]] + [
+            [str(poste), fmt_euro(valeur)] for poste, valeur in zip(df_dutreil.index, df_dutreil["Valeur"])
+        ]
+        pdf_bytes_dutreil = generer_pdf_scenario(
+            titre="Transmission d'entreprise avec le Pacte Dutreil",
+            sous_titre=f"Entreprise valorisée {fmt_euro(valeur_entreprise)} — article 787 B du CGI",
+            kpis=[
+                ("Droits sans le Pacte Dutreil", fmt_euro(resultat_dutreil["droits_sans_dutreil"])),
+                ("Droits avec le Pacte Dutreil", fmt_euro(resultat_dutreil["droits_avec_dutreil"])),
+                ("Économie de droits", fmt_euro(resultat_dutreil["economie"])),
+            ],
+            lignes_tableau=lignes_pdf_dutreil,
+            hypotheses=[
+                f"Exonération de {TAUX_EXONERATION_DUTREIL:.0%} de la valeur transmise, sous conditions "
+                f"(article 787 B du CGI) - voir le détail des conditions dans l'outil.",
+                "Calcul SI les conditions sont réunies : ce document ne vérifie pas leur respect, à "
+                "valider avec un avocat fiscaliste ou un notaire.",
+                f"Abattement de 100 000 € par parent et par enfant appliqué sur la valeur résiduelle "
+                f"après exonération ({nombre_enfants} enfant(s), {nombre_donateurs} donateur(s)).",
+            ],
+        )
+        st.download_button(
+            "Télécharger la synthèse (PDF)",
+            data=pdf_bytes_dutreil,
+            file_name=f"synthese_dutreil_{valeur_entreprise}.pdf",
+            mime="application/pdf",
+        )
+
+    glossaire_expander(["Pacte Dutreil", "Abattement", "Holding"], titre="Glossaire — Pacte Dutreil")
 
 
 # --- Onglet 4 : veille marchés & produits, calée sur les solutions GLP ---
