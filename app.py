@@ -22,7 +22,7 @@ from fiscalite import (
     TAUX_PFU,
 )
 from simulation import simulation_comparaison
-from paniers import CLASSES_ACTIFS, PANIERS, normaliser_ponderations, rendement_volatilite_panier
+from paniers import CLASSES_ACTIFS, PANIERS, rendement_volatilite_panier
 from trajectoire import comparer
 from demembrement import comparer_transmission, pourcentage_usufruit
 from pacte_dutreil import (
@@ -78,6 +78,21 @@ COULEUR_MAGENTA = "#c15f82"        # slot catégoriel 5 - vieux rose
 # TOUTES_SECTIONS), pour que chaque solution GLP garde la même identité
 # visuelle partout dans l'onglet - jamais recyclée, jamais au hasard.
 COULEURS_SECTIONS_VEILLE = [COULEUR_SALAIRE, COULEUR_DIVIDENDE, COULEUR_DEMEMBREMENT, COULEUR_JAUNE, COULEUR_MAGENTA]
+# Une couleur fixe par classe d'actifs des paniers de solutions - même ordre
+# catégoriel que ci-dessus, jamais recyclé en fonction du panier affiché,
+# pour que "Immobilier" soit toujours le même bronze d'un panier à l'autre.
+COULEURS_CLASSES_ACTIFS = {
+    "epargne_securisee": COULEUR_SALAIRE,
+    "immobilier_non_cote": COULEUR_DIVIDENDE,
+    "marches_financiers": COULEUR_DEMEMBREMENT,
+    "investissements_non_cotes": COULEUR_JAUNE,
+}
+LIBELLES_COURTS_CLASSES_ACTIFS = {
+    "epargne_securisee": "Épargne sécurisée",
+    "immobilier_non_cote": "Immobilier",
+    "marches_financiers": "Actions",
+    "investissements_non_cotes": "Non coté",
+}
 COULEUR_ALERTE = "#fab219"  # accent uniquement (texte en noir dessus pour le contraste) - cf. skill dataviz
 ENCRE_PRIMAIRE = NAVY
 ENCRE_SECONDAIRE = "#4a4860"
@@ -187,6 +202,18 @@ st.markdown(
         color: {ENCRE_MUTED};
         margin: 0;
         font-style: italic;
+    }}
+
+    /* Titre de sous-section (ex. "Panier de solutions", "Composition du
+       panier") : plus visible qu'un st.caption gris de la taille du texte
+       courant, mais plus discret que le gros titre de l'onglet. */
+    .titre-sous-section {{
+        font-family: 'Libre Caslon Display', serif;
+        font-weight: 400;
+        font-size: 1.2rem;
+        color: {NAVY};
+        margin: 1.1rem 0 0.3rem 0;
+        line-height: 1.25;
     }}
 
     .filet {{
@@ -461,6 +488,14 @@ def avertissement_compliance(titre, texte):
     )
 
 
+def titre_sous_section(texte):
+    """Titre de sous-section à l'intérieur d'un onglet (ex. "Panier de
+    solutions") - plus affirmé qu'un st.caption (qui a la même taille que le
+    texte courant et passe inaperçu), sans rivaliser avec le grand titre
+    d'onglet posé par entete_section."""
+    st.markdown(f'<div class="titre-sous-section">{texte}</div>', unsafe_allow_html=True)
+
+
 def etapes_numerotees(etapes):
     """Liste numérotée avec filets fins entre chaque étape — motif repris de
     « La Méthode Grand Large » sur le site (01. Comprendre / 02. Structurer...)."""
@@ -526,7 +561,14 @@ tab1, tab2, tab3, tab4 = st.tabs(
     ["Rémunération annuelle", "Trajectoire pluriannuelle", "Démembrement de propriété", "Note Grand Large"]
 )
 
-CONFIG_GRAPHIQUE = {"displayModeBar": False}
+# Barre d'outils Plotly activée (zoom molette/rectangle, panoramique, réinitialiser,
+# export PNG) - seuls les boutons de sélection (lasso/rectangle de sélection
+# de points, inutiles sur des courbes/barres) et le logo Plotly sont retirés.
+CONFIG_GRAPHIQUE = {
+    "displayModeBar": True,
+    "displaylogo": False,
+    "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d"],
+}
 
 
 POLICE_TITRE_GRAPHIQUE = "Libre Caslon Display, Georgia, serif"
@@ -553,6 +595,9 @@ def _mise_en_forme_graphique(fig, titre, y_titre):
             font=dict(family=POLICE_CORPS_GRAPHIQUE, color="#ffffff", size=13),
         ),
         separators=". ",  # convention française : point décimal, espace pour les milliers
+        # Barre d'outils (zoom/export) discrète et dans la charte - plutôt que
+        # les icônes bleu vif par défaut de Plotly, hors charte.
+        modebar=dict(bgcolor="rgba(0,0,0,0)", color=ENCRE_MUTED, activecolor=NAVY),
     )
     fig.update_yaxes(
         title=dict(text=y_titre, font=dict(family=POLICE_CORPS_GRAPHIQUE, size=13, color=ENCRE_MUTED)),
@@ -1099,7 +1144,7 @@ with tab2:
     # options ("Prudent", "Équilibré", "Dynamique", "Sur mesure") dans une
     # colonne d'1/3 de largeur, les boutons du segmented_control débordaient
     # et étaient tronqués ("Sur m...", bouton actif coupé à gauche).
-    st.caption("Panier de solutions (hypothèse, pas une recommandation)")
+    titre_sous_section("Panier de solutions")
     # segmented_control plutôt que selectbox : un vrai groupe de boutons à
     # cliquer, sans champ de saisie où taper un texte libre qui ne
     # correspond à aucune option.
@@ -1125,71 +1170,167 @@ with tab2:
 
     profil_slug = {"Prudent": "prudent", "Équilibré": "equilibre", "Dynamique": "dynamique", "Sur mesure": "sur_mesure"}[profil]
 
+    CLES_CLASSES_ACTIFS = list(CLASSES_ACTIFS.keys())
+    rendements_personnalises = None
+
     if profil == "Sur mesure":
-        # Trois curseurs libres, la 4e classe (non coté) est LE RESTE calculé,
-        # jamais un 4e curseur indépendant. Avec 4 curseurs indépendants, rien
-        # n'empêchait de saisir une somme à 244 % et de renormaliser au
-        # prorata en silence - le client affiché (ex. 95 % non coté) ne
-        # correspondait alors plus du tout à ce qui était réellement simulé
-        # (39 % une fois renormalisé). Ici la somme fait toujours 100 % par
-        # construction : plus de renormalisation cachée à expliquer.
-        st.caption("Répartition entre les 4 classes d'actifs - le non coté complète automatiquement à 100 % :")
-        col_p1, col_p2, col_p3, col_p4 = st.columns(4)
-        epargne_pct = col_p1.slider("Épargne sécurisée (%)", 0, 100, 30)
-        immobilier_pct = col_p2.slider("Immobilier (%)", 0, 100, 30)
-        actions_pct = col_p3.slider("Actions (%)", 0, 100, 25)
-        reste_alloue = epargne_pct + immobilier_pct + actions_pct
-        non_cote_pct = max(0, 100 - reste_alloue)
-        with col_p4:
-            st.metric("Non coté (%) — calculé", non_cote_pct)
-        if reste_alloue > 100:
-            st.warning(
-                f"Épargne + immobilier + actions = {reste_alloue} % à eux seuls, déjà au-dessus de 100 % : "
-                f"le non coté est forcé à 0 %. Réduisez l'un des trois curseurs pour lui laisser une place."
+        # Les 4 curseurs sont tous librement déplaçables (contrairement à la
+        # version précédente : 3 curseurs libres + un 4e en lecture seule,
+        # jugée confuse). Déplacer un curseur réajuste automatiquement les 3
+        # autres, proportionnellement à leur poids relatif actuel, pour que
+        # la somme reste TOUJOURS exactement 100 % - jamais de dépassement à
+        # avertir, jamais de renormalisation silencieuse à expliquer après coup.
+        st.caption(
+            "Répartition entre les 4 classes d'actifs - déplacez n'importe quel curseur, les trois "
+            "autres se réajustent automatiquement pour que la somme reste toujours 100 % :"
+        )
+
+        def _cle_session_sm(cle):
+            return f"sm_poids_{cle}"
+
+        if _cle_session_sm(CLES_CLASSES_ACTIFS[0]) not in st.session_state:
+            valeurs_defaut_sm = {
+                "epargne_securisee": 30, "immobilier_non_cote": 30,
+                "marches_financiers": 25, "investissements_non_cotes": 15,
+            }
+            for cle in CLES_CLASSES_ACTIFS:
+                st.session_state[_cle_session_sm(cle)] = valeurs_defaut_sm[cle]
+
+        def _rebalancer_sur_mesure(cle_modifiee):
+            """Callback on_change : répartit (100 - nouvelle valeur) sur les 3
+            autres curseurs, au prorata de leurs poids relatifs actuels, avec
+            correction d'arrondi sur le plus grand pour une somme exacte."""
+            nouvelle_valeur = st.session_state[_cle_session_sm(cle_modifiee)]
+            autres = [c for c in CLES_CLASSES_ACTIFS if c != cle_modifiee]
+            valeurs_autres = {c: st.session_state[_cle_session_sm(c)] for c in autres}
+            reste_a_distribuer = 100 - nouvelle_valeur
+            somme_autres = sum(valeurs_autres.values())
+            if somme_autres <= 0:
+                part_egale = reste_a_distribuer / len(autres)
+                nouvelles_valeurs = {c: part_egale for c in autres}
+            else:
+                nouvelles_valeurs = {c: valeurs_autres[c] / somme_autres * reste_a_distribuer for c in autres}
+            arrondis = {c: int(round(v)) for c, v in nouvelles_valeurs.items()}
+            ecart_arrondi = reste_a_distribuer - sum(arrondis.values())
+            cle_la_plus_grande = max(arrondis, key=lambda c: arrondis[c])
+            arrondis[cle_la_plus_grande] += ecart_arrondi
+            for c, v in arrondis.items():
+                st.session_state[_cle_session_sm(c)] = max(0, v)
+
+        colonnes_sliders_sm = st.columns(4)
+        for col_slider, cle in zip(colonnes_sliders_sm, CLES_CLASSES_ACTIFS):
+            col_slider.slider(
+                f"{LIBELLES_COURTS_CLASSES_ACTIFS[cle]} (%)", 0, 100,
+                key=_cle_session_sm(cle), on_change=_rebalancer_sur_mesure, args=(cle,),
             )
-        ponderations = {
-            "epargne_securisee": epargne_pct / 100,
-            "immobilier_non_cote": immobilier_pct / 100,
-            "marches_financiers": actions_pct / 100,
-            "investissements_non_cotes": non_cote_pct / 100,
-        }
-        if reste_alloue > 100:
-            # Les trois premiers curseurs dépassent déjà 100 % : on les
-            # renormalise entre eux (le non coté reste à 0, ce n'est pas lui
-            # qu'il faut artificiellement gonfler) pour que la somme totale
-            # retombe exactement sur 100 %, sans jamais revenir en silence -
-            # le warning ci-dessus a déjà prévenu l'utilisateur.
-            ponderations = normaliser_ponderations({
-                "epargne_securisee": epargne_pct,
-                "immobilier_non_cote": immobilier_pct,
-                "marches_financiers": actions_pct,
-                "investissements_non_cotes": 0,
-            })
+
+        ponderations = {cle: st.session_state[_cle_session_sm(cle)] / 100 for cle in CLES_CLASSES_ACTIFS}
+
+        with st.expander("Personnaliser aussi les rendements moyens par classe (optionnel)", expanded=False):
+            st.caption(
+                "Par défaut, chaque classe utilise son rendement moyen sourcé (détail plus bas). Changez "
+                "une valeur pour tester votre propre hypothèse - elle n'est alors plus une donnée de "
+                "marché sourcée, mais une estimation manuelle que vous assumez."
+            )
+            rendements_personnalises = {}
+            colonnes_rendements_sm = st.columns(4)
+            for col_rendement, cle in zip(colonnes_rendements_sm, CLES_CLASSES_ACTIFS):
+                classe = CLASSES_ACTIFS[cle]
+                rendements_personnalises[cle] = col_rendement.number_input(
+                    f"{LIBELLES_COURTS_CLASSES_ACTIFS[cle]} (%)",
+                    min_value=-10.0, max_value=30.0,
+                    value=round(classe.rendement_moyen * 100, 2),
+                    step=0.1, format="%.1f",
+                    key=f"sm_rendement_{cle}",
+                ) / 100
+            rendements_modifies = any(
+                abs(rendements_personnalises[cle] - CLASSES_ACTIFS[cle].rendement_moyen) > 0.0005
+                for cle in CLES_CLASSES_ACTIFS
+            )
+            if rendements_modifies:
+                st.warning(
+                    "Au moins un rendement a été modifié manuellement : ce n'est plus une donnée sourcée, "
+                    "mais votre propre hypothèse de travail - à ne jamais présenter comme un chiffre de marché."
+                )
     else:
         ponderations = PANIERS[profil]
 
+    resultat_panier = rendement_volatilite_panier(ponderations, rendements_override=rendements_personnalises)
+    rendement_moyen = resultat_panier["rendement_moyen"]
+    volatilite = resultat_panier["volatilite"]
+
+    titre_sous_section("Composition du panier")
+    classes_affichees = [cle for cle in CLES_CLASSES_ACTIFS if ponderations.get(cle, 0) > 0.001]
+    fig_panier = go.Figure(
+        go.Pie(
+            labels=[LIBELLES_COURTS_CLASSES_ACTIFS[cle] for cle in classes_affichees],
+            values=[ponderations[cle] * 100 for cle in classes_affichees],
+            customdata=[
+                f"{(rendements_personnalises or {}).get(cle, CLASSES_ACTIFS[cle].rendement_moyen):.1%}"
+                for cle in classes_affichees
+            ],
+            hole=0.58,
+            sort=False,
+            marker=dict(
+                colors=[COULEURS_CLASSES_ACTIFS[cle] for cle in classes_affichees],
+                line=dict(color="#ffffff", width=2),
+            ),
+            textinfo="percent",
+            textfont=dict(family=POLICE_CORPS_GRAPHIQUE, size=13, color="#ffffff"),
+            hovertemplate="<b>%{label}</b><br>%{percent} du panier<br>Rendement moyen : %{customdata}<extra></extra>",
+        )
+    )
+    fig_panier.update_layout(
+        showlegend=True,
+        legend=dict(
+            orientation="h", yanchor="bottom", y=-0.1, xanchor="center", x=0.5,
+            font=dict(family=POLICE_CORPS_GRAPHIQUE, size=13, color=ENCRE_SECONDAIRE),
+        ),
+        margin=dict(t=10, b=10, l=10, r=10),
+        height=300,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family=POLICE_CORPS_GRAPHIQUE, color=ENCRE_SECONDAIRE),
+        modebar=dict(bgcolor="rgba(0,0,0,0)", color=ENCRE_MUTED, activecolor=NAVY),
+    )
+    # Chiffre central dans le "trou" du donut : le rendement moyen pondéré
+    # du panier, pour que ce chiffre saute aux yeux sans survoler le
+    # graphique ni lire la légende textuelle en dessous.
+    fig_panier.add_annotation(
+        text=(
+            f"<span style='font-family:{POLICE_TITRE_GRAPHIQUE}; font-size:26px; color:{NAVY};'>"
+            f"<b>{rendement_moyen:.1%}</b></span><br>"
+            f"<span style='font-family:{POLICE_CORPS_GRAPHIQUE}; font-size:12px; color:{ENCRE_MUTED};'>rendement moyen</span>"
+        ),
+        showarrow=False, x=0.5, y=0.5,
+    )
+    st.plotly_chart(fig_panier, width="stretch", config=CONFIG_GRAPHIQUE)
+
+    # Équivalent texte du camembert (accessibilité, et vue "table" pour qui
+    # préfère lire des chiffres plutôt qu'une forme).
     libelles_composition = " / ".join(
         f"{poids:.0%} {CLASSES_ACTIFS[cle].libelle}" for cle, poids in ponderations.items() if poids > 0.001
     )
-    st.caption(f"Composition retenue pour la simulation : {libelles_composition}")
+    st.caption(f"Détail : {libelles_composition}")
+    st.caption(f"Volatilité du panier : {volatilite:.1%} (approximation prudente, voir note méthodologique ci-dessous).")
 
-    resultat_panier = rendement_volatilite_panier(ponderations)
-    rendement_moyen = resultat_panier["rendement_moyen"]
-    volatilite = resultat_panier["volatilite"]
-    st.caption(
-        f"Rendement moyen pondéré : {rendement_moyen:.1%} (sourcé par classe d'actifs, voir le détail ci-dessous) - "
-        f"volatilité : {volatilite:.1%} (approximation prudente, voir note méthodologique)."
-    )
-
-    with st.expander("Hypothèses de rendement par classe d'actifs (sourcées)", expanded=False):
+    with st.expander("Hypothèses de rendement par classe d'actifs", expanded=False):
         for cle, classe in CLASSES_ACTIFS.items():
             poids_classe = ponderations.get(cle, 0)
             if poids_classe <= 0:
                 continue
+            rendement_classe = classe.rendement_moyen
+            source_rendement = classe.source_rendement
+            modifie = False
+            if rendements_personnalises and abs(rendements_personnalises.get(cle, rendement_classe) - rendement_classe) > 0.0005:
+                rendement_classe = rendements_personnalises[cle]
+                source_rendement = "Hypothèse manuelle (modifiée par vous, ce n'est plus une donnée sourcée)"
+                modifie = True
             st.markdown(
                 f"**{classe.libelle}** — poids {poids_classe:.0%} dans ce panier · "
-                f"rendement moyen {classe.rendement_moyen:.1%} · volatilité illustrative {classe.volatilite:.0%}  \n"
-                f"Source : {classe.source_rendement}."
+                f"rendement moyen {rendement_classe:.1%}{' ⚙️ modifié' if modifie else ''} · "
+                f"volatilité illustrative {classe.volatilite:.0%}  \n"
+                f"Source : {source_rendement}."
                 + (f"  \n⚠️ {classe.avertissement}" if classe.avertissement else "")
             )
         st.caption(
@@ -1219,34 +1360,36 @@ with tab2:
     decalage_label = 0 if ecart_relatif_final > 0.04 else (valeur_finale_directe + valeur_finale_holding) * 0.018
 
     fig2 = go.Figure()
-    # Bandes P10-P90 : un seul liséré par série dans la légende (le lien
-    # entre bande et médiane se fait par la couleur, pas par deux entrées).
-    fig2.add_scatter(
-        x=annees, y=resultat_simu["holding"][90], mode="lines", line=dict(width=0),
-        legendgroup="holding", showlegend=False, hoverinfo="skip",
-    )
-    fig2.add_scatter(
-        x=annees, y=resultat_simu["holding"][10], mode="lines", line=dict(width=0), fill="tonexty",
-        fillcolor=rgba_depuis_hex(COULEUR_DIVIDENDE, 0.12), legendgroup="holding", showlegend=False, hoverinfo="skip",
-    )
-    fig2.add_scatter(
-        x=annees, y=resultat_simu["directe"][90], mode="lines", line=dict(width=0),
-        legendgroup="direct", showlegend=False, hoverinfo="skip",
-    )
-    fig2.add_scatter(
-        x=annees, y=resultat_simu["directe"][10], mode="lines", line=dict(width=0), fill="tonexty",
-        fillcolor=rgba_depuis_hex(COULEUR_SALAIRE, 0.12), legendgroup="direct", showlegend=False, hoverinfo="skip",
-    )
-    fig2.add_scatter(
-        x=annees, y=resultat_simu["directe"][50], mode="lines", name="Direct", legendgroup="direct",
-        line=dict(color=COULEUR_SALAIRE, width=3, shape="spline", smoothing=0.3),
-        hovertemplate="Direct : %{y:,.0f} €<extra></extra>",
-    )
-    fig2.add_scatter(
-        x=annees, y=resultat_simu["holding"][50], mode="lines", name="Holding", legendgroup="holding",
-        line=dict(color=COULEUR_DIVIDENDE, width=3, shape="spline", smoothing=0.3),
-        hovertemplate="Holding : %{y:,.0f} €<extra></extra>",
-    )
+    # Ordre des séries (légende + infobulle unifiée) : la plus forte en fin
+    # d'horizon en premier - jamais un ordre de code arbitraire qui peut
+    # afficher le scénario le plus faible au-dessus du plus fort et laisser
+    # croire à une hiérarchie inversée.
+    series_fig2 = [
+        {"cle": "directe", "nom": "Direct", "couleur": COULEUR_SALAIRE, "valeur_finale": valeur_finale_directe},
+        {"cle": "holding", "nom": "Holding", "couleur": COULEUR_DIVIDENDE, "valeur_finale": valeur_finale_holding},
+    ]
+    series_fig2.sort(key=lambda s: s["valeur_finale"], reverse=True)
+    for serie in series_fig2:
+        cle, nom, couleur = serie["cle"], serie["nom"], serie["couleur"]
+        # Médiane d'abord (le chiffre qui compte le plus), puis la fourchette
+        # P10-P90 juste en dessous dans l'infobulle - avec son propre texte
+        # labellisé, plutôt que hoverinfo="skip" qui ne montrait aucun chiffre
+        # pour le haut/bas de la fourchette au survol.
+        fig2.add_scatter(
+            x=annees, y=resultat_simu[cle][50], mode="lines", name=nom, legendgroup=cle,
+            line=dict(color=couleur, width=3, shape="spline", smoothing=0.3),
+            hovertemplate=f"{nom} (médiane) : %{{y:,.0f}} €<extra></extra>",
+        )
+        fig2.add_scatter(
+            x=annees, y=resultat_simu[cle][90], mode="lines", line=dict(width=0),
+            legendgroup=cle, showlegend=False,
+            hovertemplate=f"{nom} (optimiste, P90) : %{{y:,.0f}} €<extra></extra>",
+        )
+        fig2.add_scatter(
+            x=annees, y=resultat_simu[cle][10], mode="lines", line=dict(width=0), fill="tonexty",
+            fillcolor=rgba_depuis_hex(couleur, 0.12), legendgroup=cle, showlegend=False,
+            hovertemplate=f"{nom} (pessimiste, P10) : %{{y:,.0f}} €<extra></extra>",
+        )
     # Points + étiquettes de valeur en bout de ligne - pour lire le résultat
     # final sans survoler le graphique.
     fig2.add_scatter(
@@ -1280,7 +1423,9 @@ with tab2:
     st.plotly_chart(fig2, width="stretch", config=CONFIG_GRAPHIQUE)
     st.caption(
         "Les zones autour des lignes montrent la fourchette P10-P90 (80 % des trajectoires simulées) - "
-        "la ligne pleine est la médiane, pas une prévision garantie."
+        "survolez le graphique pour voir les trois chiffres (médiane, optimiste P90, pessimiste P10) à "
+        "n'importe quelle année, ou utilisez la loupe de la barre d'outils pour zoomer sur une période. "
+        "La ligne pleine est la médiane, pas une prévision garantie."
     )
 
     ecart_mediane_final = resultat_simu["holding"][50][-1] - resultat_simu["directe"][50][-1]

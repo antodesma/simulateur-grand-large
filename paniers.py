@@ -111,15 +111,26 @@ PANIERS = {
 }
 
 
-def rendement_volatilite_panier(ponderations):
+def rendement_volatilite_panier(ponderations, rendements_override=None):
     """
     ponderations : dict {clé de CLASSES_ACTIFS : poids}, cense sommer à 1.0
     (tolérance de flottant gérée par l'appelant - voir normaliser_ponderations).
+    rendements_override : dict optionnel {clé : rendement_moyen manuel}, pour
+    le mode "sur mesure" de l'interface où l'utilisateur remplace le
+    rendement sourcé d'une classe par sa propre hypothèse de travail. Les
+    classes absentes de ce dict gardent leur rendement sourcé (CLASSES_ACTIFS).
+    La volatilité n'est jamais remplaçable par cette voie : elle reste une
+    hypothèse illustrative de l'outil, jamais une donnée de marché unique
+    qu'un utilisateur pourrait légitimement "corriger".
     Renvoie {"rendement_moyen": ..., "volatilite": ...} - moyennes pondérées,
     voir le docstring du module pour la limite de l'approximation sur la
     volatilité.
     """
-    rendement = sum(poids * CLASSES_ACTIFS[cle].rendement_moyen for cle, poids in ponderations.items())
+    rendements_override = rendements_override or {}
+    rendement = sum(
+        poids * rendements_override.get(cle, CLASSES_ACTIFS[cle].rendement_moyen)
+        for cle, poids in ponderations.items()
+    )
     volatilite = sum(poids * CLASSES_ACTIFS[cle].volatilite for cle, poids in ponderations.items())
     return {"rendement_moyen": rendement, "volatilite": volatilite}
 

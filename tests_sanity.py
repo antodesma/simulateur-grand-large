@@ -301,6 +301,20 @@ verifier(
     "normaliser_ponderations : poids tous nuls -> erreur plutôt qu'une division silencieuse par zéro",
     _leve_exception(lambda: normaliser_ponderations({"epargne_securisee": 0, "marches_financiers": 0}))
 )
+verifier(
+    "rendement_volatilite_panier avec rendements_override : la classe remplacée utilise la valeur manuelle",
+    abs(
+        rendement_volatilite_panier({"epargne_securisee": 1.0}, rendements_override={"epargne_securisee": 0.05})["rendement_moyen"]
+        - 0.05
+    ) < 1e-9
+)
+verifier(
+    "rendement_volatilite_panier avec rendements_override : une classe absente du dict garde son rendement sourcé",
+    abs(
+        rendement_volatilite_panier({"epargne_securisee": 0.5, "marches_financiers": 0.5}, rendements_override={"epargne_securisee": 0.05})["rendement_moyen"]
+        - (0.5 * 0.05 + 0.5 * CLASSES_ACTIFS["marches_financiers"].rendement_moyen)
+    ) < 1e-9
+)
 
 print()
 if echecs:
