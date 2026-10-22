@@ -443,6 +443,24 @@ def pitch_usage(texte):
     )
 
 
+def avertissement_compliance(titre, texte):
+    """Encart jaune/ambre pour un avertissement de compliance qui doit
+    sauter aux yeux (ex. "ceci n'est pas la grille d'allocation réelle de
+    Grand Large Patrimoine") - un simple st.caption se noie dans le reste
+    du texte explicatif, alors que ce type de nuance est précisément celle
+    qu'un lecteur pressé doit voir en premier, pas en dernier."""
+    st.markdown(
+        f"""
+        <div style="background:#fef8ea; border-left:3px solid {COULEUR_ALERTE};
+                     padding:12px 18px; margin:0.8rem 0; font-size:0.9rem;
+                     color:{ENCRE_PRIMAIRE}; line-height:1.5;">
+            <strong>⚠ {titre}</strong><br>{texte}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def etapes_numerotees(etapes):
     """Liste numérotée avec filets fins entre chaque étape — motif repris de
     « La Méthode Grand Large » sur le site (01. Comprendre / 02. Structurer...)."""
@@ -1071,21 +1089,38 @@ with tab2:
             "résultats plutôt qu'un chiffre unique."
         )
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     with col1:
         profit_annuel = st.number_input("Profit annuel réinvesti (€)", min_value=1_000, max_value=500_000, step=1_000, key="profit_input")
         st.caption(f"→ {fmt_euro(profit_annuel)}")
     horizon = col2.slider("Horizon (années)", min_value=2, max_value=25, value=10)
-    profil = col3.selectbox(
+
+    # Le sélecteur de panier prend toute la largeur de la page : avec 4
+    # options ("Prudent", "Équilibré", "Dynamique", "Sur mesure") dans une
+    # colonne d'1/3 de largeur, les boutons du segmented_control débordaient
+    # et étaient tronqués ("Sur m...", bouton actif coupé à gauche).
+    st.caption("Panier de solutions (hypothèse, pas une recommandation)")
+    # segmented_control plutôt que selectbox : un vrai groupe de boutons à
+    # cliquer, sans champ de saisie où taper un texte libre qui ne
+    # correspond à aucune option.
+    profil = st.segmented_control(
         "Panier de solutions (hypothèse, pas une recommandation)",
         list(PANIERS.keys()) + ["Sur mesure"],
+        default="Prudent",
+        label_visibility="collapsed",
     )
+    if profil is None:
+        profil = "Prudent"
 
     st.caption(
         "Chaque panier combine les 4 grandes familles de solutions Grand Large Patrimoine (épargne "
-        "sécurisée, immobilier, placements financiers, non coté), avec un rendement moyen sourcé par "
-        "classe - la répartition entre classes reste une illustration pédagogique, pas la grille de "
-        "gestion réelle de Grand Large Patrimoine."
+        "sécurisée, immobilier, placements financiers, non coté), avec un rendement moyen sourcé par classe."
+    )
+    avertissement_compliance(
+        "Répartition illustrative, pas une grille réelle",
+        "La répartition entre classes de chaque panier est une construction pédagogique pour cet outil. "
+        "Elle ne reflète PAS l'allocation modèle réelle et confidentielle de Grand Large Patrimoine - "
+        "à ne jamais présenter comme telle devant un client ou Pierre.",
     )
 
     profil_slug = {"Prudent": "prudent", "Équilibré": "equilibre", "Dynamique": "dynamique", "Sur mesure": "sur_mesure"}[profil]
