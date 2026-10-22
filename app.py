@@ -61,11 +61,18 @@ NAVY = "#03001C"
 NAVY_HOVER = "#0a0633"
 CREME = "#f7f5ef"
 
-COULEUR_SALAIRE = "#2a78d6"    # slot catégoriel 1 - bleu
-COULEUR_DIVIDENDE = "#eb6834"  # slot catégoriel 2 - orange
-COULEUR_DEMEMBREMENT = "#1baf7a"  # slot catégoriel 3 - aqua
-COULEUR_JAUNE = "#eda100"      # slot catégoriel 4 - jaune
-COULEUR_MAGENTA = "#e87ba4"    # slot catégoriel 5 - magenta
+# Palette catégorielle resserrée - moins saturée que les couleurs "défaut
+# de librairie de graphiques" d'origine (bleu/orange vifs type Bootstrap),
+# plus proche d'un nuancier de gestion de patrimoine (encre, bronze, pétrole,
+# or bruni). Revalidée avec le script du skill dataviz (bande de clarté,
+# plancher de chroma, séparation daltonisme, contraste sur fond clair) :
+# tout passe, y compris le contraste de l'or bruni qui échouait avant d'être
+# assombri d'un cran.
+COULEUR_SALAIRE = "#2e5c94"        # slot catégoriel 1 - bleu encre
+COULEUR_DIVIDENDE = "#b5672e"      # slot catégoriel 2 - bronze
+COULEUR_DEMEMBREMENT = "#1b8f6f"   # slot catégoriel 3 - pétrole
+COULEUR_JAUNE = "#ad7d1f"          # slot catégoriel 4 - or bruni
+COULEUR_MAGENTA = "#c15f82"        # slot catégoriel 5 - vieux rose
 # Une couleur par section de la Note Grand Large (même ordre que
 # TOUTES_SECTIONS), pour que chaque solution GLP garde la même identité
 # visuelle partout dans l'onglet - jamais recyclée, jamais au hasard.
@@ -267,32 +274,39 @@ st.markdown(
 
     h2, h3 {{ color: {ENCRE_PRIMAIRE}; font-family: 'Libre Caslon Display', serif; font-weight: 400; }}
 
-    .stTabs [data-baseweb="tab-list"] {{
+    /* Streamlit a changé le balisage de ses onglets (data-testid="stTab",
+       plus l'ancien data-baseweb="tab" que ciblaient ces règles) - le style
+       ci-dessous ne s'appliquait donc à aucun onglet inactif, seul
+       [aria-selected="true"] matchait par coïncidence. D'où des onglets
+       inactifs quasi invisibles, repérés sur une capture d'écran réelle. */
+    [role="tablist"] {{
         gap: 10px;
         border-bottom: none;
     }}
-    .stTabs [data-baseweb="tab"] {{
-        font-weight: 600;
-        font-size: 1rem;
-        padding: 10px 20px;
-        height: auto;
-        background: #ffffff;
-        border: 1.5px solid {BORDURE};
-        border-radius: 0;
-        color: {ENCRE_SECONDAIRE};
+    [data-testid="stTab"] {{
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        padding: 10px 20px !important;
+        height: auto !important;
+        background: {CREME} !important;
+        border: 1.5px solid rgba(3,0,28,0.35) !important;
+        border-radius: 0 !important;
+        color: {ENCRE_SECONDAIRE} !important;
+        box-shadow: none !important;
+        cursor: pointer;
         transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }}
-    .stTabs [data-baseweb="tab"]:hover {{
-        border-color: {NAVY};
-        color: {NAVY};
+    [data-testid="stTab"] p {{ color: inherit !important; }}
+    [data-testid="stTab"]:hover {{
+        background: #ffffff !important;
+        border-color: {NAVY} !important;
+        color: {NAVY} !important;
     }}
-    .stTabs [aria-selected="true"] {{
+    [data-testid="stTab"][aria-selected="true"] {{
         background: {NAVY} !important;
         border-color: {NAVY} !important;
         color: #ffffff !important;
     }}
-    .stTabs [data-baseweb="tab-highlight"] {{ background-color: transparent !important; }}
-    .stTabs [data-baseweb="tab-border"] {{ background-color: transparent !important; }}
 
     /* Deux poids plutôt qu'un seul : le CSV est une donnée brute
        (secondaire, contour), le PDF est le livrable fini qu'on montre
@@ -649,6 +663,10 @@ with tab1:
         hovertemplate="%{x} : %{y:,.0f} €<extra></extra>",
     )
     fig1 = _mise_en_forme_graphique(fig1, f"Pour {fmt_euro(montant)} disponibles", "Net en poche (€)")
+    # Marge au-dessus de la barre la plus haute : sans ça, l'étiquette de
+    # valeur ("outside") et l'infobulle au survol ("x unified", positionnée
+    # en haut du tracé) se chevauchent et deviennent illisibles.
+    fig1.update_yaxes(range=[0, max(net_salaire, net_dividende, 1) * 1.22])
     fig1.update_xaxes(showgrid=False)
     st.plotly_chart(fig1, width="stretch", config=CONFIG_GRAPHIQUE)
 
@@ -791,6 +809,9 @@ with tab1:
             fig_comparateur, f"Net en poche pour {fmt_euro(montant)}, selon la forme juridique", "Net en poche (€)"
         )
         fig_comparateur.update_xaxes(showgrid=False)
+        fig_comparateur.update_yaxes(
+            range=[0, max(net_salaire_sasu, net_dividende_sasu, net_remuneration_sarl, net_dividende_sarl, 1) * 1.22]
+        )
         st.plotly_chart(fig_comparateur, width="stretch", config=CONFIG_GRAPHIQUE)
         st.caption(
             "Le scénario actuellement sélectionné ci-dessus apparaît en couleur pleine, l'autre en "
@@ -1339,6 +1360,7 @@ with tab3:
     )
     fig3 = _mise_en_forme_graphique(fig3, f"Droits de donation pour {fmt_euro(valeur_bien)} transmis", "Droits de donation (€)")
     fig3.update_xaxes(showgrid=False)
+    fig3.update_yaxes(range=[0, max(resultat_demembrement["droits_pleine_propriete"], resultat_demembrement["droits_demembrement"], 1) * 1.22])
     st.plotly_chart(fig3, width="stretch", config=CONFIG_GRAPHIQUE)
 
     with st.expander("Voir le barème officiel de l'usufruit (article 669 du CGI)"):
@@ -1493,6 +1515,9 @@ with tab3:
         fig_dutreil, f"Droits de donation pour {fmt_euro(valeur_entreprise)} d'entreprise transmise", "Droits de donation (€)"
     )
     fig_dutreil.update_xaxes(showgrid=False)
+    fig_dutreil.update_yaxes(
+        range=[0, max(resultat_dutreil["droits_sans_dutreil"], resultat_dutreil["droits_avec_dutreil"], 1) * 1.22]
+    )
     st.plotly_chart(fig_dutreil, width="stretch", config=CONFIG_GRAPHIQUE)
 
     with st.expander("Conditions à vérifier avant toute mise en œuvre", expanded=True):
