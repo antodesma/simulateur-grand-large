@@ -60,6 +60,8 @@ PROFILS_CLIENT = {
     "Dirigeant en cession": {"montant": 300_000, "profit_annuel": 80_000},
     "Famille patrimoniale": {"montant": 80_000, "profit_annuel": 50_000},
     "Profession libérale": {"montant": 60_000, "profit_annuel": 35_000},
+    "Cadre dirigeant salarié": {"montant": 50_000, "profit_annuel": 30_000},
+    "Entrepreneur en forte croissance": {"montant": 500_000, "profit_annuel": 150_000},
 }
 
 st.set_page_config(page_title="Grand Large · Simulateur patrimonial", layout="wide", page_icon="⛵")
@@ -348,20 +350,19 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-col_profil, col_profil_note = st.columns([1, 2])
-with col_profil:
-    st.selectbox(
-        "Pour quel profil client ?",
-        ["Personnalisé"] + list(PROFILS_CLIENT.keys()),
-        key="persona_select",
-        on_change=_appliquer_profil_client,
-    )
-with col_profil_note:
-    st.markdown("<div style='height:1.85rem;'></div>", unsafe_allow_html=True)
-    st.caption(
-        "Archétypes illustratifs, calés sur les typologies affichées par Grand Large Patrimoine — "
-        "pré-remplit les montants, aucune donnée réelle de client. Choisissez « Personnalisé » pour saisir vos propres chiffres."
-    )
+st.markdown("**Pour quel profil client ?**")
+st.radio(
+    "Pour quel profil client ?",
+    ["Personnalisé"] + list(PROFILS_CLIENT.keys()),
+    key="persona_select",
+    on_change=_appliquer_profil_client,
+    horizontal=True,
+    label_visibility="collapsed",
+)
+st.caption(
+    "Archétypes illustratifs, calés sur les typologies affichées par Grand Large Patrimoine — "
+    "pré-remplit les montants, aucune donnée réelle de client. Choisissez « Personnalisé » pour saisir vos propres chiffres."
+)
 
 st.markdown(
     '<div class="bloc-disclaimer">Outil informatif à usage pédagogique, construit sur des '
