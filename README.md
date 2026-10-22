@@ -42,22 +42,32 @@ Donation en pleine propriété vs donation de la nue-propriété (usufruit conse
 ### 4 — Succession
 Au décès (hors donation), les droits dus dépendent avant tout du lien de parenté avec le défunt : conjoint survivant ou partenaire pacsé totalement exonéré (article 796-0 bis du CGI), enfant au même barème et au même abattement de 100 000 € qu'une donation en ligne directe (réutilise directement le barème de `demembrement.py` plutôt que d'en dupliquer un second), frère/sœur (abattement de 15 932 €, 35 %/45 %), neveu/nièce (abattement de 7 967 €, taux fixe de 55 %), et tiers sans lien de parenté (abattement de 1 594 €, taux fixe de 60 %). Un graphique en barres horizontales compare, sur une même masse successorale, ce qu'il resterait net selon qui hérite — l'écart entre un conjoint (tout) et un tiers (40 % à peine) est souvent le chiffre qui parle le plus à un client.
 
+![Succession](screenshots/05_succession.png)
+
 ### 5 — Assurance-vie
 Fiscalité du rachat (retrait du vivant) et de la transmission au décès. Pour un rachat, seule la part de gains comprise dans le retrait est taxée : régime du PFU pour les versements à partir du 27/09/2017 (12,8 % avant 8 ans, 7,5 % après 8 ans dans la limite de 150 000 € de versements cumulés, 12,8 % au-delà), abattement annuel de 4 600 €/9 200 € après 8 ans, et 17,2 % de prélèvements sociaux toujours dus sans abattement. Pour la transmission, c'est l'âge du souscripteur au moment de CHAQUE versement qui détermine le régime applicable : article 990 I avant 70 ans (abattement de 152 500 € par bénéficiaire, puis 20 %/31,25 % selon le seuil de 700 000 €) ou article 757 B après 70 ans (seules les primes versées sont taxables, les gains étant intégralement exonérés, après un abattement de 30 500 € cette fois GLOBAL - partagé entre tous les bénéficiaires - puis taxation du solde au même barème progressif des droits de succession en ligne directe que le module de démembrement et de succession, réutilisé tel quel plutôt que dupliqué).
+
+![Assurance-vie](screenshots/06_assurance_vie.png)
 
 ### 6 — IFI
 Impôt sur la fortune immobilière : patrimoine immobilier net taxable (abattement de 30 % sur la résidence principale détenue en direct, dettes déductibles), seuil d'assujettissement de 1 300 000 € (en-deçà, aucun IFI, même pas sur la fraction au-dessus de 800 000 €), barème progressif à 6 tranches (article 977 du CGI) et décote qui lisse l'entrée dans l'impôt entre 1,3 M€ et 1,4 M€. Les biens professionnels (ex. une holding animatrice) sont supposés déjà exclus du montant saisi — ce module ne les qualifie pas lui-même, ce tri restant un sujet à conditions précises et souvent contentieux.
 
+![IFI](screenshots/07_ifi.png)
+
 ### 7 — SCI (IS vs IR)
 Détenir un bien locatif à travers une SCI à l'impôt sur le revenu (transparente, régime des revenus fonciers et des plus-values immobilières des particuliers, sans amortissement mais avec un abattement pour durée de détention qui exonère totalement la plus-value après 22 ans à l'IR et 30 ans pour les prélèvements sociaux) ou à l'impôt sur les sociétés (amortissement du bien déductible chaque année, sans sortie de trésorerie, mais plus-value de cession calculée sur la valeur nette comptable - donc souvent plus élevée pour un bien ancien - et double imposition dès que le résultat est distribué à l'associé, IS puis PFU). Une case à cocher bascule entre distribution immédiate chaque année et capitalisation dans la société (même logique que l'arbitrage holding de l'onglet trajectoire), et le graphique empilé distingue les revenus locatifs cumulés de la plus-value nette de cession pour chaque régime.
+
+![SCI (IS vs IR)](screenshots/08_sci.png)
 
 ### 8 — PER
 Verser sur un plan d'épargne retraite plutôt que percevoir en net : troisième levier d'arbitrage de la rémunération du dirigeant, à côté du salaire et du dividende de l'onglet 1. Plafond de déduction des versements volontaires (10 % des revenus professionnels nets dans la limite de 8 PASS pour un salarié/assimilé salarié, 10 % du bénéfice + 15 % supplémentaires entre 1 et 8 PASS - structurellement plus généreux - pour un TNS), économie d'impôt immédiate à la TMI actuelle, puis fiscalité de la sortie en capital : versements déduits taxés au barème IR à la TMI du moment (sans prélèvements sociaux) ou totalement exonérés si non déduits, gains toujours taxés au PFU de 31,4 %. Comparateur direct avec l'alternative "encaisser en net tout de suite, puis placer" à montant brut identique.
 
+![PER](screenshots/09_per.png)
+
 ### 9 — Note Grand Large (veille marchés & produits)
 Indicateurs de marché et seuils réglementaires organisés autour des 6 solutions réellement affichées sur grandlargepatrimoine.fr (placements financiers, immobilier, non coté, ingénierie fiscale du dirigeant, transmission), avec source et date pour chaque chiffre, un signal visuel sur les données à recouper avant diffusion, une ligne "en rendez-vous" par indicateur (ce qu'il change concrètement face à un client), et une checklist de rafraîchissement explicite — ce n'est pas un flux temps réel, c'est un instantané assumé comme tel. Une "règle fiscale niche du jour" (mécanismes patrimoniaux stables et sourcés, choisis pour être souvent mal connus plutôt que pour leur actualité) complète la page en rotation quotidienne.
 
-![Note Grand Large](screenshots/04_veille.png)
+![Note Grand Large](screenshots/10_veille.png)
 
 Chaque onglet (sauf la veille) propose aussi un export PDF en plus du CSV, et un glossaire dépliable des termes techniques employés (PASS, TNS, PFU, démembrement, usufruit, article 990 I, article 757 B, lien de parenté, IFI, décote, PER, TMI...), pour un lecteur non-initié.
 
