@@ -28,6 +28,7 @@ non rattachées à un produit ou une classe d'actifs précise) :
 import numpy as np
 
 from fiscalite import calcul_is, TAUX_PFU
+from fiscalite_tns import TAUX_IR_SEUL_PFU, cotisations_tns, net_apres_dividende_tns, seuil_dividendes_sans_cotisations
 
 PROFILS = {
     "prudent": {"rendement_moyen": 0.02, "volatilite": 0.03},
@@ -46,17 +47,59 @@ def tirer_rendements(rendement_moyen, volatilite, horizon_annees, nb_simulations
     return rng.normal(rendement_moyen, volatilite, size=(nb_simulations, horizon_annees))
 
 
-def simuler_directe(profit_annuel, rendements, is_fn=calcul_is, taux_pfu=TAUX_PFU):
+_calcul_is_vec = np.vectorize(calcul_is)
+_cotisations_tns_vec = np.vectorize(cotisations_tns)
+
+
+def _net_apres_dividende_tns_vectorise(montant_disponible, capital_social, compte_courant_moyen=0.0):
+    """
+    Équivalent vectorisé (numpy) de fiscalite_tns.net_apres_dividende_tns,
+    pour appliquer la fiscalité TNS du dividende à un tableau de montants
+    (une valeur par simulation x année) au lieu d'un seul montant. S'appuie
+    sur calcul_is et cotisations_tns - LA SEULE source de vérité pour ces
+    deux calculs (via np.vectorize, pas une réécriture parallèle) - pour
+    ne jamais risquer de diverger de la logique utilisée ailleurs dans
+    l'outil (onglet "Rémunération annuelle", trajectoire.py).
+    montant_disponible : tableau numpy. capital_social, compte_courant_moyen :
+    scalaires (saisis une fois dans l'interface, constants sur la simulation).
+    """
+    is_du = _calcul_is_vec(montant_disponible)
+    distribuable = montant_disponible - is_du
+    seuil = seuil_dividendes_sans_cotisations(capital_social, compte_courant_moyen)
+    part_sous_seuil = np.minimum(distribuable, seuil)
+    part_au_dela = np.maximum(0.0, distribuable - seuil)
+    net_sous_seuil = part_sous_seuil * (1 - TAUX_PFU)
+    cotisations_exces = np.where(part_au_dela > 0, _cotisations_tns_vec(part_au_dela), 0.0)
+    net_au_dela = part_au_dela - cotisations_exces - part_au_dela * TAUX_IR_SEUL_PFU
+    return net_sous_seuil + net_au_dela
+
+
+def simuler_directe(profit_annuel, rendements, is_fn=calcul_is, taux_pfu=TAUX_PFU,
+                     est_sarl=False, capital_social=10_000, compte_courant_moyen=0.0):
     """
     Version vectorisée de trajectoire_directe : applique la même logique
     mais sur toutes les simulations à la fois (une ligne par simulation).
     rendements : tableau (nb_simulations, horizon_annees).
+
+    est_sarl, capital_social, compte_courant_moyen : si est_sarl, le profit
+    distribué chaque année suit le régime TNS du gérant majoritaire (avec
+    réintégration au-delà de 10% du capital social + compte courant dans
+    l'assiette des cotisations, et la cotisation TNS minimale récurrente),
+    exactement comme trajectoire._net_distribue_annuel - net_distribue est
+    ici un scalaire (profit_annuel est constant sur l'horizon, inutile de
+    vectoriser ce calcul précis).
     """
     nb_simulations, horizon = rendements.shape
     capital = np.zeros(nb_simulations)
     historique = np.zeros((nb_simulations, horizon))
-    is_du = is_fn(profit_annuel)
-    net_distribue = (profit_annuel - is_du) * (1 - taux_pfu)
+    if est_sarl:
+        net_distribue = (
+            net_apres_dividende_tns(profit_annuel, capital_social, compte_courant_moyen)["net_total"]
+            - cotisations_tns(0)
+        )
+    else:
+        is_du = is_fn(profit_annuel)
+        net_distribue = (profit_annuel - is_du) * (1 - taux_pfu)
     for annee in range(horizon):
         gain = capital * rendements[:, annee]
         capital = capital + gain * (1 - taux_pfu) + net_distribue
@@ -64,10 +107,20 @@ def simuler_directe(profit_annuel, rendements, is_fn=calcul_is, taux_pfu=TAUX_PF
     return historique
 
 
-def simuler_holding(profit_annuel, rendements, is_fn=calcul_is, taux_pfu=TAUX_PFU):
+def simuler_holding(profit_annuel, rendements, is_fn=calcul_is, taux_pfu=TAUX_PFU,
+                     est_sarl=False, capital_social=10_000, compte_courant_moyen=0.0):
     """
     Version vectorisée de trajectoire_holding + sortie_holding : la holding
-    capitalise brut chaque année, la sortie en net est calculée après coup.
+    capitalise brut chaque année (identique quelle que soit la forme
+    juridique - voir trajectoire.trajectoire_holding), la sortie en net est
+    calculée après coup, année par année (chaque valeur de l'historique
+    représente "si on sortait tout maintenant").
+
+    Si est_sarl, cette sortie suit le régime TNS du gérant majoritaire
+    (réintégration au-delà du seuil + cotisation minimale récurrente),
+    appliqué à TOUT le capital brut accumulé de chaque année comme s'il
+    s'agissait d'une distribution de dividende cette année-là - voir
+    trajectoire.sortie_holding pour le raisonnement détaillé.
     """
     nb_simulations, horizon = rendements.shape
     capital = np.zeros(nb_simulations)
@@ -77,19 +130,22 @@ def simuler_holding(profit_annuel, rendements, is_fn=calcul_is, taux_pfu=TAUX_PF
     for annee in range(horizon):
         capital = capital * (1 + rendements[:, annee]) + apport_net_is
         historique_brut[:, annee] = capital
+    if est_sarl:
+        return _net_apres_dividende_tns_vectorise(historique_brut, capital_social, compte_courant_moyen) - cotisations_tns(0)
     return historique_brut * (1 - taux_pfu)
 
 
 def simulation_comparaison(profit_annuel, rendement_moyen, volatilite, horizon_annees,
-                            nb_simulations=1000, graine=None):
+                            nb_simulations=1000, graine=None,
+                            est_sarl=False, capital_social=10_000, compte_courant_moyen=0.0):
     """
     Lance la simulation Monte-Carlo et renvoie, pour chaque année, les
     percentiles 10/50/90 des deux trajectoires (direct et holding net).
     """
     rendements = tirer_rendements(rendement_moyen, volatilite, horizon_annees, nb_simulations, graine)
 
-    directe = simuler_directe(profit_annuel, rendements)
-    holding = simuler_holding(profit_annuel, rendements)
+    directe = simuler_directe(profit_annuel, rendements, est_sarl=est_sarl, capital_social=capital_social, compte_courant_moyen=compte_courant_moyen)
+    holding = simuler_holding(profit_annuel, rendements, est_sarl=est_sarl, capital_social=capital_social, compte_courant_moyen=compte_courant_moyen)
 
     percentiles = [10, 50, 90]
     resultat = {"directe": {}, "holding": {}}

@@ -1235,6 +1235,36 @@ with tab2:
         "fourchette réaliste."
     )
 
+    # --- Forme juridique du dirigeant (cohérence avec l'onglet 1) - défini
+    # avant l'expander d'hypothèses ci-dessous, qui s'y réfère.
+    titre_sous_section("Forme juridique du dirigeant")
+    forme_juridique_traj = st.radio(
+        "Forme juridique du dirigeant (trajectoire)",
+        ["SASU (président, assimilé salarié)", "SARL (gérant majoritaire, TNS)"],
+        horizontal=True, label_visibility="collapsed", key="forme_juridique_traj",
+    )
+    est_sarl_traj = forme_juridique_traj.startswith("SARL")
+    if est_sarl_traj:
+        st.caption(
+            "Chaque distribution (en direct, comme à la sortie finale de la holding) suit le même "
+            "régime TNS du gérant majoritaire que sur l'onglet « Rémunération annuelle » - la part "
+            "qui dépasse 10 % du capital social + compte courant est réintégrée dans l'assiette des "
+            "cotisations sociales (article L131-6 du code de la sécurité sociale)."
+        )
+        col_cap1_traj, col_cap2_traj = st.columns(2)
+        capital_social_traj = col_cap1_traj.number_input(
+            "Capital social de la SARL (€)", min_value=1, max_value=5_000_000,
+            value=10_000, step=1_000, key="capital_social_traj",
+        )
+        compte_courant_moyen_traj = col_cap2_traj.number_input(
+            "Solde moyen du compte courant d'associé (€, optionnel)", min_value=0, max_value=5_000_000,
+            value=0, step=5_000, key="compte_courant_traj",
+        )
+        seuil_div_traj = seuil_dividendes_sans_cotisations(capital_social_traj, compte_courant_moyen_traj)
+        st.caption(f"→ Seuil de dividende non cotisé : {fmt_euro(seuil_div_traj)} par an.")
+    else:
+        capital_social_traj, compte_courant_moyen_traj = 10_000, 0.0
+
     with st.expander("Hypothèses de ce scénario (à lire avant de tirer des conclusions)", expanded=True):
         st.markdown(
             "- Le profit annuel avant impôt est supposé constant sur tout l'horizon.\n"
@@ -1246,7 +1276,16 @@ with tab2:
             "paie que l'IS, et se réinvestit sans frottement fiscal annuel "
             "supplémentaire (hypothèse de capitalisation interne). Tout ne "
             "sort qu'à la fin, en dividende (PFU à la sortie).\n"
-            "- Le rendement n'est pas une prévision : la simulation tire des "
+            + (
+                "- **Gérant majoritaire de SARL (TNS)** : chaque distribution (en direct comme à la "
+                "sortie de la holding) applique le même mécanisme de réintégration que sur l'onglet "
+                "« Rémunération annuelle » - la part du dividende qui dépasse 10 % du capital social "
+                "+ compte courant est cotisée comme un revenu professionnel. La sortie de la holding "
+                "est traitée comme une distribution unique l'année de la sortie, pas étalée sur "
+                "l'horizon.\n"
+                if est_sarl_traj else ""
+            )
+            + "- Le rendement n'est pas une prévision : la simulation tire des "
             "centaines de trajectoires aléatoires autour d'une moyenne et "
             "d'une volatilité choisies, pour montrer une fourchette de "
             "résultats plutôt qu'un chiffre unique."
@@ -1465,6 +1504,9 @@ with tab2:
         horizon_annees=horizon,
         nb_simulations=1500,
         graine=42,
+        est_sarl=est_sarl_traj,
+        capital_social=capital_social_traj,
+        compte_courant_moyen=compte_courant_moyen_traj,
     )
 
     # Comparateur optionnel avec un second panier : pour montrer l'arbitrage
@@ -1492,6 +1534,9 @@ with tab2:
             horizon_annees=horizon,
             nb_simulations=1500,
             graine=42,  # même graine : les deux paniers sont comparés sur les mêmes tirages de marché
+            est_sarl=est_sarl_traj,
+            capital_social=capital_social_traj,
+            compte_courant_moyen=compte_courant_moyen_traj,
         )
         st.caption(
             f"Panier « {panier_comparaison} » affiché en tirets, pour comparaison - rendement moyen "
@@ -1590,7 +1635,10 @@ with tab2:
     fig2.update_xaxes(title="Année", range=[annees[0] - 0.3, horizon + horizon * 0.22])
     fig2.update_layout(margin=dict(r=90))
 
-    resultat_det = comparer(profit_annuel, rendement_moyen, horizon)
+    resultat_det = comparer(
+        profit_annuel, rendement_moyen, horizon,
+        est_sarl=est_sarl_traj, capital_social=capital_social_traj, compte_courant_moyen=compte_courant_moyen_traj,
+    )
     if resultat_det["annee_croisement"]:
         fig2.add_vline(
             x=resultat_det["annee_croisement"],
@@ -1699,7 +1747,10 @@ with tab2:
 
         pdf_bytes_trajectoire = generer_pdf_scenario(
             titre="Direct vs holding, sur plusieurs années",
-            sous_titre=f"Profit annuel {fmt_euro(profit_annuel)} — horizon {horizon} ans — panier {profil}",
+            sous_titre=(
+                f"Profit annuel {fmt_euro(profit_annuel)} — horizon {horizon} ans — panier {profil} — "
+                f"{forme_juridique_traj.split(' (')[0]}"
+            ),
             kpis=[
                 (
                     "Croisement (scénario central)",
@@ -1723,6 +1774,15 @@ with tab2:
                 "Scénario holding : profit conservé dans la société, ne paie que l'IS, capitalise "
                 "sans frottement fiscal annuel supplémentaire ; tout ne sort qu'en fin d'horizon, "
                 "en dividende (PFU à la sortie).",
+            ] + (
+                [
+                    f"Gérant majoritaire de SARL (TNS) : chaque distribution au-delà de "
+                    f"{fmt_euro(seuil_div_traj)} par an (10 % du capital social + compte courant) est "
+                    f"réintégrée dans l'assiette des cotisations sociales, y compris la sortie finale "
+                    f"de la holding, traitée comme une distribution unique l'année de la sortie."
+                ]
+                if est_sarl_traj else []
+            ) + [
                 "Le rendement n'est pas une prévision : fourchette P10-P90 issue d'une simulation "
                 "Monte-Carlo (1500 tirages), pas un chiffre garanti.",
             ],
@@ -1735,7 +1795,7 @@ with tab2:
             type="primary",
         )
 
-    glossaire_expander(["Holding", "PFU", "IS", "Monte-Carlo (simulation)", "P10 / P50 / P90"])
+    glossaire_expander(["Holding", "PFU", "IS", "TNS", "Monte-Carlo (simulation)", "P10 / P50 / P90"])
 
 # --- Onglet 3 : démembrement de propriété ---
 with tab3:

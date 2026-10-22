@@ -17,9 +17,9 @@ from fiscalite import (
     net_apres_salaire,
     PASS_2026,
 )
-from simulation import PROFILS, simulation_comparaison
+from simulation import PROFILS, simulation_comparaison, simuler_directe, simuler_holding
 from paniers import CLASSES_ACTIFS, PANIERS, normaliser_ponderations, rendement_volatilite_panier
-from trajectoire import comparer
+from trajectoire import comparer, sortie_holding, trajectoire_directe, trajectoire_holding
 from demembrement import (
     calcul_droits_donation,
     calcul_droits_donation_famille,
@@ -357,6 +357,49 @@ verifier(
 verifier(
     "net_total_mix SASU à p=100% : avec pass_value = PASS_2026, résultat identique à l'appel sans surcharge",
     abs(net_total_mix(80_000, 1.0, False) - net_total_mix(80_000, 1.0, False, pass_value=PASS_2026)) < 1e-9
+)
+
+# --- Trajectoire pluriannuelle : forme juridique SASU/SARL (task #27) ---
+verifier(
+    "trajectoire_directe SASU : comportement inchangé par défaut (est_sarl=False)",
+    abs(trajectoire_directe(80_000, 0.05, 10)[-1] - trajectoire_directe(80_000, 0.05, 10, est_sarl=False)[-1]) < 1e-6
+)
+verifier(
+    "trajectoire_directe SARL (capital social faible) : net strictement inférieur à la SASU, même profit/rendement",
+    trajectoire_directe(80_000, 0.05, 10, est_sarl=True, capital_social=10_000)[-1]
+    < trajectoire_directe(80_000, 0.05, 10, est_sarl=False)[-1]
+)
+verifier(
+    "sortie_holding SARL : un capital social plus élevé laisse un net au moins aussi élevé (moins de dividende réintégré en TNS)",
+    sortie_holding(500_000, est_sarl=True, capital_social=200_000) >= sortie_holding(500_000, est_sarl=True, capital_social=10_000)
+)
+verifier(
+    "comparer SARL (capital social faible) : l'année de croisement n'est jamais plus précoce que pour la SASU (le régime TNS pénalise surtout le direct, pas la holding qui ne distribue qu'à la sortie)",
+    (lambda a, b: a is None or (b is not None and a >= b))(
+        comparer(80_000, 0.05, 15, est_sarl=True, capital_social=10_000)["annee_croisement"],
+        comparer(80_000, 0.05, 15, est_sarl=False)["annee_croisement"],
+    )
+)
+
+_rendements_constants_test = np.full((2, 8), 0.05)
+verifier(
+    "simuler_directe (vectorisé) SARL recoupe exactement trajectoire_directe (scalaire), à rendement constant",
+    np.allclose(
+        simuler_directe(80_000, _rendements_constants_test, est_sarl=True, capital_social=10_000)[0],
+        trajectoire_directe(80_000, 0.05, 8, est_sarl=True, capital_social=10_000),
+    )
+)
+verifier(
+    "simuler_holding (vectorisé) SARL recoupe exactement trajectoire_holding + sortie_holding (scalaires), à rendement constant",
+    np.allclose(
+        simuler_holding(80_000, _rendements_constants_test, est_sarl=True, capital_social=10_000)[0],
+        [sortie_holding(c, est_sarl=True, capital_social=10_000) for c in trajectoire_holding(80_000, 0.05, 8)],
+    )
+)
+verifier(
+    "simulation_comparaison : accepte est_sarl/capital_social sans erreur et modifie bien le résultat",
+    simulation_comparaison(80_000, 0.05, 0.08, 10, nb_simulations=200, graine=1, est_sarl=True, capital_social=10_000)["directe"][50][-1]
+    != simulation_comparaison(80_000, 0.05, 0.08, 10, nb_simulations=200, graine=1, est_sarl=False)["directe"][50][-1]
 )
 
 print()
