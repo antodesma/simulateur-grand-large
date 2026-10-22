@@ -17,7 +17,7 @@ Un dirigeant de société qui se demande *« salaire ou dividende ? »*, *« je 
 ## Les 4 modules
 
 ### 1 — Rémunération annuelle
-Salaire vs dividende, avec un choix de la forme juridique du dirigeant : SASU (président, assimilé salarié — charges patronales et salariales par tranche de PASS) ou SARL (gérant majoritaire, travailleur non salarié — cotisations TNS, sans distinction patronal/salarial, et réintégration des dividendes excédant 10 % du capital social dans l'assiette des cotisations, article L131-6 du code de la sécurité sociale). Abattement de 10 % pour frais professionnels, IS à 15 %/25 %, barème IR progressif, PFU sur dividendes. Cascade interactive (waterfall) du coût total entreprise jusqu'au net en poche, détail du calcul étape par étape, export CSV.
+Salaire vs dividende, avec un choix de la forme juridique du dirigeant : SASU (président, assimilé salarié — charges patronales et salariales par tranche de PASS) ou SARL (gérant majoritaire, travailleur non salarié — cotisations TNS, sans distinction patronal/salarial, et réintégration des dividendes excédant 10 % du capital social dans l'assiette des cotisations, article L131-6 du code de la sécurité sociale). Abattement de 10 % pour frais professionnels, IS à 15 %/25 %, barème IR progressif, PFU sur dividendes. Cascade interactive (waterfall) du coût total entreprise jusqu'au net en poche, détail du calcul étape par étape, comparateur direct des 4 scénarios (SASU/SARL × salaire/dividende) sans changer de réglage, export CSV et PDF (synthèse one-pager).
 
 ### 2 — Trajectoire pluriannuelle
 Garder l'argent en direct vs le faire capitaliser dans une holding, sur plusieurs années. Simulation Monte-Carlo (1500 tirages) avec trois profils de rendement/risque, affichée en fourchette P10–P90 plutôt qu'en point unique — pour ne jamais ressembler à une prévision de performance personnalisée. L'année de croisement (scénario central) est annotée directement sur le graphique.
@@ -33,6 +33,8 @@ Donation en pleine propriété vs donation de la nue-propriété (usufruit conse
 Indicateurs de marché et seuils réglementaires organisés autour des 6 solutions réellement affichées sur grandlargepatrimoine.fr (placements financiers, immobilier, non coté, ingénierie fiscale du dirigeant, transmission), avec source et date pour chaque chiffre, un signal visuel sur les données à recouper avant diffusion, et une checklist de rafraîchissement explicite — ce n'est pas un flux temps réel, c'est un instantané assumé comme tel.
 
 ![Note Grand Large](screenshots/04_veille.png)
+
+Chaque onglet (sauf la veille) propose aussi un export PDF en plus du CSV, et un glossaire dépliable des termes techniques employés (PASS, TNS, PFU, démembrement, usufruit...), pour un lecteur non-initié.
 
 ## Rigueur méthodologique
 
@@ -64,6 +66,8 @@ trajectoire.py       # comparaison directe vs holding, déterministe
 simulation.py        # même comparaison, Monte-Carlo (profils prudent/équilibre/dynamique)
 demembrement.py       # barème art. 669 CGI, droits de donation, pleine propriété vs démembrement
 veille.py             # indicateurs de marché et seuils réglementaires sourcés, organisés par solution GLP
+export_pdf.py         # génération des exports PDF one-pager (un par scénario)
+glossaire.py          # définitions courtes des termes techniques, affichées par onglet
 app.py                # interface Streamlit (4 onglets), charte graphique Grand Large Patrimoine
 tests_sanity.py       # 47 vérifications automatisées sur les modules de calcul
 ```

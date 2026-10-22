@@ -31,6 +31,8 @@ from fiscalite_tns import (
     net_apres_remuneration_tns,
     seuil_dividendes_sans_cotisations,
 )
+from export_pdf import generer_pdf_scenario
+from glossaire import termes_glossaire
 from veille import (
     CHECKLIST_RAFRAICHISSEMENT,
     DATE_MISE_A_JOUR,
@@ -316,6 +318,15 @@ def etapes_numerotees(etapes):
     st.markdown(f"<div>{lignes}</div>", unsafe_allow_html=True)
 
 
+def glossaire_expander(cles, titre="Glossaire des termes utilisés ici"):
+    """Dépliable listant les définitions des termes techniques pertinents
+    pour l'onglet en cours - pour un lecteur non-initié (le dirigeant
+    lui-même, ou un membre de sa famille)."""
+    with st.expander(titre):
+        for cle, definition in termes_glossaire(cles):
+            st.markdown(f"**{cle}** — {definition}")
+
+
 if "montant_input" not in st.session_state:
     st.session_state["montant_input"] = 80_000
 if "profit_input" not in st.session_state:
@@ -464,6 +475,54 @@ with tab1:
     fig1.update_xaxes(showgrid=False)
     st.plotly_chart(fig1, width="stretch", config=CONFIG_GRAPHIQUE)
 
+    # --- Comparateur direct des 4 scénarios (SASU et SARL), sans bascule ---
+    if est_sarl:
+        capital_social_comparateur = capital_social
+        compte_courant_comparateur = compte_courant_moyen
+        net_salaire_sasu = net_apres_salaire(montant)
+        net_dividende_sasu = net_apres_dividende(montant)
+        net_remuneration_sarl = net_salaire
+        net_dividende_sarl = net_dividende
+    else:
+        capital_social_comparateur = 10_000
+        compte_courant_comparateur = 0
+        net_salaire_sasu = net_salaire
+        net_dividende_sasu = net_dividende
+        net_remuneration_sarl = net_apres_remuneration_tns(montant)
+        net_dividende_sarl = net_apres_dividende_tns(montant, capital_social_comparateur, compte_courant_comparateur)["net_total"]
+
+    with st.expander("Comparer les 4 scénarios (SASU et SARL) sans changer de forme juridique"):
+        if not est_sarl:
+            st.caption(
+                f"Valeurs SARL calculées avec un capital social par défaut de "
+                f"{fmt_euro(capital_social_comparateur)} (choisissez « SARL » ci-dessus pour saisir le "
+                f"capital réel du client)."
+            )
+        fig_comparateur = go.Figure()
+        fig_comparateur.add_bar(
+            x=["SASU\nsalaire", "SASU\ndividende", "SARL\nrémunération", "SARL\ndividende"],
+            y=[net_salaire_sasu, net_dividende_sasu, net_remuneration_sarl, net_dividende_sarl],
+            marker_color=[COULEUR_SALAIRE, COULEUR_DIVIDENDE, COULEUR_SALAIRE, COULEUR_DIVIDENDE],
+            marker_opacity=[
+                1.0 if not est_sarl else 0.4,
+                1.0 if not est_sarl else 0.4,
+                1.0 if est_sarl else 0.4,
+                1.0 if est_sarl else 0.4,
+            ],
+            text=[fmt_euro(v) for v in [net_salaire_sasu, net_dividende_sasu, net_remuneration_sarl, net_dividende_sarl]],
+            textposition="outside", width=0.6,
+            hovertemplate="%{x} : %{y:,.0f} €<extra></extra>",
+        )
+        fig_comparateur = _mise_en_forme_graphique(
+            fig_comparateur, f"Net en poche pour {fmt_euro(montant)}, selon la forme juridique", "Net en poche (€)"
+        )
+        fig_comparateur.update_xaxes(showgrid=False)
+        st.plotly_chart(fig_comparateur, width="stretch", config=CONFIG_GRAPHIQUE)
+        st.caption(
+            "Le scénario actuellement sélectionné ci-dessus apparaît en couleur pleine, l'autre en "
+            "transparence - pour comparer les deux formes juridiques sans changer le réglage."
+        )
+
     if est_sarl:
         cotisations_remuneration = cotisations_tns(montant)
         net_avant_abattement = montant - cotisations_remuneration
@@ -574,12 +633,59 @@ with tab1:
             width="stretch",
         )
 
-    st.download_button(
-        "Télécharger ce scénario (CSV)",
-        data=df_detail.to_csv().encode("utf-8"),
-        file_name=f"scenario_remuneration_{montant}.csv",
-        mime="text/csv",
-    )
+    col_csv, col_pdf = st.columns(2)
+    with col_csv:
+        st.download_button(
+            "Télécharger ce scénario (CSV)",
+            data=df_detail.to_csv().encode("utf-8"),
+            file_name=f"scenario_remuneration_{montant}.csv",
+            mime="text/csv",
+        )
+    with col_pdf:
+        lignes_pdf = [["Poste"] + list(df_detail.columns)] + [
+            [str(poste)] + [fmt_euro(v) if pd.notna(v) else "—" for v in ligne]
+            for poste, ligne in zip(df_detail.index, df_detail.values)
+        ]
+        hypotheses_pdf = (
+            [
+                "Gérant majoritaire de SARL, travailleur non salarié (TNS) : pas de distinction "
+                "charges patronales/salariales, cotisations payées en totalité par le gérant.",
+                f"Seuil de dividende non réintégré dans l'assiette TNS : {fmt_euro(seuil_div)} par an "
+                f"(10 % du capital social + compte courant d'associé, article L131-6 du code de la "
+                f"sécurité sociale).",
+                "Simplifications documentées (progressivité maladie/famille interpolée, assiette "
+                "CSG-CRDS sans abattement non confirmé) : voir le code source, à vérifier avec un "
+                "expert-comptable.",
+            ]
+            if est_sarl else
+            [
+                "Président de SASU, assimilé salarié : charges patronales et salariales calculées "
+                "par tranche de PASS.",
+                "Abattement forfaitaire de 10 % pour frais professionnels, barème IR 2026 (revenus "
+                "2025), part fiscale unique.",
+                "Dividende : IS (15 %/25 %) payé par la société, puis PFU (30 %) sur le montant "
+                "distribué au dirigeant.",
+            ]
+        )
+        pdf_bytes = generer_pdf_scenario(
+            titre="Salaire vs dividende, sur une année",
+            sous_titre=f"{forme_juridique} — pour {fmt_euro(montant)} disponibles",
+            kpis=[
+                (libelle_salaire, fmt_euro(net_salaire)),
+                ("Net en poche si dividende", fmt_euro(net_dividende)),
+                ("Écart", f"{fmt_euro(ecart)} en faveur de {meilleur}"),
+            ],
+            lignes_tableau=lignes_pdf,
+            hypotheses=hypotheses_pdf,
+        )
+        st.download_button(
+            "Télécharger la synthèse (PDF)",
+            data=pdf_bytes,
+            file_name=f"synthese_remuneration_{montant}.pdf",
+            mime="application/pdf",
+        )
+
+    glossaire_expander(["Assimilé salarié", "TNS", "PASS", "Assiette", "PFU", "IS", "IR", "Abattement"])
 
 # --- Onglet 2 : trajectoire pluriannuelle avec risque ---
 with tab2:
@@ -690,12 +796,54 @@ with tab2:
         }
     )
     st.write("")
-    st.download_button(
-        "Télécharger cette trajectoire (CSV)",
-        data=df_trajectoire.to_csv(index=False).encode("utf-8"),
-        file_name=f"trajectoire_{profil}_{horizon}ans.csv",
-        mime="text/csv",
-    )
+    col_csv2, col_pdf2 = st.columns(2)
+    with col_csv2:
+        st.download_button(
+            "Télécharger cette trajectoire (CSV)",
+            data=df_trajectoire.to_csv(index=False).encode("utf-8"),
+            file_name=f"trajectoire_{profil}_{horizon}ans.csv",
+            mime="text/csv",
+        )
+    with col_pdf2:
+        annees_cles = sorted(set([1, horizon // 2 or 1, horizon]))
+        lignes_pdf_trajectoire = [["Année", "Direct (médiane)", "Holding (médiane)"]] + [
+            [
+                str(annee),
+                fmt_euro(resultat_simu["directe"][50][annee - 1]),
+                fmt_euro(resultat_simu["holding"][50][annee - 1]),
+            ]
+            for annee in annees_cles
+        ]
+        pdf_bytes_trajectoire = generer_pdf_scenario(
+            titre="Direct vs holding, sur plusieurs années",
+            sous_titre=f"Profit annuel {fmt_euro(profit_annuel)} — horizon {horizon} ans — profil {profil}",
+            kpis=[
+                (
+                    "Croisement (scénario central)",
+                    f"Année {resultat_det['annee_croisement']}" if resultat_det["annee_croisement"] else "Aucun",
+                ),
+                ("Écart médian en fin d'horizon", fmt_euro(ecart_mediane_final, signe=True)),
+            ],
+            lignes_tableau=lignes_pdf_trajectoire,
+            hypotheses=[
+                "Profit annuel avant impôt supposé constant sur tout l'horizon.",
+                "Scénario direct : profit distribué en dividende chaque année (IS puis PFU), "
+                "réinvesti et taxé au PFU chaque année sur ses propres gains.",
+                "Scénario holding : profit conservé dans la société, ne paie que l'IS, capitalise "
+                "sans frottement fiscal annuel supplémentaire ; tout ne sort qu'en fin d'horizon, "
+                "en dividende (PFU à la sortie).",
+                "Le rendement n'est pas une prévision : fourchette P10-P90 issue d'une simulation "
+                "Monte-Carlo (1500 tirages), pas un chiffre garanti.",
+            ],
+        )
+        st.download_button(
+            "Télécharger la synthèse (PDF)",
+            data=pdf_bytes_trajectoire,
+            file_name=f"synthese_trajectoire_{profil}_{horizon}ans.pdf",
+            mime="application/pdf",
+        )
+
+    glossaire_expander(["Holding", "PFU", "IS", "Monte-Carlo (simulation)", "P10 / P50 / P90"])
 
 # --- Onglet 3 : démembrement de propriété ---
 with tab3:
@@ -827,12 +975,49 @@ with tab3:
         )
         st.dataframe(df_demembrement.style.format(fmt_euro), width="stretch")
 
-    st.download_button(
-        "Télécharger ce scénario (CSV)",
-        data=df_demembrement.to_csv().encode("utf-8"),
-        file_name=f"demembrement_{valeur_bien}_{nombre_enfants}enf_{age_donateur}ans.csv",
-        mime="text/csv",
-    )
+    col_csv3, col_pdf3 = st.columns(2)
+    with col_csv3:
+        st.download_button(
+            "Télécharger ce scénario (CSV)",
+            data=df_demembrement.to_csv().encode("utf-8"),
+            file_name=f"demembrement_{valeur_bien}_{nombre_enfants}enf_{age_donateur}ans.csv",
+            mime="text/csv",
+        )
+    with col_pdf3:
+        lignes_pdf_demembrement = [["Poste", "Valeur"]] + [
+            [str(poste), fmt_euro(valeur)]
+            for poste, valeur in zip(df_demembrement.index, df_demembrement["Valeur"])
+        ]
+        pdf_bytes_demembrement = generer_pdf_scenario(
+            titre="Donation en pleine propriété vs donation de la nue-propriété",
+            sous_titre=f"Bien de {fmt_euro(valeur_bien)} — donateur de {age_donateur} ans — barème article 669 du CGI",
+            kpis=[
+                ("Droits si pleine propriété", fmt_euro(resultat_demembrement["droits_pleine_propriete"])),
+                ("Droits si nue-propriété seule", fmt_euro(resultat_demembrement["droits_demembrement"])),
+                ("Économie de droits", fmt_euro(resultat_demembrement["economie_droits"])),
+            ],
+            lignes_tableau=lignes_pdf_demembrement,
+            hypotheses=[
+                "Nue-propriété seule : le parent garde l'usufruit jusqu'à son décès ; les droits de "
+                "donation ne portent que sur la valeur réduite de la nue-propriété (barème fiscal "
+                "par tranche d'âge, article 669 du CGI).",
+                "Au décès du parent, l'usufruit s'éteint sans droit supplémentaire (article 1133 "
+                "du CGI).",
+                f"Abattement de 100 000 € par parent et par enfant (article 779 du CGI) : "
+                f"{fmt_euro(100_000 * nombre_parts)} au total pour {nombre_enfants} enfant(s) et "
+                f"{nombre_donateurs} donateur(s).",
+                "Avec la nue-propriété seule, l'enfant n'a pas l'usage ou les revenus du bien avant "
+                "l'extinction de l'usufruit — un arbitrage fiscal contre un arbitrage de jouissance.",
+            ],
+        )
+        st.download_button(
+            "Télécharger la synthèse (PDF)",
+            data=pdf_bytes_demembrement,
+            file_name=f"synthese_demembrement_{valeur_bien}.pdf",
+            mime="application/pdf",
+        )
+
+    glossaire_expander(["Démembrement de propriété", "Usufruit", "Nue-propriété", "Abattement"])
 
 
 # --- Onglet 4 : veille marchés & produits, calée sur les solutions GLP ---
