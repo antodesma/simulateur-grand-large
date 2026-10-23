@@ -99,6 +99,13 @@ COULEUR_DIVIDENDE = "#b5672e"      # slot catégoriel 2 - bronze
 COULEUR_DEMEMBREMENT = "#1b8f6f"   # slot catégoriel 3 - pétrole
 COULEUR_JAUNE = "#ad7d1f"          # slot catégoriel 4 - or bruni
 COULEUR_MAGENTA = "#c15f82"        # slot catégoriel 5 - vieux rose
+# Couleur dédiée au donut "Composition du panier" uniquement (pas recyclée
+# ailleurs) : testée et validée avec le script du skill dataviz aux côtés de
+# COULEUR_SALAIRE/DIVIDENDE/DEMEMBREMENT (adjacentes ET toutes paires, clair)
+# - contrairement à COULEUR_JAUNE à cette place, qui échouait le plancher de
+# vision normale face à COULEUR_DIVIDENDE (ΔE 6,1, sous le seuil de 15) et à
+# COULEUR_MAGENTA, qui échoue la séparation daltonisme face à COULEUR_DEMEMBREMENT.
+COULEUR_PRUNE_PANIER = "#8a3a5e"
 # Une couleur par section de la Note Grand Large (même ordre que
 # TOUTES_SECTIONS), pour que chaque solution GLP garde la même identité
 # visuelle partout dans l'onglet - jamais recyclée, jamais au hasard.
@@ -110,7 +117,11 @@ COULEURS_CLASSES_ACTIFS = {
     "epargne_securisee": COULEUR_SALAIRE,
     "immobilier_non_cote": COULEUR_DIVIDENDE,
     "marches_financiers": COULEUR_DEMEMBREMENT,
-    "investissements_non_cotes": COULEUR_JAUNE,
+    # COULEUR_PRUNE_PANIER plutôt que le jaune/or bruni d'origine :
+    # "Immobilier" (bronze) et "Non coté" (or) étaient deux tons chauds
+    # trop proches sur une fine tranche de donut - repéré à l'audit visuel,
+    # confirmé par le validateur (voir le commentaire sur la couleur elle-même).
+    "investissements_non_cotes": COULEUR_PRUNE_PANIER,
 }
 LIBELLES_COURTS_CLASSES_ACTIFS = {
     "epargne_securisee": "Épargne sécurisée",
@@ -2698,12 +2709,18 @@ with tab6:
             "Montant dû au titre de l'IFI, décote déduite.",
         )
 
+    # Le patrimoine net taxable (déjà affiché en carte KPI ci-dessus) est
+    # volontairement exclu de ce graphique : à la même échelle que l'IFI
+    # brut/la décote/l'IFI net dû (souvent 100 à 1000 fois plus petits), il
+    # écrase les trois autres barres au point de les rendre invisibles -
+    # seul le texte flotterait au-dessus d'un graphique vide. Ce graphique
+    # ne sert qu'à comparer les 3 montants propres à l'IFI entre eux.
     fig_ifi = go.Figure()
     fig_ifi.add_bar(
-        x=["Patrimoine net taxable", "IFI brut", "Décote", "IFI net dû"],
-        y=[resultat_ifi["assiette"], resultat_ifi["ifi_brut"], -resultat_ifi["decote"], resultat_ifi["ifi_net"]],
-        marker_color=[ENCRE_MUTED, COULEUR_SALAIRE, COULEUR_JAUNE, COULEUR_DEMEMBREMENT],
-        text=[fmt_euro(v) for v in [resultat_ifi["assiette"], resultat_ifi["ifi_brut"], resultat_ifi["decote"], resultat_ifi["ifi_net"]]],
+        x=["IFI brut", "Décote", "IFI net dû"],
+        y=[resultat_ifi["ifi_brut"], -resultat_ifi["decote"], resultat_ifi["ifi_net"]],
+        marker_color=[COULEUR_SALAIRE, COULEUR_JAUNE, COULEUR_DEMEMBREMENT],
+        text=[fmt_euro(v) for v in [resultat_ifi["ifi_brut"], resultat_ifi["decote"], resultat_ifi["ifi_net"]]],
         textposition="outside", width=0.5,
         hovertemplate="%{x} : %{y:,.0f} €<extra></extra>",
     )
@@ -3305,6 +3322,19 @@ with tab10:
             "`.streamlit/secrets.toml` sous la forme `ANTHROPIC_API_KEY = \"sk-ant-...\"`, "
             "puis relance l'application.",
         )
+        st.caption("Aperçu - exemple d'échange une fois la clef configurée :")
+        with st.chat_message("user"):
+            st.markdown("Quelle différence entre l'article 990 I et l'article 757 B pour l'assurance-vie ?")
+        with st.chat_message("assistant"):
+            st.markdown(
+                "Ça dépend de l'âge du souscripteur au moment des **versements** (pas du décès) :\n\n"
+                "- **Article 990 I** (versements avant 70 ans) : abattement de 152 500 € par bénéficiaire, "
+                "puis 20 % jusqu'à 700 000 €, 31,25 % au-delà.\n"
+                "- **Article 757 B** (versements après 70 ans) : seules les primes versées sont taxables - "
+                "les gains sont exonérés - après un abattement de 30 500 € partagé entre tous les "
+                "bénéficiaires, puis barème des droits de succession classique.\n\n"
+                "L'onglet Assurance-vie bascule automatiquement de l'un à l'autre selon l'âge que tu saisis."
+            )
     else:
         if "copilote_messages" not in st.session_state:
             st.session_state.copilote_messages = []
