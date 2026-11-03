@@ -660,6 +660,11 @@ def _mise_en_forme_graphique(fig, titre, y_titre):
         ),
         margin=dict(t=100, l=10, r=10, b=10),
         hovermode="x unified",
+        # Barres nettement plus étroites que leur créneau ("ne jamais remplir
+        # le créneau") : un bloc de couleur saturée qui occupe tout l'espace
+        # disponible est ce qui donne aux graphiques un aspect criard. Avec de
+        # l'air autour, la même couleur reste identifiable sans agresser l'œil.
+        bargap=0.68,
         # dragmode=False : cliquer-glisser sur le graphique ne déclenche plus
         # de rectangle de sélection/zoom accidentel (gênant en usage normal,
         # ex. en essayant juste de survoler le graphique). Le zoom reste
@@ -696,8 +701,9 @@ def _mise_en_forme_graphique(fig, titre, y_titre):
     # titre. N'affecte que les traces qui affichent du texte (bar,
     # waterfall) - sans effet sur les courbes.
     fig.update_traces(textfont=dict(family=POLICE_CORPS_GRAPHIQUE, size=13, color=ENCRE_SECONDAIRE))
-    # Coins arrondis sur les barres - rendu plus actuel qu'un rectangle plein.
-    fig.update_traces(marker=dict(cornerradius=6), selector=dict(type="bar"))
+    # Coins arrondis sur les barres - rendu plus actuel qu'un rectangle plein
+    # (plus visible maintenant que les barres sont plus étroites, cf. bargap).
+    fig.update_traces(marker=dict(cornerradius=8), selector=dict(type="bar"))
     return fig
 
 
@@ -801,7 +807,7 @@ with tab1:
         x=["Rémunération" if est_sarl else "Salaire", "Dividende"], y=[net_salaire, net_dividende],
         marker_color=[COULEUR_SALAIRE, COULEUR_DIVIDENDE],
         text=[fmt_euro(net_salaire), fmt_euro(net_dividende)],
-        textposition="outside", width=0.5,
+        textposition="outside", width=0.22,
         hovertemplate="%{x} : %{y:,.0f} €<extra></extra>",
     )
     fig1 = _mise_en_forme_graphique(fig1, f"Pour {fmt_euro(montant)} disponibles", "Net en poche (€)")
@@ -1942,7 +1948,7 @@ with tab3:
         y=[resultat_demembrement["droits_pleine_propriete"], resultat_demembrement["droits_demembrement"]],
         marker_color=[COULEUR_SALAIRE, COULEUR_DEMEMBREMENT],
         text=[fmt_euro(resultat_demembrement['droits_pleine_propriete']), fmt_euro(resultat_demembrement['droits_demembrement'])],
-        textposition="outside", width=0.5,
+        textposition="outside", width=0.22,
         hovertemplate="%{x} : %{y:,.0f} €<extra></extra>",
     )
     fig3 = _mise_en_forme_graphique(fig3, f"Droits de donation pour {fmt_euro(valeur_bien)} transmis", "Droits de donation (€)")
@@ -2095,7 +2101,7 @@ with tab3:
         y=[resultat_dutreil["droits_sans_dutreil"], resultat_dutreil["droits_avec_dutreil"]],
         marker_color=[ENCRE_MUTED, COULEUR_DEMEMBREMENT],
         text=[fmt_euro(resultat_dutreil["droits_sans_dutreil"]), fmt_euro(resultat_dutreil["droits_avec_dutreil"])],
-        textposition="outside", width=0.5,
+        textposition="outside", width=0.22,
         hovertemplate="%{x} : %{y:,.0f} €<extra></extra>",
     )
     fig_dutreil = _mise_en_forme_graphique(
@@ -2448,7 +2454,7 @@ with tab5:
         y=[montant_gains_rachat, -resultat_rachat["ir"], -resultat_rachat["prelevements_sociaux"], resultat_rachat["net"]],
         marker_color=[ENCRE_MUTED, COULEUR_SALAIRE, COULEUR_JAUNE, COULEUR_DEMEMBREMENT],
         text=[fmt_euro(v) for v in [montant_gains_rachat, resultat_rachat["ir"], resultat_rachat["prelevements_sociaux"], resultat_rachat["net"]]],
-        textposition="outside", width=0.5,
+        textposition="outside", width=0.22,
         hovertemplate="%{x} : %{y:,.0f} €<extra></extra>",
     )
     fig_rachat = _mise_en_forme_graphique(fig_rachat, "Décomposition du rachat", "Montant (€)")
@@ -2548,7 +2554,7 @@ with tab5:
         y=[capital_transmis, -resultat_transmission["prelevement"], resultat_transmission["net_beneficiaire"]],
         marker_color=[ENCRE_MUTED, COULEUR_SALAIRE, COULEUR_DEMEMBREMENT],
         text=[fmt_euro(v) for v in [capital_transmis, resultat_transmission["prelevement"], resultat_transmission["net_beneficiaire"]]],
-        textposition="outside", width=0.5,
+        textposition="outside", width=0.22,
         hovertemplate="%{x} : %{y:,.0f} €<extra></extra>",
     )
     fig_transmission = _mise_en_forme_graphique(
@@ -2721,7 +2727,7 @@ with tab6:
         y=[resultat_ifi["ifi_brut"], -resultat_ifi["decote"], resultat_ifi["ifi_net"]],
         marker_color=[COULEUR_SALAIRE, COULEUR_JAUNE, COULEUR_DEMEMBREMENT],
         text=[fmt_euro(v) for v in [resultat_ifi["ifi_brut"], resultat_ifi["decote"], resultat_ifi["ifi_net"]]],
-        textposition="outside", width=0.5,
+        textposition="outside", width=0.22,
         hovertemplate="%{x} : %{y:,.0f} €<extra></extra>",
     )
     fig_ifi = _mise_en_forme_graphique(fig_ifi, "Décomposition de l'IFI", "Montant (€)")
@@ -3318,9 +3324,9 @@ with tab10:
 
     if not cle_api_configuree(st.secrets):
         st.warning(
-            "Clef API non configurée. Pour activer le copilote, ajoute ta clef Anthropic dans "
-            "`.streamlit/secrets.toml` sous la forme `ANTHROPIC_API_KEY = \"sk-ant-...\"`, "
-            "puis relance l'application.",
+            "Clef API non configurée. En local : ajoute-la dans `.streamlit/secrets.toml` sous la "
+            "forme `ANTHROPIC_API_KEY = \"sk-ant-...\"`, puis relance l'application. Sur Streamlit "
+            "Cloud : renseigne-la dans *Settings → Secrets* de l'appli déployée.",
         )
         st.caption("Aperçu - exemple d'échange une fois la clef configurée :")
         with st.chat_message("user"):

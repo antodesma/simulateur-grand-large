@@ -52,8 +52,19 @@ def cle_api_configuree(secrets) -> bool:
     Vérifie qu'une vraie clef semble présente dans st.secrets - sans
     jamais la journaliser ni la renvoyer. `secrets` est st.secrets,
     passé en paramètre pour ne pas importer streamlit ici.
+
+    Tant que secrets.toml n'existe pas du tout sur le disque (cas du tout
+    premier déploiement, avant que la clef ne soit renseignée dans les
+    paramètres de l'appli sur Streamlit Cloud), st.secrets lève une
+    exception dès qu'on le teste - y compris via `.get()` - plutôt que de
+    se comporter comme un dict vide. On l'attrape ici pour que l'absence de
+    clef dégrade l'onglet Copilote proprement, au lieu de faire planter
+    toute l'application au chargement.
     """
-    cle = secrets.get("ANTHROPIC_API_KEY", "") if secrets else ""
+    try:
+        cle = secrets.get("ANTHROPIC_API_KEY", "") if secrets else ""
+    except Exception:
+        return False
     return bool(cle) and cle.strip() not in ("", "colle-ta-clef-ici") and cle.startswith("sk-ant-")
 
 
