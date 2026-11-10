@@ -521,20 +521,6 @@
   }
   .roadmap-list { font-size: 13px; color: var(--ink-muted); margin-top: 10px; }
   .roadmap-list li { margin-bottom: 4px; }
-  /* Copilote */
-  .chat-log { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; max-height: 480px; overflow-y: auto; padding-right: 2px; }
-  .bubble { max-width: 85%; padding: 10px 13px; border-radius: 14px; font-size: 14px; line-height: 1.5; }
-  .bubble.user { border-bottom-right-radius: 4px; }
-  .bubble.assistant { border-bottom-left-radius: 4px; }
-  .bubble.user { align-self: flex-end; background: var(--navy); color: var(--creme); }
-  .bubble.assistant { align-self: flex-start; background: var(--surface-2); border: 1px solid var(--border); white-space: pre-wrap; }
-  .bubble.thinking { color: var(--ink-muted); font-style: italic; }
-  .chat-input-row { display: flex; gap: 8px; }
-  textarea.chat-input {
-    font: inherit; font-size: 14px; flex: 1; resize: none;
-    padding: 9px 11px; border: 1px solid var(--border); border-radius: 10px;
-    background: var(--surface); color: var(--ink); min-height: 42px; max-height: 140px;
-  }
   button.send-btn, button.clear-btn, button.ex-btn {
     font: inherit; font-size: 13px; font-weight: 600;
     border: none; border-radius: 10px; cursor: pointer; padding: 10px 16px;
@@ -544,9 +530,6 @@
   }
   button.send-btn:hover:not(:disabled) { opacity: 0.88; }
   button.send-btn:disabled { opacity: 0.5; cursor: default; }
-  button.clear-btn { background: none; color: var(--ink-muted); border: 1px solid var(--border); font-weight: 500; padding: 6px 11px; font-size: 12px; }
-  button.clear-btn:hover { color: var(--ink); border-color: var(--ink-muted); }
-  .ex-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
   button.ex-btn { background: var(--surface-2); color: var(--ink); border: 1px solid var(--border); font-weight: 500; font-size: 12.5px; padding: 7px 11px; }
   button.ex-btn:hover { border-color: var(--ui-accent); }
   .disclaimer-box {
@@ -2306,23 +2289,6 @@ function comparerTrajectoires(profitAnnuel, rendement, horizonAnnees, estSarl = 
   return { directe: trajDirecte, holdingNet: trajHoldingNet, anneeCroisement };
 }
 
-/* ============================= GLOSSAIRE ================================= */
-const GLOSSAIRE_COPILOTE = `
-PASS : Plafond annuel de la Sécurité sociale - seuil de revenu fixé chaque année par l'État, référence pour de nombreuses cotisations (48 060 € en 2026).
-Assimilé salarié : statut social du président de SASU - il cotise comme un salarié classique (charges patronales + salariales), sans cotiser à l'assurance chômage.
-TNS (travailleur non salarié) : statut social du gérant majoritaire de SARL - il paie lui-même l'intégralité de ses cotisations sociales, cotisations globalement moins élevées qu'en assimilé salarié, en contrepartie de droits sociaux moindres.
-Assiette : base de calcul sur laquelle s'applique un taux de cotisation ou d'impôt.
-PFU (flat tax) : régime d'imposition par défaut des dividendes et revenus du capital, taux global de 31,4 % (12,8 % IR + 18,6 % prélèvements sociaux, taux 2026).
-IS (impôt sur les sociétés) : impôt payé par l'entreprise sur son bénéfice avant distribution (15 % jusqu'à 42 500 € de bénéfice, 25 % au-delà, barème 2026).
-IR (impôt sur le revenu) : impôt payé par le dirigeant sur ses revenus personnels, barème progressif par tranches.
-Abattement : réduction appliquée à un montant avant impôt - ex. abattement forfaitaire de 10 % pour frais professionnels sur un salaire.
-Démembrement de propriété : séparation de la pleine propriété en usufruit (usage/revenus) et nue-propriété (droit de devenir plein propriétaire à l'extinction de l'usufruit).
-Holding : société qui détient des parts d'autres sociétés, utilisée pour faire capitaliser des bénéfices sans frottement fiscal personnel annuel immédiat.
-Pacte Dutreil : dispositif (article 787 B du CGI) exonérant 75 % de la valeur d'une entreprise transmise par donation ou succession, sous conditions de conservation des titres.
-Article 990 I du CGI : régime fiscal des capitaux décès d'assurance-vie versés aux bénéficiaires (abattement de 152 500 € par bénéficiaire pour les versements avant 70 ans, puis prélèvement forfaitaire).
-Article 757 B du CGI : régime applicable aux capitaux décès d'assurance-vie correspondant à des versements effectués après 70 ans par l'assuré (abattement global de 30 500 €, puis droits de succession selon le lien de parenté).
-`;
-
 /* ============================= UI / NAVIGATION ============================= */
 
 const ONGLETS = [
@@ -2336,7 +2302,6 @@ const ONGLETS = [
   { id: "sci", label: "SCI (IS vs IR)", desc: "Quel régime coûte le moins cher", ready: true },
   { id: "per", label: "PER", desc: "Verser plutôt que percevoir en net", ready: true },
   { id: "note", label: "Cap au Large", desc: "Veille marchés et partenaires", ready: true },
-  { id: "copilote", label: "Copilote IA", desc: "Poser une question sur son patrimoine", ready: true },
 ];
 
 // Onglets épinglés dans la barre d'appli (mobile) - les autres sont dans "Plus".
@@ -2349,7 +2314,7 @@ const CATEGORIES = [
   { id: "dirigeant", label: "Dirigeant", tabs: ["remuneration", "trajectoire"] },
   { id: "transmission", label: "Transmission", tabs: ["demembrement", "succession", "assurance_vie"] },
   { id: "patrimoine", label: "Patrimoine", tabs: ["ifi", "sci", "per"] },
-  { id: "ressources", label: "Ressources", tabs: ["note", "copilote"] },
+  { id: "ressources", label: "Ressources", tabs: ["note"] },
 ];
 function categorieDe(id) {
   return CATEGORIES.find(c => c.tabs.includes(id)) || CATEGORIES[0];
@@ -2370,7 +2335,6 @@ const CONTEXTE_PAR_ONGLET = {
   sci: { cat: "Patrimoine", texte: "SCI (IS vs IR)", accent: "var(--prune)" },
   per: { cat: "Patrimoine", texte: "PER", accent: "var(--dividende)" },
   note: { cat: "Ressources", texte: "Cap au Large", accent: "var(--ui-accent)" },
-  copilote: { cat: "Ressources", texte: "Copilote IA", accent: "var(--ui-accent)" },
 };
 function majBarreContexte(id) {
   const bar = document.getElementById("context-bar");
@@ -4782,7 +4746,6 @@ const ICONES_MODULES = {
   sci: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3" y="3" width="10" height="11" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 5.5h1.2M9.3 5.5h1.2M5.5 8.5h1.2M9.3 8.5h1.2M5.5 11.5h1.2M9.3 11.5h1.2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>', // immeuble
   per: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 14V8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M8 8C8 8 4.5 7.5 4.5 4C8 4 8 8 8 8Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M8 9C8 9 11.5 8.5 11.5 5.5C8 5.5 8 9 8 9Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>', // pousse
   note: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3" y="2" width="10" height="12" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>', // feuille de notes
-  copilote: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 3.5h10a1 1 0 0 1 1 1V10a1 1 0 0 1-1 1H8.5L5.5 13.5V11H3a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M8 7.2V7.19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="5.6" cy="7.2" r="0.15" fill="currentColor" stroke="currentColor" stroke-width="1"/><circle cx="10.4" cy="7.2" r="0.15" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg>', // bulle de dialogue
 };
 
 const VEILLE_SECTIONS = [
@@ -5329,130 +5292,6 @@ document.getElementById("input-panier-comparer").onchange = (e) => {
 
 calculerEtAfficherTrajectoire();
 
-/* ============================= ONGLET 10 : COPILOTE IA ============================= */
-
-const panelCopilote = document.getElementById("panel-copilote");
-panelCopilote.innerHTML = `
-  <div class="card">
-    <h2>Copilote IA</h2>
-    <div class="sub">Pose une question sur un mécanisme fiscal ou la logique d'un module de l'outil.</div>
-    <div class="disclaimer-box">Les réponses s'appuient sur le glossaire sourcé de l'outil. Elles sont pédagogiques et générales - jamais un conseil fiscal, social ou en investissement personnalisé sur votre situation.</div>
-    <div class="ex-row" id="ex-questions"></div>
-    <div class="chat-log" id="chat-log"></div>
-    <div class="chat-input-row">
-      <textarea class="chat-input" id="chat-input" placeholder="Pose ta question ici..." rows="1"></textarea>
-      <button class="send-btn" id="send-btn">Envoyer</button>
-    </div>
-    <div style="margin-top:10px;">
-      <button class="clear-btn" id="clear-btn">Vider la conversation</button>
-    </div>
-  </div>
-`;
-
-const EXEMPLES_QUESTIONS = [
-  "Quelle est la différence entre un salaire et un dividende, fiscalement ?",
-  "Pourquoi le statut TNS a des cotisations plus basses qu'assimilé salarié ?",
-  "C'est quoi le démembrement de propriété ?",
-];
-
-let chatHistory = []; // {role, content}
-const chatLog = document.getElementById("chat-log");
-const chatInput = document.getElementById("chat-input");
-const sendBtn = document.getElementById("send-btn");
-
-document.getElementById("ex-questions").innerHTML = EXEMPLES_QUESTIONS
-  .map(q => `<button class="ex-btn">${q}</button>`).join("");
-document.querySelectorAll(".ex-btn").forEach((btn, i) => {
-  btn.onclick = () => { chatInput.value = EXEMPLES_QUESTIONS[i]; envoyerMessage(); };
-});
-
-document.getElementById("clear-btn").onclick = () => {
-  chatHistory = [];
-  chatLog.innerHTML = "";
-};
-
-function ajouterBulle(role, texte) {
-  const div = document.createElement("div");
-  div.className = "bubble " + role;
-  div.textContent = texte;
-  chatLog.appendChild(div);
-  chatLog.scrollTop = chatLog.scrollHeight;
-  return div;
-}
-
-async function envoyerMessage() {
-  const texte = chatInput.value.trim();
-  if (!texte) return;
-  chatInput.value = "";
-  ajouterBulle("user", texte);
-  chatHistory.push({ role: "user", content: texte });
-  sendBtn.disabled = true;
-
-  const thinkingBubble = ajouterBulle("assistant thinking", "Réflexion...");
-
-  try {
-    const sample = await claude.use("sample");
-    if (!sample) {
-      thinkingBubble.textContent = "Le copilote IA n'est pas disponible dans cette vue.";
-      thinkingBubble.classList.remove("thinking");
-      sendBtn.disabled = false;
-      return;
-    }
-
-    const instructions = `Tu es le copilote pédagogique du Simulateur Grand Large, un outil de simulation patrimoniale pour un dirigeant d'entreprise (Grand Large Patrimoine, famille office). Règles strictes :
-- Tu réponds en français, de façon courte et directe (quelques phrases, pas de longue dissertation).
-- Tu n'apportes JAMAIS de conseil fiscal, social ou en investissement personnalisé : tu expliques des mécanismes généraux, jamais "tu devrais faire X".
-- Tu t'appuies sur le glossaire ci-dessous pour les définitions et chiffres - ne invente aucun chiffre qui n'y figure pas.
-- Tu ne vois pas les valeurs actuellement saisies par l'utilisateur dans les autres onglets de l'outil : si la question porte sur un calcul précis avec ses propres chiffres, invite-le à utiliser l'onglet correspondant.
-
-Glossaire de l'outil :
-${GLOSSAIRE_COPILOTE}`;
-
-    // Les instructions sont fusionnées dans le PREMIER tour (plutôt qu'ajoutées comme
-    // un tour "user" à part) : deux tours "user" consécutifs en tête de conversation
-    // violeraient l'alternance stricte user/assistant attendue par l'API de sampling.
-    const turns = chatHistory.map((m, i) =>
-      i === 0 ? { role: "user", content: instructions + "\n\n---\n\nQuestion de l'utilisateur :\n" + m.content } : m
-    );
-
-    const { text } = await sample(turns, {
-      modelTier: "default",
-      cache: false,
-      onText: ({ text }) => {
-        thinkingBubble.classList.remove("thinking");
-        thinkingBubble.textContent = text;
-        chatLog.scrollTop = chatLog.scrollHeight;
-      },
-    });
-    chatHistory.push({ role: "assistant", content: text });
-  } catch (e) {
-    thinkingBubble.classList.remove("thinking");
-    const messages = {
-      not_granted: "Tu n'as pas autorisé le copilote IA à répondre dans cette vue.",
-      rate_limited: "Trop de questions d'un coup - réessaie dans un instant.",
-      sampling_disabled: "Le copilote IA n'est pas disponible pour ce compte.",
-      refused: "Cette question n'a pas pu obtenir de réponse - essaie de la reformuler.",
-      empty_completion: "Pas de réponse obtenue - essaie de reformuler ta question.",
-    };
-    thinkingBubble.textContent = e.text || messages[e.code] || "Désolé, l'appel au copilote a échoué. Réessaie dans un instant.";
-    if (!e.text) chatHistory.pop();
-  } finally {
-    sendBtn.disabled = false;
-  }
-}
-
-sendBtn.onclick = envoyerMessage;
-chatInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    envoyerMessage();
-  }
-});
-chatInput.addEventListener("input", () => {
-  chatInput.style.height = "auto";
-  chatInput.style.height = Math.min(140, chatInput.scrollHeight) + "px";
-});
-
 /* ============================= ONGLET 0 : SYNTHÈSE ============================= */
 
 const panelSynthese = document.getElementById("panel-synthese");
@@ -5881,14 +5720,6 @@ function calculerEtAfficherSynthese() {
       <div class="synth-link-text">
         <div class="synth-link-label">Cap au Large</div>
         <div class="synth-link-desc">Veille marchés et produits</div>
-      </div>
-      <span class="synth-link-arrow">→</span>
-    </button>
-    <button type="button" class="synth-link" data-target="copilote">
-      <div class="synth-link-icone">${ICONES_MODULES.copilote}</div>
-      <div class="synth-link-text">
-        <div class="synth-link-label">Copilote IA</div>
-        <div class="synth-link-desc">Poser une question sur son patrimoine</div>
       </div>
       <span class="synth-link-arrow">→</span>
     </button>
