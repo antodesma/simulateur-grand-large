@@ -4857,7 +4857,7 @@ const ACTUALITE_PARTENAIRES = [
 
 const VEILLE_NAV = [
   ...VEILLE_SECTIONS.map(s => ({ id: s.id, label: s.titre.split(" - ")[0].split(" & ")[0].split(" : ")[0], icone: s.icone, accent: s.accent })),
-  { id: "partenaires", label: "Partenaires", icone: ICONES_VEILLE.partenaires, accent: "var(--salaire)" },
+  { id: "partenaires", label: "Actualité partenaires", icone: ICONES_VEILLE.partenaires, accent: "var(--salaire)" },
 ];
 
 panelNote.innerHTML = `
