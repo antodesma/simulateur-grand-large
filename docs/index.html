@@ -618,18 +618,25 @@
     padding: 10px 0 10px 14px; border-left: 2px solid var(--border);
   }
   .veille-nav-cap {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
-    color: var(--or); margin-bottom: 8px;
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--ink-muted); opacity: 0.7; margin: 0 0 9px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
   }
   .veille-nav-link {
     display:inline-flex; align-items:center; gap:7px;
     font-size: 12.5px; font-weight: 500; color: var(--ink-muted); text-decoration: none;
     padding: 7px 0 7px 12px; margin-left: -14px; border-left: 2px solid transparent;
-    transition: border-color 0.15s ease, color 0.15s ease; white-space: normal; line-height: 1.3;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease; white-space: normal; line-height: 1.3;
+    border-radius: 0 5px 5px 0;
   }
   .veille-nav-link svg { flex: none; color: var(--ui-accent); opacity: 0.85; }
   .veille-nav-link:hover { color: var(--ink); border-color: var(--or); }
+  .veille-nav-link.active {
+    color: var(--ink); font-weight: 700;
+    border-left-color: var(--link-accent, var(--or));
+    background: var(--surface-2);
+  }
+  .veille-nav-link.active svg { opacity: 1; }
   @media (max-width: 860px) {
     .veille-layout { flex-direction: column; }
     .veille-nav {
@@ -639,20 +646,21 @@
       border-left: none; border-top: 3px solid var(--or); background: var(--navy);
       overflow-x: auto; -webkit-overflow-scrolling: touch;
     }
-    .veille-nav-cap {
-      color: var(--or); margin: 0 12px 0 0; padding-right: 12px; flex: none;
-      border-right: 1px solid rgba(247,245,239,0.25);
-    }
+    .veille-nav-cap { display: none; }
     .veille-nav-link {
       color: rgba(247,245,239,0.72); padding: 13px 11px; margin: 0 0 -1px;
-      border-left: none; border-bottom: 2px solid transparent; flex: none;
+      border-left: none; border-bottom: 2px solid transparent; flex: none; border-radius: 0;
     }
     .veille-nav-link svg { color: var(--or); opacity: 0.9; }
     .veille-nav-link:hover { color: #f2efe6; border-color: var(--or); }
+    .veille-nav-link.active {
+      color: #f2efe6; background: rgba(247,245,239,0.1);
+      border-left: none; border-bottom-color: var(--or);
+    }
     :root[data-theme="dark"] .veille-nav { background: var(--surface-2); border-top-color: var(--or); }
-    :root[data-theme="dark"] .veille-nav-cap { color: var(--or); border-right-color: var(--border); }
     :root[data-theme="dark"] .veille-nav-link { color: var(--ink-muted); }
     :root[data-theme="dark"] .veille-nav-link:hover { color: var(--ink); }
+    :root[data-theme="dark"] .veille-nav-link.active { color: var(--ink); background: var(--surface); }
   }
   @media (max-width: 680px) {
     .veille-nav { margin: 0 -15px 20px; padding: 4px 15px; top: 59px; }
@@ -4885,19 +4893,19 @@ const ACTUALITE_PARTENAIRES = [
 // identifiée - mieux vaut ne rien avancer que risquer une approximation.
 
 const VEILLE_NAV = [
-  ...VEILLE_SECTIONS.map(s => ({ id: s.id, label: s.titre.split(" - ")[0].split(" & ")[0].split(" : ")[0], icone: s.icone })),
-  { id: "partenaires", label: "Partenaires", icone: ICONES_VEILLE.partenaires },
+  ...VEILLE_SECTIONS.map(s => ({ id: s.id, label: s.titre.split(" - ")[0].split(" & ")[0].split(" : ")[0], icone: s.icone, accent: s.accent })),
+  { id: "partenaires", label: "Partenaires", icone: ICONES_VEILLE.partenaires, accent: "var(--salaire)" },
 ];
 
 panelNote.innerHTML = `
   <div class="card">
     <h2>Cap au Large</h2>
-    <div class="sub">Ce qui bouge sur les marchés, chez nos partenaires et dans la fiscalité patrimoniale - <strong>jamais une recommandation d'investissement</strong>. Chaque information est <strong>vérifiée et sourcée manuellement</strong>, jamais rafraîchie automatiquement.</div>
+    <div class="sub">Ce qui bouge sur les marchés, chez nos partenaires et dans la fiscalité patrimoniale - de quoi garder un coup d'avance avant d'en parler avec un client, <strong>sans jamais remplacer votre propre analyse</strong>. Une sélection resserrée, <strong>passée au crible à la main</strong> chaque semaine.</div>
     <div class="maj-tag"><strong>Dernière vérification : 10 novembre 2026</strong> · prochaine avant le 17 novembre 2026</div>
     <div class="veille-layout">
     <nav class="veille-nav">
-      <span class="veille-nav-cap"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.3" stroke="currentColor" stroke-width="1.1"/><path d="M8 8 10.8 5.2 8 8 5.2 10.8 8 8Z" fill="currentColor"/></svg>Cap</span>
-      ${VEILLE_NAV.map(n => `<a href="#veille-${n.id}" class="veille-nav-link">${n.icone}<span>${n.label}</span></a>`).join("")}
+      <div class="veille-nav-cap">Sommaire</div>
+      ${VEILLE_NAV.map(n => `<a href="#veille-${n.id}" data-veille-id="${n.id}" class="veille-nav-link" style="--link-accent: ${n.accent};">${n.icone}<span>${n.label}</span></a>`).join("")}
     </nav>
     <div class="veille-content">
     ${VEILLE_SECTIONS.map(section => `
@@ -4952,6 +4960,28 @@ panelNote.innerHTML = `
     </div>
   </div>
 `;
+
+// Surligne dans la nav de gauche la section actuellement visible à l'écran,
+// pour qu'on sache toujours "où on est" pendant la lecture - l'offset négatif
+// en haut (-120px) tient compte de la barre d'onglets + fil d'Ariane sticky,
+// celui en bas (-55%) fait basculer l'état actif dès qu'une section occupe
+// la moitié supérieure de la zone de lecture plutôt que d'attendre qu'elle
+// soit entièrement visible.
+(function () {
+  const navLinks = panelNote.querySelectorAll(".veille-nav-link");
+  const sections = panelNote.querySelectorAll(".veille-section[id]");
+  if (!navLinks.length || !sections.length) return;
+  const activer = id => {
+    navLinks.forEach(a => a.classList.toggle("active", a.dataset.veilleId === id));
+  };
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) activer(entry.target.id.replace("veille-", ""));
+    });
+  }, { rootMargin: "-120px 0px -55% 0px", threshold: 0 });
+  sections.forEach(sec => observer.observe(sec));
+  activer(VEILLE_NAV[0].id);
+})();
 
 /* ============================= ONGLET 2 : TRAJECTOIRE PLURIANNUELLE ============================= */
 
