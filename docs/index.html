@@ -610,26 +610,36 @@
   .radio-group label { display: flex; align-items: center; gap: 5px; font-size: 13px; border: 1px solid var(--border); border-radius: 10px; padding: 7px 10px; cursor: pointer; transition: border-color 0.15s ease; }
   .radio-group label:hover { border-color: var(--ui-accent); }
   .radio-group input { margin: 0; }
-  .badge-unreliable { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:600; background:var(--alerte); color:var(--alerte-ink); padding:2px 8px; border-radius:10px; margin-left:6px; vertical-align:middle; white-space:nowrap; }
-  .veille-legende {
-    display:flex; align-items:center; gap:7px; font-size:12px; color:var(--ink-muted);
-    background:var(--surface-2); border:1px solid var(--border); border-radius:10px;
-    padding:9px 12px; margin-bottom:18px;
-  }
-  .veille-legende .badge-unreliable { margin-left:0; flex:none; }
   .veille-nav {
-    display: flex; flex-wrap: wrap; gap: 7px 10px;
-    padding-bottom: 16px; margin-bottom: 18px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 102px; z-index: 5;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 1px;
+    margin: 0 -24px 28px; padding: 11px 24px 0;
+    background: var(--surface); border-top: 2px solid var(--or); border-bottom: 1px solid var(--border);
   }
+  .veille-nav-cap {
+    display: flex; align-items: center; gap: 5px; flex: none;
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--ink-muted); margin: 0 10px 9px 0; padding-bottom: 9px;
+  }
+  .veille-nav-cap svg { color: var(--or); }
   .veille-nav-link {
-    display:inline-flex; align-items:center; gap:6px;
-    font-size: 12px; font-weight: 500; color: var(--ink-muted); text-decoration: none;
-    border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px 5px 9px; background: var(--surface-2);
-    transition: border-color 0.15s ease, color 0.15s ease;
+    display:inline-flex; align-items:center; gap:5px;
+    font-size: 12.5px; font-weight: 500; color: var(--ink-muted); text-decoration: none;
+    padding: 0 10px 9px; margin-bottom: -1px; border-bottom: 2px solid transparent;
+    transition: border-color 0.15s ease, color 0.15s ease; white-space: nowrap;
   }
-  .veille-nav-link svg { flex: none; color: var(--ui-accent); opacity: 0.85; }
-  .veille-nav-link:hover { color: var(--ink); border-color: var(--ui-accent); }
-  .veille-section { margin-bottom: 30px; scroll-margin-top: 90px; }
+  .veille-nav-link svg { flex: none; color: var(--ui-accent); opacity: 0.8; }
+  .veille-nav-link:hover { color: var(--ink); border-color: var(--or); }
+  @media (max-width: 680px) {
+    .veille-nav {
+      margin: 0 -15px 22px; padding: 9px 15px 0;
+      flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+      top: 59px;
+    }
+    .veille-nav-cap, .veille-nav-link { flex: none; }
+  }
+  .veille-section { margin-bottom: 8px; padding-top: 28px; scroll-margin-top: 194px; border-top: 1px solid var(--border); }
+  .veille-section:first-of-type { padding-top: 0; border-top: none; }
   .veille-section-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 4px; }
   .veille-icone {
     display: flex; align-items: center; justify-content: center;
@@ -658,7 +668,6 @@
   .partenaires-grid .groupe .liste { color: var(--ink-muted); }
   .maj-tag { display:inline-flex; align-items:center; gap:6px; font-size: 11px; color: var(--ink-muted); border: 1px solid var(--border); border-radius: 10px; padding: 3px 10px; margin-bottom: 14px; }
   .maj-tag strong { color: var(--ink); font-weight: 600; }
-  .checklist li { margin-bottom: 6px; font-size: 13px; }
   footer.credit { text-align: center; color: var(--ink-muted); font-size: 11.5px; padding: 20px 16px 30px; border-top: 1px solid var(--border); margin-top: 6px; }
   .tabs-wrap { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--border); }
   .context-bar {
@@ -4723,7 +4732,6 @@ const ICONES_VEILLE = {
   niches: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5 10 6l4.5 2-4.5 2-2 4.5-2-4.5L1.5 8 6 6Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>',
   pld2027: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3" y="2" width="10" height="12" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 5h5M5.5 7.5h5M5.5 10h3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M11 12.5 13 14.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="12.3" cy="11.3" r="1.6" stroke="currentColor" stroke-width="1.1"/></svg>',
   partenaires: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="4.5" cy="4.5" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="11.5" cy="4.5" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="11.5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M5.8 5.9 7 9.9M10.2 5.9 9 9.9" stroke="currentColor" stroke-width="1.1"/></svg>',
-  checklist: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2.5" y="2" width="11" height="12" rx="0.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 5.5h6M5 8h6M5 10.5h4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>',
 };
 
 // Icônes des 10 modules de simulation - même langage graphique que la Note Grand
@@ -4748,67 +4756,61 @@ const VEILLE_SECTIONS = [
     id: "marches", icone: ICONES_VEILLE.marches,
     titre: "Marchés financiers & taux", solution: "Placements financiers",
     items: [
-      { libelle: "CAC 40 : une semaine en nette hausse", valeur: "8 139 points à la clôture du vendredi 6 novembre 2026 (+2,13 % sur la semaine)", date: "6 novembre 2026", source: "Boursedirect - bilan hebdomadaire (source agrégatrice, cohérente avec la clôture de la semaine précédente à 7 969 points)", lecture: "La semaine confirme le rebond amorcé après les midterms américaines (victoire démocrate actant la fin de l'incertitude électorale, +1,96 % dès le 4 novembre) : banques en tête, valeurs IA plus hésitantes (STMicro). Sert à rassurer un client inquiet sur ses lignes actions, sans sur-interpréter un mouvement hebdomadaire comme un signal durable.", fiable: true },
-      { libelle: "OAT France 10 ans : la prime de risque reste élevée", valeur: "4,93 % (Bund allemand 3,34 %, écart d'environ 159 points de base)", date: "30 octobre 2026", source: "culture-financiere.com - récapitulatif macro hebdomadaire", lecture: "Explique pourquoi les nouveaux produits structurés et fonds datés affichent des taux garantis plus attractifs qu'il y a un an - la contrepartie est un risque souverain perçu en hausse (voir ci-dessous, la perspective Fitch).", fiable: true },
-      { libelle: "Fitch abaisse la perspective de la France à négative", valeur: "Note maintenue à A+, perspective passée de stable à négative", date: "30 octobre 2026", source: "culture-financiere.com, à recouper avec le communiqué officiel de Fitch Ratings", lecture: "À mentionner avec prudence en rendez-vous : ce n'est pas une dégradation de note, seulement un avertissement sur la trajectoire budgétaire française - mais c'est cohérent avec la remontée des taux OAT observée au même moment.", fiable: false },
-      { libelle: "BCE : la succession de Christine Lagarde s'accélère", valeur: "Lagarde quittera la présidence par anticipation ; les ministres des Finances de la zone euro examinaient les candidatures le 9 novembre 2026, Klaas Knot et Pablo Hernández de Cos étant cités comme favoris", date: "3 novembre 2026 (réunion du 9 novembre encore sans résultat confirmé à ce jour)", source: "Dépêche d'agence (DH.be)", lecture: "Le successeur devrait être connu dans les prochaines semaines - un facteur d'incertitude réel sur la politique monétaire 2027 à garder en tête, sans en faire un sujet d'inquiétude immédiat pour un client.", fiable: true },
-      { libelle: "Fed : un changement de présidence à ne pas manquer", valeur: "La Fed est présidée par Kevin Warsh depuis le 13 mai 2026 (confirmé par le Sénat américain), Jerome Powell restant gouverneur votant ; la décision de statu quo du 28 octobre (taux à 3,75-4,00 %, deux dissidents) s'est donc tenue sous la présidence Warsh", date: "13 mai 2026 (prise de fonction) - 28 octobre 2026 (dernière décision)", source: "Multiples sources concordantes (presse américaine)", lecture: "Point à connaître avant de parler de politique monétaire américaine avec un client exposé au dollar ou aux marchés US - la présidence de la Fed a changé de main en 2026, ce n'est plus l'ère Powell.", fiable: true },
+      { libelle: "CAC 40 : une semaine en nette hausse", valeur: "8 139 points à la clôture du vendredi 6 novembre 2026 (+2,13 % sur la semaine)", date: "6 novembre 2026", source: "Boursedirect - bilan hebdomadaire (source agrégatrice, cohérente avec la clôture de la semaine précédente à 7 969 points)", lecture: "Le rebond s'inscrit dans la continuité du soulagement post-midterms américaines : l'incertitude électorale levée, les indices ont accéléré dès le 4 novembre, portés par les banques - les valeurs liées à l'intelligence artificielle marquent elles une pause après plusieurs mois de hausse continue. De quoi rassurer un client inquiet pour ses lignes actions, sans ériger une semaine positive en tendance de fond.", fiable: true },
+      { libelle: "OAT France 10 ans : la prime de risque reste élevée", valeur: "4,93 % (Bund allemand 3,34 %, écart d'environ 159 points de base)", date: "30 octobre 2026", source: "culture-financiere.com - récapitulatif macro hebdomadaire", lecture: "Cet écart avec le Bund allemand explique en bonne partie pourquoi les fonds datés et produits structurés lancés cet automne affichent des taux garantis plus généreux qu'il y a un an : le marché fait simplement payer plus cher la dette française.", fiable: true },
+      { libelle: "BCE : la succession de Christine Lagarde s'accélère", valeur: "Lagarde quittera la présidence par anticipation ; les ministres des Finances de la zone euro examinaient les candidatures le 9 novembre 2026, Klaas Knot et Pablo Hernández de Cos étant cités comme favoris", date: "3 novembre 2026 (réunion du 9 novembre encore sans résultat confirmé à ce jour)", source: "Dépêche d'agence (DH.be)", lecture: "Un changement à la tête de la BCE redistribue toujours un peu les anticipations de marché sur les taux de la zone euro - un dossier à suivre avant qu'il infuse les discussions de 2027, sans en faire un sujet d'alerte pour un client aujourd'hui.", fiable: true },
+      { libelle: "Fed : un changement de présidence à ne pas manquer", valeur: "La Fed est présidée par Kevin Warsh depuis le 13 mai 2026 (confirmé par le Sénat américain), Jerome Powell restant gouverneur votant ; la décision de statu quo du 28 octobre (taux à 3,75-4,00 %, deux dissidents) s'est donc tenue sous la présidence Warsh", date: "13 mai 2026 (prise de fonction) - 28 octobre 2026 (dernière décision)", source: "Multiples sources concordantes (presse américaine)", lecture: "La Fed a changé de visage en 2026 sans que cela ait beaucoup transpiré hors des cercles spécialisés - utile à savoir avant d'évoquer la politique monétaire américaine avec un client exposé au dollar ou aux marchés US.", fiable: true },
     ],
   },
   {
     id: "niches", icone: ICONES_VEILLE.niches,
     titre: "Pépites à l'horizon", solution: "Culture de marché - jamais une recommandation",
     items: [
-      { libelle: "D.A.T.E. (échangeurs thermiques défense/deeptech)", valeur: "IPO sur Euronext Growth le 9 septembre 2026, prix fixe 19,36 € ; CA 2025 : 3,8 M€, portefeuille commercial > 80 M€ sur 2026-2030", date: "9 septembre 2026", source: "TradingSat", lecture: "Micro-cap tout juste introduite, flottant réduit, forte dépendance à quelques contrats défense - volatilité et liquidité limitées. À mentionner à titre de culture de marché uniquement, jamais comme une recommandation d'achat.", fiable: true },
-      { libelle: "ST Group (composites aéro/défense/spatial)", valeur: "Première société cotée sur Lise (nouvelle bourse digitale PME), IPO ~2,07 M€ à 18,25 €/action ; CA 2025 : 3 M€ (+19 %)", date: "IPO avril 2026, article mis à jour le 28 octobre 2026", source: "Toutsurmesfinances", lecture: "Marché Lise encore jeune et peu liquide, taille très réduite - purement informatif, pas de conseil d'investissement.", fiable: true },
-      { libelle: "The Exploration Company (capsule spatiale réutilisable Nyx)", valeur: "Série C de 450 M$ annoncée le 8 septembre 2026 - décrite comme la plus importante jamais levée par une entreprise spatiale européenne à ce stade", date: "8 septembre 2026", source: "L'Essentiel de l'Éco", lecture: "Société non cotée (capital-risque), horizon et risque très différents d'une action liquide - sert d'illustration de la dynamique \"deeptech française\", pas d'opportunité d'investissement accessible à un client lambda.", fiable: true },
-      { libelle: "Alice & Bob (ordinateur quantique)", valeur: "Série B ~100 M€ (dette incluse), objectif de doubler l'équipe (120 personnes)", date: "2 janvier 2025 - repère de fond, pas une actualité récente", source: "CFNEWS", lecture: "Non coté, capital-investissement - à citer uniquement pour illustrer l'intérêt du secteur quantique français, jamais comme une piste de placement.", fiable: true },
+      { libelle: "D.A.T.E. (échangeurs thermiques défense/deeptech)", valeur: "IPO sur Euronext Growth le 9 septembre 2026, prix fixe 19,36 € ; CA 2025 : 3,8 M€, portefeuille commercial > 80 M€ sur 2026-2030", date: "9 septembre 2026", source: "TradingSat", lecture: "Une micro-cap tout juste introduite, au flottant réduit et fortement dépendante de quelques contrats défense : volatilité et liquidité restent limitées. Un nom à connaître pour la culture générale de marché, pas une piste d'investissement.", fiable: true },
+      { libelle: "ST Group (composites aéro/défense/spatial)", valeur: "Première société cotée sur Lise (nouvelle bourse digitale PME), IPO ~2,07 M€ à 18,25 €/action ; CA 2025 : 3 M€ (+19 %)", date: "IPO avril 2026, article mis à jour le 28 octobre 2026", source: "Toutsurmesfinances", lecture: "Lise, le marché tout juste créé pour coter les PME, reste jeune et peu liquide - une référence utile pour la culture de marché, sans valeur de conseil.", fiable: true },
+      { libelle: "The Exploration Company (capsule spatiale réutilisable Nyx)", valeur: "Série C de 450 M$ annoncée le 8 septembre 2026 - décrite comme la plus importante jamais levée par une entreprise spatiale européenne à ce stade", date: "8 septembre 2026", source: "L'Essentiel de l'Éco", lecture: "Une levée non cotée, à l'horizon et au profil de risque très différents d'une action liquide : elle illustre surtout le dynamisme du spatial deeptech français, pas une opportunité accessible à un client type.", fiable: true },
+      { libelle: "Alice & Bob (ordinateur quantique)", valeur: "Série B ~100 M€ (dette incluse), objectif de doubler l'équipe (120 personnes)", date: "2 janvier 2025 - repère de fond, pas une actualité récente", source: "CFNEWS", lecture: "Un repère plus ancien qu'une actualité fraîche, mais qui donne la mesure de l'intérêt porté à l'informatique quantique française - là encore pour la culture de marché, jamais comme une piste de placement.", fiable: true },
     ],
   },
   {
     id: "immobilier", icone: ICONES_VEILLE.immobilier,
     titre: "Immobilier patrimonial", solution: "Immobilier patrimonial",
     items: [
-      { libelle: "Taux de distribution moyen des SCPI (TDVM), marché 2025", valeur: "4,91 %", date: "données annuelles 2025", source: "ASPIM", lecture: "Permet de resituer la performance d'une SCPI proposée face à la moyenne du marché.", fiable: true },
+      { libelle: "Taux de distribution moyen des SCPI (TDVM), marché 2025", valeur: "4,91 %", date: "données annuelles 2025", source: "ASPIM", lecture: "Le repère à garder en tête pour resituer la performance d'une SCPI proposée au client par rapport à la moyenne du marché.", fiable: true },
     ],
   },
   {
     id: "non_cote", icone: ICONES_VEILLE.non_cote,
     titre: "Investissements non cotés", solution: "Investissements non cotés",
     items: [
-      { libelle: "TRI net du capital-investissement français depuis l'origine", valeur: "11,3 % par an", date: "étude parue le 8 juillet 2025", source: "France Invest / EY", lecture: "Point de comparaison utile en rappelant l'horizon de blocage (8-12 ans) et le risque de perte en capital.", fiable: true },
-      { libelle: "TRI net du capital-investissement français sur 10 ans", valeur: "entre 12,4 % et 12,7 % selon les tableaux de l'étude (incohérence interne au document)", date: "étude parue le 8 juillet 2025", source: "France Invest / EY", lecture: "Chiffre à manier avec précaution ; illustre un écart de marché, pas une promesse de performance.", fiable: false },
+      { libelle: "TRI net du capital-investissement français depuis l'origine", valeur: "11,3 % par an", date: "étude parue le 8 juillet 2025", source: "France Invest / EY", lecture: "Un point de comparaison utile en rendez-vous, à condition de toujours rappeler l'horizon de blocage (8 à 12 ans) et le risque de perte en capital qui vont avec.", fiable: true },
     ],
   },
   {
     id: "assurance_vie", icone: ICONES_VEILLE.assurance_vie,
     titre: "Assurance-vie & épargne", solution: "Placements financiers",
     items: [
-      { libelle: "Rendement moyen des fonds euros, marché 2025", valeur: "2,60 % (France Assureurs) / 2,63 % (ACPR)", date: "données annuelles 2025, publiées en 2026", source: "France Assureurs ; ACPR", lecture: "Point de départ pour toute conversation sur la part à garder en fonds euros plutôt qu'en unités de compte.", fiable: true },
+      { libelle: "Rendement moyen des fonds euros, marché 2025", valeur: "2,60 % (France Assureurs) / 2,63 % (ACPR)", date: "données annuelles 2025, publiées en 2026", source: "France Assureurs ; ACPR", lecture: "Le point de départ classique pour toute conversation sur l'arbitrage entre fonds euros et unités de compte.", fiable: true },
     ],
   },
   {
     id: "pld2027", icone: ICONES_VEILLE.pld2027,
     titre: "Projet de loi de finances 2027 - fiscalité patrimoniale (rien n'est encore voté)", solution: "Transmission et structuration familiale",
     items: [
-      { libelle: "Donations familiales en numéraire", valeur: "Taxation proposée à 6 % (5 % si don à une association), plafond 100 000 € par donateur/bénéficiaire, du 1er janvier au 30 juin 2027, bénéficiaire majeur de moins de 50 ans", date: "texte présenté le 1er octobre 2026", source: "Toutsurmesfinances", lecture: "À ne présenter qu'au conditionnel - c'est une mesure proposée, pas en vigueur.", fiable: false },
-      { libelle: "Abattement donation familiale", valeur: "Relevé de 31 865 € à 50 000 €, sur la même fenêtre (1er janvier-30 juin 2027)", date: "texte présenté le 1er octobre 2026", source: "Toutsurmesfinances", lecture: "Idem - proposition, pas acquis.", fiable: false },
-      { libelle: "Apport-cession (art. 5) : titres de holding transmis par donation ou décès", valeur: "La plus-value en report deviendrait immédiatement exigible (étalement possible sur 5 ans), pour les transmissions depuis le 1er octobre 2026", date: "texte présenté le 1er octobre 2026", source: "Toutsurmesfinances", lecture: "Le point le plus sensible du texte pour un dirigeant ayant apporté des titres à une holding - à surveiller de près même si rien n'est voté, car une rétroactivité au 1er octobre 2026 est évoquée.", fiable: false },
-      { libelle: "Pacte Dutreil", valeur: "L'abattement de 75 % resterait inchangé, selon l'engagement du gouvernement", date: "texte présenté le 1er octobre 2026", source: "Toutsurmesfinances", lecture: "Rassurant à ce stade, mais à reconfirmer au fil des débats.", fiable: false },
-      { libelle: "Calendrier parlementaire", valeur: "Volet recettes rejeté par l'Assemblée nationale le 4 novembre 2026 ; le Sénat examine le texte initial du gouvernement à partir du 20 novembre", date: "4 novembre 2026", source: "Toutsurmesfinances", lecture: "Le point à suivre avant tout rendez-vous transmission dans les prochaines semaines - la version finale sera vraisemblablement différente du texte initial.", fiable: true },
+      { libelle: "Calendrier parlementaire", valeur: "Volet recettes rejeté par l'Assemblée nationale le 4 novembre 2026 ; le Sénat examine le texte initial du gouvernement à partir du 20 novembre", date: "4 novembre 2026", source: "Toutsurmesfinances", lecture: "Le rejet du volet recettes par l'Assemblée renvoie l'essentiel des arbitrages au Sénat à partir du 20 novembre : un dossier à suivre de près avant tout rendez-vous transmission, en gardant à l'esprit que le texte final différera probablement de cette version initiale.", fiable: true },
     ],
   },
   {
     id: "seuils", icone: ICONES_VEILLE.seuils,
     titre: "Seuils réglementaires - dirigeant, transmission", solution: "Ingénierie fiscale et sociale du dirigeant / Transmission et structuration familiale",
     items: [
-      { libelle: "PASS (plafond annuel de la sécurité sociale) 2026", valeur: "48 060 € / an (4 005 € / mois)", date: "exercice 2026", source: "Sécurité sociale - arrêté annuel", lecture: "Sert à recalculer rapidement un plafond de cotisation ou un seuil social pendant un rendez-vous.", fiable: true },
-      { libelle: "Abattement forfaitaire 10 % frais professionnels", valeur: "plancher 509 € - plafond 14 555 €", date: "revenus 2025, déclaration 2026", source: "Code général des impôts", lecture: "Utile pour vérifier une déclaration de revenus d'un dirigeant assimilé salarié.", fiable: true },
-      { libelle: "Exonération régime mère-fille (remontée de dividendes en holding)", valeur: "95 % (quote-part de frais et charges de 5 % réintégrée)", date: "en vigueur", source: "Code général des impôts", lecture: "Argument clé pour expliquer l'intérêt d'une holding qui perçoit les dividendes de la société opérationnelle.", fiable: true },
-      { libelle: "Pacte Dutreil - abattement transmission d'entreprise", valeur: "75 % de la valeur transmise, sous engagement de conservation", date: "en vigueur", source: "Code général des impôts", lecture: "À mentionner dès qu'un client évoque la transmission de son entreprise à ses enfants.", fiable: true },
-      { libelle: "Apport-cession (article 150-0 B ter du CGI)", valeur: "report d'imposition de la plus-value sous condition de réinvestissement de 60 % sous 24 mois", date: "en vigueur", source: "Code général des impôts", lecture: "Utile quand un client envisage de céder des titres après les avoir apportés à une holding.", fiable: true },
-      { libelle: "Abattement donation en ligne directe (parent → enfant)", valeur: "100 000 € par parent et par enfant, renouvelable tous les 15 ans", date: "en vigueur", source: "Code général des impôts", lecture: "Le chiffre le plus souvent cité en premier rendez-vous transmission.", fiable: true },
-      { libelle: "Abattement donation grand-parent → petit-enfant", valeur: "31 865 €, renouvelable tous les 15 ans", date: "en vigueur", source: "Code général des impôts", lecture: "À mentionner quand un client veut aussi transmettre à ses petits-enfants.", fiable: true },
+      { libelle: "PASS (plafond annuel de la sécurité sociale) 2026", valeur: "48 060 € / an (4 005 € / mois)", date: "exercice 2026", source: "Sécurité sociale - arrêté annuel", lecture: "Le chiffre à avoir en tête pour recalculer, sans ouvrir de tableur, un plafond de cotisation ou un seuil social pendant un rendez-vous.", fiable: true },
+      { libelle: "Abattement forfaitaire 10 % frais professionnels", valeur: "plancher 509 € - plafond 14 555 €", date: "revenus 2025, déclaration 2026", source: "Code général des impôts", lecture: "Pratique pour vérifier rapidement la déclaration de revenus d'un dirigeant assimilé salarié.", fiable: true },
+      { libelle: "Exonération régime mère-fille (remontée de dividendes en holding)", valeur: "95 % (quote-part de frais et charges de 5 % réintégrée)", date: "en vigueur", source: "Code général des impôts", lecture: "L'argument qui justifie, à lui seul, l'intérêt fiscal d'une holding qui perçoit les dividendes de la société opérationnelle.", fiable: true },
+      { libelle: "Pacte Dutreil - abattement transmission d'entreprise", valeur: "75 % de la valeur transmise, sous engagement de conservation", date: "en vigueur", source: "Code général des impôts", lecture: "Le premier réflexe dès qu'un client évoque la transmission de son entreprise à ses enfants.", fiable: true },
+      { libelle: "Apport-cession (article 150-0 B ter du CGI)", valeur: "report d'imposition de la plus-value sous condition de réinvestissement de 60 % sous 24 mois", date: "en vigueur", source: "Code général des impôts", lecture: "Le mécanisme à expliquer quand un client envisage de céder des titres après les avoir apportés à une holding.", fiable: true },
+      { libelle: "Abattement donation en ligne directe (parent → enfant)", valeur: "100 000 € par parent et par enfant, renouvelable tous les 15 ans", date: "en vigueur", source: "Code général des impôts", lecture: "Le chiffre le plus souvent cité, et souvent le mieux connu des clients, dès le premier rendez-vous transmission.", fiable: true },
+      { libelle: "Abattement donation grand-parent → petit-enfant", valeur: "31 865 €, renouvelable tous les 15 ans", date: "en vigueur", source: "Code général des impôts", lecture: "À glisser dans la conversation dès qu'un client veut aussi penser à ses petits-enfants.", fiable: true },
     ],
   },
 ];
@@ -4817,65 +4819,48 @@ const ACTUALITE_PARTENAIRES = [
   {
     categorie: "Private equity",
     items: [
-      { libelle: "PAI Partners", valeur: "En négociations exclusives pour acquérir une participation majoritaire dans Cyrus Group (société de gestion de patrimoine, ~20 Md€ d'encours)", date: "octobre 2025", source: "PAI Partners (communiqué officiel)", lecture: "Signal que les gérants de fonds eux-mêmes consolident le secteur du conseil patrimonial - pertinent si un client s'interroge sur la solidité du secteur.", fiable: true },
-      { libelle: "Bridgepoint", valeur: "Rachat d'une participation majoritaire dans Interpath (conseil en restructuration), valorisée ~800 M$", date: "confirmé février 2026 (CCPC irlandaise)", source: "AJ Bell", lecture: "Illustre l'appétit du PE pour les métiers du conseil, pas seulement l'industrie.", fiable: true },
-      { libelle: "Eurazeo", valeur: "Négociation de cession d'Aroma Zone à Partners Group ; acquisition de Netco Group auprès d'Ardian ; cession de 260 M€ d'actifs à un tiers (décembre 2025)", date: "fin 2025", source: "Newsroom Eurazeo", lecture: "Eurazeo tourne activement son portefeuille - utile pour montrer qu'un fonds de private equity n'est pas figé sur 10 ans.", fiable: true },
+      { libelle: "PAI Partners", valeur: "En négociations exclusives pour acquérir une participation majoritaire dans Cyrus Group (société de gestion de patrimoine, ~20 Md€ d'encours)", date: "octobre 2025", source: "PAI Partners (communiqué officiel)", lecture: "Signe que les gérants de fonds consolident eux-mêmes le secteur du conseil patrimonial - un argument utile si un client s'interroge sur la solidité du secteur.", fiable: true },
+      { libelle: "Bridgepoint", valeur: "Rachat d'une participation majoritaire dans Interpath (conseil en restructuration), valorisée ~800 M$", date: "confirmé février 2026 (CCPC irlandaise)", source: "AJ Bell", lecture: "Confirme l'appétit du capital-investissement pour les métiers du conseil, pas seulement pour l'industrie.", fiable: true },
+      { libelle: "Eurazeo", valeur: "Négociation de cession d'Aroma Zone à Partners Group ; acquisition de Netco Group auprès d'Ardian ; cession de 260 M€ d'actifs à un tiers (décembre 2025)", date: "fin 2025", source: "Newsroom Eurazeo", lecture: "Un portefeuille qui tourne activement, utile à montrer à un client qui imagine un fonds de private equity figé pendant dix ans.", fiable: true },
     ],
   },
   {
     categorie: "Infrastructures",
     items: [
-      { libelle: "Ardian Infrastructure", valeur: "Acquisition d'Energia Group (utility énergétique irlandaise) pour 2,75 Md€ ; levée de 20 Md$ pour ses stratégies infrastructure européennes", date: "2025-2026", source: "pe-insights.com, informedinfrastructure.com", lecture: "Taille et vitesse de déploiement du plus gros acteur infra français - rassurant sur la liquidité de la classe d'actif.", fiable: true },
-      { libelle: "Antin Infrastructure Partners", valeur: "Acquisitions de Vigor Marine Group (février 2026) et de Sapphire Gas Solutions auprès d'Apollo", date: "début 2026", source: "Antin IP, Businesswire", lecture: "Deux opérations rapprochées - montre un rythme d'investissement soutenu sur l'infrastructure énergétique.", fiable: true },
-      { libelle: "EQT Infrastructure : un 6e fonds record, un 7e déjà en levée", valeur: "EQT Infrastructure VI clôturé à 21,5 Md€ (+35 % vs le fonds précédent, ~70 % de souscripteurs historiques) ; EQT Infrastructure VII vise désormais 21 Md€", date: "closing VI en avril 2025, lancement VII annoncé le 31 mai 2026", source: "Communiqués officiels EQT", lecture: "Bon exemple à citer pour illustrer la fidélité des investisseurs institutionnels d'un millésime à l'autre sur l'infrastructure - la taille cible du VII n'est pas garantie tant que le closing final n'est pas annoncé.", fiable: true },
+      { libelle: "Ardian Infrastructure", valeur: "Acquisition d'Energia Group (utility énergétique irlandaise) pour 2,75 Md€ ; levée de 20 Md$ pour ses stratégies infrastructure européennes", date: "2025-2026", source: "pe-insights.com, informedinfrastructure.com", lecture: "La taille et la vitesse de déploiement du premier acteur infrastructure français - de quoi rassurer sur la liquidité de la classe d'actifs.", fiable: true },
+      { libelle: "Antin Infrastructure Partners", valeur: "Acquisitions de Vigor Marine Group (février 2026) et de Sapphire Gas Solutions auprès d'Apollo", date: "début 2026", source: "Antin IP, Businesswire", lecture: "Deux acquisitions rapprochées qui montrent un rythme d'investissement soutenu sur l'infrastructure énergétique.", fiable: true },
+      { libelle: "EQT Infrastructure : un 6e fonds record, un 7e déjà en levée", valeur: "EQT Infrastructure VI clôturé à 21,5 Md€ (+35 % vs le fonds précédent, ~70 % de souscripteurs historiques) ; EQT Infrastructure VII vise désormais 21 Md€", date: "closing VI en avril 2025, lancement VII annoncé le 31 mai 2026", source: "Communiqués officiels EQT", lecture: "Un bon exemple de la fidélité des investisseurs institutionnels d'un millésime à l'autre sur l'infrastructure - la taille visée pour le septième fonds reste un objectif, pas un montant acquis tant que le closing final n'est pas annoncé.", fiable: true },
     ],
   },
   {
     categorie: "Dette privée",
     items: [
-      { libelle: "Tikehau Capital", valeur: "Closing final du 6e millésime de sa stratégie de direct lending européenne à 5,2 Md€ (hors effet de levier)", date: "24 juillet 2026", source: "Boursedirect, confirmé par plusieurs sources", lecture: "Bon chiffre daté pour illustrer l'appétit institutionnel pour la dette privée européenne en rendez-vous.", fiable: true },
-      { libelle: "Ares Management : taille de marché à connaître (pas une actualité récente)", valeur: "Environ 30 Md€ levés pour sa stratégie de direct lending européen - un record de marché à l'époque", date: "annonce de janvier 2025, encore utile comme repère", source: "GlobalCapital, Businesswire, AlternativesWatch", lecture: "Date volontairement signalée comme ancienne : à citer comme ordre de grandeur du marché de la dette privée, jamais comme une actualité fraîche.", fiable: true },
+      { libelle: "Tikehau Capital", valeur: "Closing final du 6e millésime de sa stratégie de direct lending européenne à 5,2 Md€ (hors effet de levier)", date: "24 juillet 2026", source: "Boursedirect, confirmé par plusieurs sources", lecture: "Un chiffre daté et net, utile pour illustrer en rendez-vous l'appétit institutionnel pour la dette privée européenne.", fiable: true },
+      { libelle: "Ares Management : taille de marché à connaître (pas une actualité récente)", valeur: "Environ 30 Md€ levés pour sa stratégie de direct lending européen - un record de marché à l'époque", date: "annonce de janvier 2025, encore utile comme repère", source: "GlobalCapital, Businesswire, AlternativesWatch", lecture: "Date volontairement signalée comme ancienne : ce chiffre donne un ordre de grandeur du marché de la dette privée, il ne doit jamais être présenté comme une actualité récente.", fiable: true },
     ],
   },
   {
     categorie: "Gestion d'actifs - performance et collecte",
     items: [
-      { libelle: "Carmignac Patrimoine : performance nette au 30 octobre", valeur: "+7,8 % depuis le 1er janvier (indice de référence +8,2 %), +6,9 % sur 1 an, +35,4 % sur 3 ans", date: "30 octobre 2026", source: "carmignac.com - page officielle des performances", lecture: "Chiffre net de frais, daté à onze jours de la note - utilisable directement en rendez-vous pour situer un fonds patrimonial multi-actifs connu du client.", fiable: true },
-      { libelle: "Edmond de Rothschild AM : 5e année de collecte positive", valeur: "Collecte nette 2025 : 5,4 Md€ (encours total 107 Md€) ; fonds actions \"Big Data\" > 3,2 Md€ ; fonds daté Millesima 2030 : plus de 660 M€ collectés sur 2025 seul", date: "communiqué du 18 février 2026", source: "Communiqué officiel Edmond de Rothschild AM", lecture: "Utile pour montrer qu'un partenaire continue d'attirer des capitaux malgré un contexte de marché incertain - le détail par fonds permet de rebondir si le client détient déjà l'un d'eux.", fiable: true },
+      { libelle: "Carmignac Patrimoine : performance nette au 30 octobre", valeur: "+7,8 % depuis le 1er janvier (indice de référence +8,2 %), +6,9 % sur 1 an, +35,4 % sur 3 ans", date: "30 octobre 2026", source: "carmignac.com - page officielle des performances", lecture: "Un chiffre net de frais et récent (onze jours avant la mise à jour de cette note), directement utilisable pour situer un fonds patrimonial multi-actifs que le client connaît peut-être déjà.", fiable: true },
+      { libelle: "Edmond de Rothschild AM : 5e année de collecte positive", valeur: "Collecte nette 2025 : 5,4 Md€ (encours total 107 Md€) ; fonds actions \"Big Data\" > 3,2 Md€ ; fonds daté Millesima 2030 : plus de 660 M€ collectés sur 2025 seul", date: "communiqué du 18 février 2026", source: "Communiqué officiel Edmond de Rothschild AM", lecture: "De quoi montrer qu'un partenaire continue d'attirer des capitaux malgré un contexte de marché incertain - le détail par fonds permet de rebondir si le client en détient déjà un.", fiable: true },
     ],
   },
   {
     categorie: "SCPI / OPCI",
     items: [
-      { libelle: "Sofidy - SCPI Sofidynamic", valeur: "Performance globale 2025 de +14,04 % (9,04 % distribution + revalorisation de part de 300 € à 315 €)", date: "rapport annuel 2025", source: "Sofidy (rapport officiel), relayé par meilleurtaux.com", lecture: "Chiffre fort à citer face à une SCPI concurrente moins performante - mais préciser que c'est une SCPI de petite taille/spécialisée, pas représentative de la moyenne du marché (le TDVM moyen ASPIM reste à 4,91 %, voir plus haut).", fiable: true },
-      { libelle: "Primonial REIM", valeur: "Poursuit ses acquisitions de bureaux pour ses SCPI (Villeurbanne, Orléans, Osny...) ; Primovie négocierait la cession de 19 actifs à Clariane au 2e trimestre 2026", date: "2026", source: "Centrale des SCPI, France SCPI - agrégateurs spécialisés, pas de communiqué officiel Primonial retrouvé directement", lecture: "À recouper avant toute citation en rendez-vous.", fiable: false },
-      { libelle: "Amundi Immobilier", valeur: "Tendance 2026 décrite comme négative pour plusieurs SCPI historiques, dans un contexte de pression plus large liée à la hausse des taux obligataires", date: "2026", source: "France SCPI - titre à sensation, pas de communiqué officiel Amundi retrouvé", lecture: "Utile pour une conversation honnête sur les risques des SCPI anciennes génération vs nouvelle génération - mais à reformuler et recouper avant tout usage client, ne pas reprendre le titre tel quel.", fiable: false },
+      { libelle: "Sofidy - SCPI Sofidynamic", valeur: "Performance globale 2025 de +14,04 % (9,04 % distribution + revalorisation de part de 300 € à 315 €)", date: "rapport annuel 2025", source: "Sofidy (rapport officiel), relayé par meilleurtaux.com", lecture: "Un chiffre fort face à une SCPI concurrente moins performante - à nuancer en précisant qu'il s'agit d'une SCPI de petite taille et spécialisée, non représentative de la moyenne du marché (le TDVM moyen ASPIM reste à 4,91 %, voir plus haut).", fiable: true },
     ],
   },
 ];
 
-// Volontairement courte : plutôt que de lister une vingtaine de noms sans rien
-// à en dire, on ne garde ici que les partenaires pour lesquels une actualité
-// chiffrée et solide a été identifiée (ci-dessus) - le reste n'est pas énuméré,
-// par souci de lisibilité et d'honnêteté (mieux vaut ne rien avancer que risquer
-// une approximation sur un partenaire).
-const PARTENAIRES_SANS_ACTU_NOTE = "Les autres partenaires de l'architecture ouverte (gestion privée, infrastructure, dette, assurance-vie luxembourgeoise...) n'ont pas, à ce jour, d'actualité chiffrée récente et vérifiée à ajouter ici.";
-
-const CHECKLIST_RAFRAICHISSEMENT = [
-  "CAC 40 et taux (OAT, BCE, Fed) : revérifier le jour-même (source officielle : Banque de France, BCE, Fed).",
-  "Fonds euros et SCPI (TDVM) : données annuelles - revérifier qu'aucune publication plus récente n'est sortie entre-temps.",
-  "Performance capital-investissement (France Invest/EY) : revérifier qu'aucune étude plus récente n'a été publiée.",
-  "Actualité des partenaires et petites valeurs de niche : péremption rapide (semaines) - revérifier avant chaque rendez-vous, pas seulement en début de mois.",
-  "Projet de loi de finances 2027 : suivre le calendrier parlementaire (Sénat à partir du 20 novembre 2026) - rien n'est voté, ne jamais présenter une mesure proposée comme acquise.",
-  "Seuils fiscaux (PASS, abattements, Dutreil, 150-0 B ter) : revérifier après chaque loi de finances.",
-  "Ne jamais présenter un chiffre marqué « à vérifier » sans le recouper avec une source officielle d'abord.",
-  "Petites valeurs de niche : rappeler systématiquement qu'il s'agit de culture de marché, jamais d'une recommandation d'achat.",
-];
+// Plutôt que de lister une vingtaine de partenaires sans rien à en dire, on ne
+// garde ici que ceux pour lesquels une actualité chiffrée et solide a été
+// identifiée - mieux vaut ne rien avancer que risquer une approximation.
 
 const VEILLE_NAV = [
   ...VEILLE_SECTIONS.map(s => ({ id: s.id, label: s.titre.split(" - ")[0].split(" & ")[0].split(" : ")[0], icone: s.icone })),
   { id: "partenaires", label: "Partenaires", icone: ICONES_VEILLE.partenaires },
-  { id: "checklist", label: "Checklist", icone: ICONES_VEILLE.checklist },
 ];
 
 panelNote.innerHTML = `
@@ -4883,8 +4868,8 @@ panelNote.innerHTML = `
     <h2>Cap au Large</h2>
     <div class="sub">Ce qui bouge sur les marchés, chez nos partenaires et dans la fiscalité patrimoniale - jamais une recommandation d'investissement. Chaque information est vérifiée et sourcée manuellement, jamais rafraîchie automatiquement.</div>
     <div class="maj-tag"><strong>Dernière vérification : 10 novembre 2026</strong> · prochaine avant le 17 novembre 2026</div>
-    <div class="veille-legende"><span class="badge-unreliable">À vérifier</span> signale une information non confirmée par une source officielle - à recouper avant de la citer telle quelle en rendez-vous. Les autres informations sont corroborées par au moins une source fiable.</div>
     <nav class="veille-nav">
+      <span class="veille-nav-cap"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.3" stroke="currentColor" stroke-width="1.1"/><path d="M8 8 10.8 5.2 8 8 5.2 10.8 8 8Z" fill="currentColor"/></svg>Cap</span>
       ${VEILLE_NAV.map(n => `<a href="#veille-${n.id}" class="veille-nav-link">${n.icone}<span>${n.label}</span></a>`).join("")}
     </nav>
     ${VEILLE_SECTIONS.map(section => `
@@ -4899,7 +4884,7 @@ panelNote.innerHTML = `
         ${section.items.map(it => `
           <div class="veille-item">
             <div class="veille-item-head">
-              <div class="libelle">${it.libelle}${!it.fiable ? '<span class="badge-unreliable">À vérifier</span>' : ""}</div>
+              <div class="libelle">${it.libelle}</div>
               <span class="veille-date-badge">${it.date}</span>
             </div>
             <div class="valeur">${it.valeur}</div>
@@ -4924,7 +4909,7 @@ panelNote.innerHTML = `
           ${groupe.items.map(it => `
             <div class="veille-item">
               <div class="veille-item-head">
-                <div class="libelle">${it.libelle}${!it.fiable ? '<span class="badge-unreliable">À vérifier</span>' : ""}</div>
+                <div class="libelle">${it.libelle}</div>
                 <span class="veille-date-badge">${it.date}</span>
               </div>
               <div class="valeur">${it.valeur}</div>
@@ -4934,15 +4919,6 @@ panelNote.innerHTML = `
           `).join("")}
         </div>
       `).join("")}
-      <div class="caption-secondaire">${PARTENAIRES_SANS_ACTU_NOTE}</div>
-    </div>
-
-    <div class="veille-section" id="veille-checklist">
-      <div class="veille-section-header">
-        <span class="veille-icone">${ICONES_VEILLE.checklist}</span>
-        <div><h4>Checklist de rafraîchissement avant utilisation</h4></div>
-      </div>
-      <ul class="checklist">${CHECKLIST_RAFRAICHISSEMENT.map(c => `<li>${c}</li>`).join("")}</ul>
     </div>
   </div>
 `;
