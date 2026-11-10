@@ -610,37 +610,52 @@
   .radio-group label { display: flex; align-items: center; gap: 5px; font-size: 13px; border: 1px solid var(--border); border-radius: 10px; padding: 7px 10px; cursor: pointer; transition: border-color 0.15s ease; }
   .radio-group label:hover { border-color: var(--ui-accent); }
   .radio-group input { margin: 0; }
+  .veille-layout { display: flex; gap: 26px; align-items: flex-start; }
+  .veille-content { flex: 1; min-width: 0; }
   .veille-nav {
-    position: sticky; top: 102px; z-index: 5;
-    display: flex; align-items: center; flex-wrap: wrap; gap: 1px;
-    margin: 0 -24px 28px; padding: 5px 24px;
-    background: var(--navy); border-top: 3px solid var(--or);
+    position: sticky; top: 118px; z-index: 5; flex: 0 0 168px;
+    display: flex; flex-direction: column; gap: 1px;
+    padding: 10px 0 10px 14px; border-left: 2px solid var(--border);
   }
   .veille-nav-cap {
-    display: flex; align-items: center; gap: 6px; flex: none;
-    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
-    color: var(--or); margin-right: 14px; padding-right: 14px;
-    border-right: 1px solid rgba(247,245,239,0.25);
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--or); margin-bottom: 8px;
   }
   .veille-nav-link {
-    display:inline-flex; align-items:center; gap:6px;
-    font-size: 12.5px; font-weight: 500; color: rgba(247,245,239,0.72); text-decoration: none;
-    padding: 13px 11px; margin-bottom: -1px; border-bottom: 2px solid transparent;
-    transition: border-color 0.15s ease, color 0.15s ease; white-space: nowrap;
+    display:inline-flex; align-items:center; gap:7px;
+    font-size: 12.5px; font-weight: 500; color: var(--ink-muted); text-decoration: none;
+    padding: 7px 0 7px 12px; margin-left: -14px; border-left: 2px solid transparent;
+    transition: border-color 0.15s ease, color 0.15s ease; white-space: normal; line-height: 1.3;
   }
-  .veille-nav-link svg { flex: none; color: var(--or); opacity: 0.9; }
-  .veille-nav-link:hover { color: #f2efe6; border-color: var(--or); }
-  :root[data-theme="dark"] .veille-nav { background: var(--surface-2); border-top-color: var(--or); }
-  :root[data-theme="dark"] .veille-nav-cap { color: var(--or); border-right-color: var(--border); }
-  :root[data-theme="dark"] .veille-nav-link { color: var(--ink-muted); }
-  :root[data-theme="dark"] .veille-nav-link:hover { color: var(--ink); }
-  @media (max-width: 680px) {
+  .veille-nav-link svg { flex: none; color: var(--ui-accent); opacity: 0.85; }
+  .veille-nav-link:hover { color: var(--ink); border-color: var(--or); }
+  @media (max-width: 860px) {
+    .veille-layout { flex-direction: column; }
     .veille-nav {
-      margin: 0 -15px 22px; padding: 4px 15px;
-      flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
-      top: 59px;
+      position: sticky; top: 102px; flex: none; width: 100%;
+      flex-direction: row; align-items: center; flex-wrap: nowrap; gap: 1px;
+      margin: 0 -24px 22px; padding: 5px 24px 5px;
+      border-left: none; border-top: 3px solid var(--or); background: var(--navy);
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
     }
-    .veille-nav-cap, .veille-nav-link { flex: none; }
+    .veille-nav-cap {
+      color: var(--or); margin: 0 12px 0 0; padding-right: 12px; flex: none;
+      border-right: 1px solid rgba(247,245,239,0.25);
+    }
+    .veille-nav-link {
+      color: rgba(247,245,239,0.72); padding: 13px 11px; margin: 0 0 -1px;
+      border-left: none; border-bottom: 2px solid transparent; flex: none;
+    }
+    .veille-nav-link svg { color: var(--or); opacity: 0.9; }
+    .veille-nav-link:hover { color: #f2efe6; border-color: var(--or); }
+    :root[data-theme="dark"] .veille-nav { background: var(--surface-2); border-top-color: var(--or); }
+    :root[data-theme="dark"] .veille-nav-cap { color: var(--or); border-right-color: var(--border); }
+    :root[data-theme="dark"] .veille-nav-link { color: var(--ink-muted); }
+    :root[data-theme="dark"] .veille-nav-link:hover { color: var(--ink); }
+  }
+  @media (max-width: 680px) {
+    .veille-nav { margin: 0 -15px 20px; padding: 4px 15px; top: 59px; }
   }
   .veille-section {
     margin-bottom: 22px; padding: 20px 22px 22px; scroll-margin-top: 194px;
@@ -660,7 +675,7 @@
   .veille-item { border-left: 3px solid var(--sec-accent, var(--ui-accent)); border-radius: 0; background: var(--surface-2); padding: 13px 16px; margin-bottom: 10px; }
   .veille-item:last-child { margin-bottom: 0; }
   .veille-item-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-  .veille-item .libelle { font-weight: 600; font-size: 13.5px; }
+  .veille-item .libelle { font-weight: 700; font-size: 17px; line-height: 1.3; color: var(--ink); }
   .veille-item .pourquoi strong { color: var(--sec-accent, var(--ui-accent)); font-weight: 700; }
   .veille-date-badge {
     display: inline-flex; align-items: center; gap: 4px; flex: none;
@@ -668,7 +683,7 @@
     background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 2px 10px;
     white-space: nowrap;
   }
-  .veille-item .valeur { font-size: 14.5px; font-weight: 600; color: var(--ink); margin-top: 6px; }
+  .veille-item .valeur { font-size: 13px; font-weight: 600; color: var(--ink-muted); margin-top: 5px; }
   .veille-item .pourquoi { font-size: 13px; color: var(--ink); line-height: 1.55; margin-top: 7px; }
   .veille-item .meta { font-size: 11px; color: var(--ink-muted); margin-top: 8px; padding-top: 7px; border-top: 1px dashed var(--border); }
   .partenaires-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 10px; margin-top: 10px; }
@@ -680,7 +695,7 @@
   footer.credit { text-align: center; color: var(--ink-muted); font-size: 11.5px; padding: 20px 16px 30px; border-top: 1px solid var(--border); margin-top: 6px; }
   .tabs-wrap { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--border); }
   .context-bar {
-    padding: 10px 0;
+    padding: 11px 0;
     background: var(--surface-2);
     border-bottom: 1px solid var(--border);
     font-family: "Poppins", sans-serif;
@@ -689,9 +704,12 @@
   .context-bar-inner {
     max-width: 980px; margin: 0 auto;
     padding: 0 max(16px, env(safe-area-inset-left));
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 9px;
   }
-  .context-bar-cat { color: var(--ink-muted); text-transform: uppercase; font-size: 11px; letter-spacing: .04em; font-weight: 600; }
+  .context-bar-cat {
+    color: var(--ink-muted); text-transform: uppercase; font-size: 10.5px; letter-spacing: .04em; font-weight: 700;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px;
+  }
   .context-bar-chev { flex: none; color: var(--ink-muted); opacity: 0.45; }
   .context-bar-label { color: var(--context-accent, var(--ui-accent)); font-weight: 700; font-size: 13.5px; letter-spacing: -0.005em; }
   .context-bar-dot { display: none; }
@@ -4876,10 +4894,12 @@ panelNote.innerHTML = `
     <h2>Cap au Large</h2>
     <div class="sub">Ce qui bouge sur les marchés, chez nos partenaires et dans la fiscalité patrimoniale - <strong>jamais une recommandation d'investissement</strong>. Chaque information est <strong>vérifiée et sourcée manuellement</strong>, jamais rafraîchie automatiquement.</div>
     <div class="maj-tag"><strong>Dernière vérification : 10 novembre 2026</strong> · prochaine avant le 17 novembre 2026</div>
+    <div class="veille-layout">
     <nav class="veille-nav">
       <span class="veille-nav-cap"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.3" stroke="currentColor" stroke-width="1.1"/><path d="M8 8 10.8 5.2 8 8 5.2 10.8 8 8Z" fill="currentColor"/></svg>Cap</span>
       ${VEILLE_NAV.map(n => `<a href="#veille-${n.id}" class="veille-nav-link">${n.icone}<span>${n.label}</span></a>`).join("")}
     </nav>
+    <div class="veille-content">
     ${VEILLE_SECTIONS.map(section => `
       <div class="veille-section" id="veille-${section.id}" style="--sec-accent: ${section.accent};">
         <div class="veille-section-header">
@@ -4927,6 +4947,8 @@ panelNote.innerHTML = `
           `).join("")}
         </div>
       `).join("")}
+    </div>
+    </div>
     </div>
   </div>
 `;
