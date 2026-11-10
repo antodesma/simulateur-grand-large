@@ -2292,7 +2292,7 @@ const ONGLETS = [
   { id: "ifi", label: "IFI", desc: "Seuil et calcul de l'impôt sur la fortune immobilière", ready: true },
   { id: "sci", label: "SCI (IS vs IR)", desc: "Quel régime coûte le moins cher", ready: true },
   { id: "per", label: "PER", desc: "Verser plutôt que percevoir en net", ready: true },
-  { id: "note", label: "Vigie Grand Large", desc: "Veille marchés et partenaires", ready: true },
+  { id: "note", label: "Cap au Large", desc: "Veille marchés et partenaires", ready: true },
   { id: "copilote", label: "Copilote IA", desc: "Poser une question sur son patrimoine", ready: true },
 ];
 
@@ -2326,7 +2326,7 @@ const CONTEXTE_PAR_ONGLET = {
   ifi: { cat: "Patrimoine", texte: "IFI", accent: "var(--or)" },
   sci: { cat: "Patrimoine", texte: "SCI (IS vs IR)", accent: "var(--prune)" },
   per: { cat: "Patrimoine", texte: "PER", accent: "var(--dividende)" },
-  note: { cat: "Ressources", texte: "Vigie Grand Large", accent: "var(--ui-accent)" },
+  note: { cat: "Ressources", texte: "Cap au Large", accent: "var(--ui-accent)" },
   copilote: { cat: "Ressources", texte: "Copilote IA", accent: "var(--ui-accent)" },
 };
 function majBarreContexte(id) {
@@ -4880,8 +4880,8 @@ const VEILLE_NAV = [
 
 panelNote.innerHTML = `
   <div class="card">
-    <h2>Vigie Grand Large</h2>
-    <div class="sub">Ce qui bouge sur les marchés, chez vos partenaires et dans la fiscalité patrimoniale - à lire avant un rendez-vous, jamais une recommandation d'investissement. Chaque information est vérifiée et sourcée manuellement, jamais rafraîchie automatiquement.</div>
+    <h2>Cap au Large</h2>
+    <div class="sub">Ce qui bouge sur les marchés, chez nos partenaires et dans la fiscalité patrimoniale - jamais une recommandation d'investissement. Chaque information est vérifiée et sourcée manuellement, jamais rafraîchie automatiquement.</div>
     <div class="maj-tag"><strong>Dernière vérification : 10 novembre 2026</strong> · prochaine avant le 17 novembre 2026</div>
     <div class="veille-legende"><span class="badge-unreliable">À vérifier</span> signale une information non confirmée par une source officielle - à recouper avant de la citer telle quelle en rendez-vous. Les autres informations sont corroborées par au moins une source fiable.</div>
     <nav class="veille-nav">
@@ -5843,7 +5843,7 @@ function calculerEtAfficherSynthese() {
     <button type="button" class="synth-link" data-target="note">
       <div class="synth-link-icone">${ICONES_MODULES.note}</div>
       <div class="synth-link-text">
-        <div class="synth-link-label">Vigie Grand Large</div>
+        <div class="synth-link-label">Cap au Large</div>
         <div class="synth-link-desc">Veille marchés et produits</div>
       </div>
       <span class="synth-link-arrow">→</span>
