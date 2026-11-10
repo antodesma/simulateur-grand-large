@@ -613,33 +613,40 @@
   .veille-nav {
     position: sticky; top: 102px; z-index: 5;
     display: flex; align-items: center; flex-wrap: wrap; gap: 1px;
-    margin: 0 -24px 28px; padding: 11px 24px 0;
-    background: var(--surface); border-top: 2px solid var(--or); border-bottom: 1px solid var(--border);
+    margin: 0 -24px 28px; padding: 5px 24px;
+    background: var(--navy); border-top: 3px solid var(--or);
   }
   .veille-nav-cap {
-    display: flex; align-items: center; gap: 5px; flex: none;
-    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
-    color: var(--ink-muted); margin: 0 10px 9px 0; padding-bottom: 9px;
+    display: flex; align-items: center; gap: 6px; flex: none;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--or); margin-right: 14px; padding-right: 14px;
+    border-right: 1px solid rgba(247,245,239,0.25);
   }
-  .veille-nav-cap svg { color: var(--or); }
   .veille-nav-link {
-    display:inline-flex; align-items:center; gap:5px;
-    font-size: 12.5px; font-weight: 500; color: var(--ink-muted); text-decoration: none;
-    padding: 0 10px 9px; margin-bottom: -1px; border-bottom: 2px solid transparent;
+    display:inline-flex; align-items:center; gap:6px;
+    font-size: 12.5px; font-weight: 500; color: rgba(247,245,239,0.72); text-decoration: none;
+    padding: 13px 11px; margin-bottom: -1px; border-bottom: 2px solid transparent;
     transition: border-color 0.15s ease, color 0.15s ease; white-space: nowrap;
   }
-  .veille-nav-link svg { flex: none; color: var(--ui-accent); opacity: 0.8; }
-  .veille-nav-link:hover { color: var(--ink); border-color: var(--or); }
+  .veille-nav-link svg { flex: none; color: var(--or); opacity: 0.9; }
+  .veille-nav-link:hover { color: #f2efe6; border-color: var(--or); }
+  :root[data-theme="dark"] .veille-nav { background: var(--surface-2); border-top-color: var(--or); }
+  :root[data-theme="dark"] .veille-nav-cap { color: var(--or); border-right-color: var(--border); }
+  :root[data-theme="dark"] .veille-nav-link { color: var(--ink-muted); }
+  :root[data-theme="dark"] .veille-nav-link:hover { color: var(--ink); }
   @media (max-width: 680px) {
     .veille-nav {
-      margin: 0 -15px 22px; padding: 9px 15px 0;
+      margin: 0 -15px 22px; padding: 4px 15px;
       flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
       top: 59px;
     }
     .veille-nav-cap, .veille-nav-link { flex: none; }
   }
-  .veille-section { margin-bottom: 8px; padding-top: 28px; scroll-margin-top: 194px; border-top: 1px solid var(--border); }
-  .veille-section:first-of-type { padding-top: 0; border-top: none; }
+  .veille-section {
+    margin-bottom: 22px; padding: 20px 22px 22px; scroll-margin-top: 194px;
+    border: 1px solid var(--border); background: var(--surface);
+  }
+  @media (max-width: 560px) { .veille-section { padding: 15px 15px 17px; } }
   .veille-section-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 4px; }
   .veille-icone {
     display: flex; align-items: center; justify-content: center;
@@ -651,6 +658,7 @@
   .veille-solution { font-size: 11.5px; color: var(--ink-muted); }
   .veille-section-intro { font-size: 12.5px; color: var(--ink-muted); line-height: 1.5; margin: 8px 0 14px 40px; max-width: 620px; }
   .veille-item { border-left: 3px solid var(--ui-accent); border-radius: 0; background: var(--surface-2); padding: 13px 16px; margin-bottom: 10px; }
+  .veille-item:last-child { margin-bottom: 0; }
   .veille-item-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
   .veille-item .libelle { font-weight: 600; font-size: 13.5px; }
   .veille-date-badge {
@@ -671,21 +679,20 @@
   footer.credit { text-align: center; color: var(--ink-muted); font-size: 11.5px; padding: 20px 16px 30px; border-top: 1px solid var(--border); margin-top: 6px; }
   .tabs-wrap { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--border); }
   .context-bar {
-    padding: 8px 0;
+    padding: 10px 0;
     background: var(--surface-2);
-    border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
     font-family: "Poppins", sans-serif;
-    font-size: 12.5px; font-weight: 500;
+    font-size: 13px; font-weight: 500;
   }
   .context-bar-inner {
     max-width: 980px; margin: 0 auto;
     padding: 0 max(16px, env(safe-area-inset-left));
-    display: flex; align-items: center; gap: 7px;
+    display: flex; align-items: center; gap: 8px;
   }
-  .context-bar-cat { color: var(--ink-muted); }
-  .context-bar-chev { flex: none; color: var(--ink-muted); opacity: 0.55; }
-  .context-bar-label { color: var(--context-accent, var(--ui-accent)); font-weight: 700; }
+  .context-bar-cat { color: var(--ink-muted); text-transform: uppercase; font-size: 11px; letter-spacing: .04em; font-weight: 600; }
+  .context-bar-chev { flex: none; color: var(--ink-muted); opacity: 0.45; }
+  .context-bar-label { color: var(--context-accent, var(--ui-accent)); font-weight: 700; font-size: 13.5px; letter-spacing: -0.005em; }
   .context-bar-dot { display: none; }
   .context-bar:empty, .context-bar #context-bar-label:empty { display: none; }
   .card .card-eyebrow { display: none; }
@@ -4756,9 +4763,9 @@ const VEILLE_SECTIONS = [
     id: "marches", icone: ICONES_VEILLE.marches,
     titre: "Marchés financiers & taux", solution: "Placements financiers",
     items: [
-      { libelle: "CAC 40 : une semaine en nette hausse", valeur: "8 139 points à la clôture du vendredi 6 novembre 2026 (+2,13 % sur la semaine)", date: "6 novembre 2026", source: "Boursedirect - bilan hebdomadaire (source agrégatrice, cohérente avec la clôture de la semaine précédente à 7 969 points)", lecture: "Le rebond s'inscrit dans la continuité du soulagement post-midterms américaines : l'incertitude électorale levée, les indices ont accéléré dès le 4 novembre, portés par les banques - les valeurs liées à l'intelligence artificielle marquent elles une pause après plusieurs mois de hausse continue. De quoi rassurer un client inquiet pour ses lignes actions, sans ériger une semaine positive en tendance de fond.", fiable: true },
+      { libelle: "CAC 40 : une semaine en nette hausse", valeur: "8 139 points à la clôture du vendredi 6 novembre 2026 (+2,13 % sur la semaine)", date: "6 novembre 2026", source: "Boursedirect - bilan hebdomadaire (source agrégatrice, cohérente avec la clôture de la semaine précédente à 7 969 points)", url: "https://www.boursedirect.fr/fr/actualites/categorie/point-hebdo/bilan-hebdo-le-cac40-resiste-aux-craintes-sur-l-ia-boursier-a1b8179bd83f5084599e41b09d53360f0704cdd4", lecture: "Le rebond s'inscrit dans la continuité du soulagement post-midterms américaines : l'incertitude électorale levée, les indices ont accéléré dès le 4 novembre, portés par les banques - les valeurs liées à l'intelligence artificielle marquent elles une pause après plusieurs mois de hausse continue. De quoi rassurer un client inquiet pour ses lignes actions, sans ériger une semaine positive en tendance de fond.", fiable: true },
       { libelle: "OAT France 10 ans : la prime de risque reste élevée", valeur: "4,93 % (Bund allemand 3,34 %, écart d'environ 159 points de base)", date: "30 octobre 2026", source: "culture-financiere.com - récapitulatif macro hebdomadaire", lecture: "Cet écart avec le Bund allemand explique en bonne partie pourquoi les fonds datés et produits structurés lancés cet automne affichent des taux garantis plus généreux qu'il y a un an : le marché fait simplement payer plus cher la dette française.", fiable: true },
-      { libelle: "BCE : la succession de Christine Lagarde s'accélère", valeur: "Lagarde quittera la présidence par anticipation ; les ministres des Finances de la zone euro examinaient les candidatures le 9 novembre 2026, Klaas Knot et Pablo Hernández de Cos étant cités comme favoris", date: "3 novembre 2026 (réunion du 9 novembre encore sans résultat confirmé à ce jour)", source: "Dépêche d'agence (DH.be)", lecture: "Un changement à la tête de la BCE redistribue toujours un peu les anticipations de marché sur les taux de la zone euro - un dossier à suivre avant qu'il infuse les discussions de 2027, sans en faire un sujet d'alerte pour un client aujourd'hui.", fiable: true },
+      { libelle: "BCE : la succession de Christine Lagarde s'accélère", valeur: "Lagarde quittera la présidence par anticipation ; les ministres des Finances de la zone euro examinaient les candidatures le 9 novembre 2026, Klaas Knot et Pablo Hernández de Cos étant cités comme favoris", date: "3 novembre 2026 (réunion du 9 novembre encore sans résultat confirmé à ce jour)", source: "Dépêche d'agence (DH.be)", url: "https://www.dhnet.be/dernieres-depeches/2026/11/03/la-course-pour-remplacer-lagarde-a-la-tete-de-la-bce-est-lancee-QCZEHSNSANAILHIJYZJX7IN7CQ/", lecture: "Un changement à la tête de la BCE redistribue toujours un peu les anticipations de marché sur les taux de la zone euro - un dossier à suivre avant qu'il infuse les discussions de 2027, sans en faire un sujet d'alerte pour un client aujourd'hui.", fiable: true },
       { libelle: "Fed : un changement de présidence à ne pas manquer", valeur: "La Fed est présidée par Kevin Warsh depuis le 13 mai 2026 (confirmé par le Sénat américain), Jerome Powell restant gouverneur votant ; la décision de statu quo du 28 octobre (taux à 3,75-4,00 %, deux dissidents) s'est donc tenue sous la présidence Warsh", date: "13 mai 2026 (prise de fonction) - 28 octobre 2026 (dernière décision)", source: "Multiples sources concordantes (presse américaine)", lecture: "La Fed a changé de visage en 2026 sans que cela ait beaucoup transpiré hors des cercles spécialisés - utile à savoir avant d'évoquer la politique monétaire américaine avec un client exposé au dollar ou aux marchés US.", fiable: true },
     ],
   },
@@ -4766,8 +4773,8 @@ const VEILLE_SECTIONS = [
     id: "niches", icone: ICONES_VEILLE.niches,
     titre: "Pépites à l'horizon", solution: "Culture de marché - jamais une recommandation",
     items: [
-      { libelle: "D.A.T.E. (échangeurs thermiques défense/deeptech)", valeur: "IPO sur Euronext Growth le 9 septembre 2026, prix fixe 19,36 € ; CA 2025 : 3,8 M€, portefeuille commercial > 80 M€ sur 2026-2030", date: "9 septembre 2026", source: "TradingSat", lecture: "Une micro-cap tout juste introduite, au flottant réduit et fortement dépendante de quelques contrats défense : volatilité et liquidité restent limitées. Un nom à connaître pour la culture générale de marché, pas une piste d'investissement.", fiable: true },
-      { libelle: "ST Group (composites aéro/défense/spatial)", valeur: "Première société cotée sur Lise (nouvelle bourse digitale PME), IPO ~2,07 M€ à 18,25 €/action ; CA 2025 : 3 M€ (+19 %)", date: "IPO avril 2026, article mis à jour le 28 octobre 2026", source: "Toutsurmesfinances", lecture: "Lise, le marché tout juste créé pour coter les PME, reste jeune et peu liquide - une référence utile pour la culture de marché, sans valeur de conseil.", fiable: true },
+      { libelle: "D.A.T.E. (échangeurs thermiques défense/deeptech)", valeur: "IPO sur Euronext Growth le 9 septembre 2026, prix fixe 19,36 € ; CA 2025 : 3,8 M€, portefeuille commercial > 80 M€ sur 2026-2030", date: "9 septembre 2026", source: "TradingSat", url: "https://www.tradingsat.com/actualites/informations-societes/elle-refroidit-radars-sous-marins-et-avions-de-chasse-c-est-quoi-cette-pme-francaise-de-defense-date-qui-arrive-en-bourse-47-ans-apres-sa-creation-1169795.html", lecture: "Une micro-cap tout juste introduite, au flottant réduit et fortement dépendante de quelques contrats défense : volatilité et liquidité restent limitées. Un nom à connaître pour la culture générale de marché, pas une piste d'investissement.", fiable: true },
+      { libelle: "ST Group (composites aéro/défense/spatial)", valeur: "Première société cotée sur Lise (nouvelle bourse digitale PME), IPO ~2,07 M€ à 18,25 €/action ; CA 2025 : 3 M€ (+19 %)", date: "IPO avril 2026, article mis à jour le 28 octobre 2026", source: "Toutsurmesfinances", url: "https://www.toutsurmesfinances.com/actualites/a/st-group-quatre-jours-supplementaires-pour-souscrire-a-lintroduction-en-bourse", lecture: "Lise, le marché tout juste créé pour coter les PME, reste jeune et peu liquide - une référence utile pour la culture de marché, sans valeur de conseil.", fiable: true },
       { libelle: "The Exploration Company (capsule spatiale réutilisable Nyx)", valeur: "Série C de 450 M$ annoncée le 8 septembre 2026 - décrite comme la plus importante jamais levée par une entreprise spatiale européenne à ce stade", date: "8 septembre 2026", source: "L'Essentiel de l'Éco", lecture: "Une levée non cotée, à l'horizon et au profil de risque très différents d'une action liquide : elle illustre surtout le dynamisme du spatial deeptech français, pas une opportunité accessible à un client type.", fiable: true },
       { libelle: "Alice & Bob (ordinateur quantique)", valeur: "Série B ~100 M€ (dette incluse), objectif de doubler l'équipe (120 personnes)", date: "2 janvier 2025 - repère de fond, pas une actualité récente", source: "CFNEWS", lecture: "Un repère plus ancien qu'une actualité fraîche, mais qui donne la mesure de l'intérêt porté à l'informatique quantique française - là encore pour la culture de marché, jamais comme une piste de placement.", fiable: true },
     ],
@@ -4776,28 +4783,28 @@ const VEILLE_SECTIONS = [
     id: "immobilier", icone: ICONES_VEILLE.immobilier,
     titre: "Immobilier patrimonial", solution: "Immobilier patrimonial",
     items: [
-      { libelle: "Taux de distribution moyen des SCPI (TDVM), marché 2025", valeur: "4,91 %", date: "données annuelles 2025", source: "ASPIM", lecture: "Le repère à garder en tête pour resituer la performance d'une SCPI proposée au client par rapport à la moyenne du marché.", fiable: true },
+      { libelle: "Taux de distribution moyen des SCPI (TDVM), marché 2025", valeur: "4,91 %", date: "données annuelles 2025", source: "ASPIM", url: "https://www.aspim.fr/content/uploads/2026/02/ASPIM_CP-4T-2025_V4.pdf", lecture: "Le repère à garder en tête pour resituer la performance d'une SCPI proposée au client par rapport à la moyenne du marché.", fiable: true },
     ],
   },
   {
     id: "non_cote", icone: ICONES_VEILLE.non_cote,
     titre: "Investissements non cotés", solution: "Investissements non cotés",
     items: [
-      { libelle: "TRI net du capital-investissement français depuis l'origine", valeur: "11,3 % par an", date: "étude parue le 8 juillet 2025", source: "France Invest / EY", lecture: "Un point de comparaison utile en rendez-vous, à condition de toujours rappeler l'horizon de blocage (8 à 12 ans) et le risque de perte en capital qui vont avec.", fiable: true },
+      { libelle: "TRI net du capital-investissement français depuis l'origine", valeur: "11,3 % par an", date: "étude parue le 8 juillet 2025", source: "France Invest / EY", url: "https://www.franceinvest.eu/wp-content/uploads/2025/07/Note-dinfo_France-Invest_Etude-perf.-nette-du-capital-investissement-2025-07-08.pdf", lecture: "Un point de comparaison utile en rendez-vous, à condition de toujours rappeler l'horizon de blocage (8 à 12 ans) et le risque de perte en capital qui vont avec.", fiable: true },
     ],
   },
   {
     id: "assurance_vie", icone: ICONES_VEILLE.assurance_vie,
     titre: "Assurance-vie & épargne", solution: "Placements financiers",
     items: [
-      { libelle: "Rendement moyen des fonds euros, marché 2025", valeur: "2,60 % (France Assureurs) / 2,63 % (ACPR)", date: "données annuelles 2025, publiées en 2026", source: "France Assureurs ; ACPR", lecture: "Le point de départ classique pour toute conversation sur l'arbitrage entre fonds euros et unités de compte.", fiable: true },
+      { libelle: "Rendement moyen des fonds euros, marché 2025", valeur: "2,60 % (France Assureurs) / 2,63 % (ACPR)", date: "données annuelles 2025, publiées en 2026", source: "France Assureurs ; ACPR", url: "https://acpr.banque-france.fr/system/files/2026-06/20260630_AS180_revalorisation_2025.pdf", lecture: "Le point de départ classique pour toute conversation sur l'arbitrage entre fonds euros et unités de compte.", fiable: true },
     ],
   },
   {
     id: "pld2027", icone: ICONES_VEILLE.pld2027,
     titre: "Projet de loi de finances 2027 - fiscalité patrimoniale (rien n'est encore voté)", solution: "Transmission et structuration familiale",
     items: [
-      { libelle: "Calendrier parlementaire", valeur: "Volet recettes rejeté par l'Assemblée nationale le 4 novembre 2026 ; le Sénat examine le texte initial du gouvernement à partir du 20 novembre", date: "4 novembre 2026", source: "Toutsurmesfinances", lecture: "Le rejet du volet recettes par l'Assemblée renvoie l'essentiel des arbitrages au Sénat à partir du 20 novembre : un dossier à suivre de près avant tout rendez-vous transmission, en gardant à l'esprit que le texte final différera probablement de cette version initiale.", fiable: true },
+      { libelle: "Calendrier parlementaire", valeur: "Volet recettes rejeté par l'Assemblée nationale le 4 novembre 2026 ; le Sénat examine le texte initial du gouvernement à partir du 20 novembre", date: "4 novembre 2026", source: "Toutsurmesfinances", url: "https://www.toutsurmesfinances.com/actualites/?p=2840", lecture: "Le rejet du volet recettes par l'Assemblée renvoie l'essentiel des arbitrages au Sénat à partir du 20 novembre : un dossier à suivre de près avant tout rendez-vous transmission, en gardant à l'esprit que le texte final différera probablement de cette version initiale.", fiable: true },
     ],
   },
   {
@@ -4866,7 +4873,7 @@ const VEILLE_NAV = [
 panelNote.innerHTML = `
   <div class="card">
     <h2>Cap au Large</h2>
-    <div class="sub">Ce qui bouge sur les marchés, chez nos partenaires et dans la fiscalité patrimoniale - jamais une recommandation d'investissement. Chaque information est vérifiée et sourcée manuellement, jamais rafraîchie automatiquement.</div>
+    <div class="sub">Ce qui bouge sur les marchés, chez nos partenaires et dans la fiscalité patrimoniale - <strong>jamais une recommandation d'investissement</strong>. Chaque information est <strong>vérifiée et sourcée manuellement</strong>, jamais rafraîchie automatiquement.</div>
     <div class="maj-tag"><strong>Dernière vérification : 10 novembre 2026</strong> · prochaine avant le 17 novembre 2026</div>
     <nav class="veille-nav">
       <span class="veille-nav-cap"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.3" stroke="currentColor" stroke-width="1.1"/><path d="M8 8 10.8 5.2 8 8 5.2 10.8 8 8Z" fill="currentColor"/></svg>Cap</span>
@@ -4889,7 +4896,7 @@ panelNote.innerHTML = `
             </div>
             <div class="valeur">${it.valeur}</div>
             <div class="pourquoi">${it.lecture}</div>
-            <div class="meta">Source : ${it.source}</div>
+            <div class="meta">Source : ${it.url ? `<a href="${it.url}" target="_blank" rel="noopener noreferrer">${it.source}</a>` : it.source}</div>
           </div>
         `).join("")}
       </div>
@@ -4914,7 +4921,7 @@ panelNote.innerHTML = `
               </div>
               <div class="valeur">${it.valeur}</div>
               <div class="pourquoi">${it.lecture}</div>
-              <div class="meta">Source : ${it.source}</div>
+              <div class="meta">Source : ${it.url ? `<a href="${it.url}" target="_blank" rel="noopener noreferrer">${it.source}</a>` : it.source}</div>
             </div>
           `).join("")}
         </div>
