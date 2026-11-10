@@ -2292,7 +2292,7 @@ const ONGLETS = [
   { id: "ifi", label: "IFI", desc: "Seuil et calcul de l'impôt sur la fortune immobilière", ready: true },
   { id: "sci", label: "SCI (IS vs IR)", desc: "Quel régime coûte le moins cher", ready: true },
   { id: "per", label: "PER", desc: "Verser plutôt que percevoir en net", ready: true },
-  { id: "note", label: "Note Grand Large", desc: "Veille marchés et produits", ready: true },
+  { id: "note", label: "Vigie Grand Large", desc: "Veille marchés et partenaires", ready: true },
   { id: "copilote", label: "Copilote IA", desc: "Poser une question sur son patrimoine", ready: true },
 ];
 
@@ -2326,7 +2326,7 @@ const CONTEXTE_PAR_ONGLET = {
   ifi: { cat: "Patrimoine", texte: "IFI", accent: "var(--or)" },
   sci: { cat: "Patrimoine", texte: "SCI (IS vs IR)", accent: "var(--prune)" },
   per: { cat: "Patrimoine", texte: "PER", accent: "var(--dividende)" },
-  note: { cat: "Ressources", texte: "Note Grand Large", accent: "var(--ui-accent)" },
+  note: { cat: "Ressources", texte: "Vigie Grand Large", accent: "var(--ui-accent)" },
   copilote: { cat: "Ressources", texte: "Copilote IA", accent: "var(--ui-accent)" },
 };
 function majBarreContexte(id) {
@@ -4722,6 +4722,8 @@ const ICONES_VEILLE = {
   seuils: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2V14M4.5 3.5h7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4.5 3.5 2 8.5h5L4.5 3.5ZM11.5 3.5 9 8.5h5l-2.5-5Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M2.5 13.5h11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
   niches: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5 10 6l4.5 2-4.5 2-2 4.5-2-4.5L1.5 8 6 6Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>',
   pld2027: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3" y="2" width="10" height="12" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 5h5M5.5 7.5h5M5.5 10h3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M11 12.5 13 14.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="12.3" cy="11.3" r="1.6" stroke="currentColor" stroke-width="1.1"/></svg>',
+  partenaires: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="4.5" cy="4.5" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="11.5" cy="4.5" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="11.5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M5.8 5.9 7 9.9M10.2 5.9 9 9.9" stroke="currentColor" stroke-width="1.1"/></svg>',
+  checklist: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2.5" y="2" width="11" height="12" rx="0.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 5.5h6M5 8h6M5 10.5h4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>',
 };
 
 // Icônes des 10 modules de simulation - même langage graphique que la Note Grand
@@ -4746,18 +4748,16 @@ const VEILLE_SECTIONS = [
     id: "marches", icone: ICONES_VEILLE.marches,
     titre: "Marchés financiers & taux", solution: "Placements financiers",
     items: [
-      { libelle: "CAC 40", valeur: "7 876,70 points (+0,49 % sur la séance)", date: "21 octobre 2026", source: "TradingEconomics (cotation CFD, à recouper avec une source officielle avant diffusion)", lecture: "Sert à répondre calmement à un client qui s'inquiète ou s'enthousiasme sur ses lignes actions ; la proximité des plus hauts n'est ni un signal d'achat ni un signal de vente en soi.", fiable: false },
-      { libelle: "OAT France 10 ans", valeur: "≈ 4,9 % - 5,0 %", date: "20 octobre 2026", source: "TradingEconomics / presse financière - les sources divergent sur la 2e décimale", lecture: "Utile pour expliquer pourquoi les nouveaux produits structurés affichent des taux garantis plus attractifs qu'il y a un an.", fiable: false },
-      { libelle: "Taux de dépôt BCE", valeur: "2,50 %", date: "décision du 10 septembre 2026, effective au 16 septembre 2026", source: "Banque de France", lecture: "Point de repère pour toute discussion sur le coût du crédit avec un client.", fiable: true },
-      { libelle: "Fourchette cible Fed Funds", valeur: "3,75 % - 4,00 %", date: "décision FOMC des 15-16 septembre 2026 (+25 pb)", source: "Presse financière spécialisée, à recouper avec le communiqué officiel du FOMC", lecture: "Pertinent pour un client exposé aux marchés américains ou au dollar.", fiable: true },
-      { libelle: "CAC 40 : rebond après les midterms américaines", valeur: "+1,96 % le 4 novembre 2026, clôture à 8 177,69 points (après -1,22 % la veille)", date: "4 novembre 2026", source: "Dépêche d'agence (DH Les Sports+), chiffres cohérents et recoupés", lecture: "Le rebond suit la victoire démocrate aux midterms US (incertitude levée) et un apaisement perçu au Moyen-Orient - utile pour expliquer à un client qu'un mouvement de marché tient parfois plus au sentiment géopolitique qu'aux fondamentaux : banques en forte hausse (BNP +4,67 %), valeurs IA en recul (STMicro -5,14 %).", fiable: true },
-      { libelle: "BCE : taux inchangés, départ anticipé de Christine Lagarde", valeur: "Taux de dépôt maintenu à 2,50 % le 29 octobre 2026 ; Lagarde quittera la présidence le 7 février 2027, environ 9 mois avant la fin de son mandat", date: "29 octobre 2026", source: "Euronews", lecture: "Le motif du départ n'est pas confirmé officiellement (rumeurs non vérifiées) - mais la succession à la tête de la BCE est, elle, un facteur d'incertitude réel à garder en tête sur l'horizon 2027.", fiable: false },
-      { libelle: "Fed : statu quo annoncé à 3,75-4,00 %, avec deux dissidents", valeur: "Décision non unanime du 28 octobre 2026 (2 gouverneurs sur 12 auraient voulu une hausse de 25 pb)", date: "28 octobre 2026", source: "Presse financière - une recherche croisée a aussi fait remonter des mentions contradictoires d'une baisse de taux Fed sur la même période", lecture: "Information à ne PAS citer telle quelle en rendez-vous tant que le communiqué officiel du FOMC n'a pas été recoupé - sert ici de rappel que la trajectoire des taux US reste disputée en interne à la Fed.", fiable: false },
+      { libelle: "CAC 40 : une semaine en nette hausse", valeur: "8 139 points à la clôture du vendredi 6 novembre 2026 (+2,13 % sur la semaine)", date: "6 novembre 2026", source: "Boursedirect - bilan hebdomadaire (source agrégatrice, cohérente avec la clôture de la semaine précédente à 7 969 points)", lecture: "La semaine confirme le rebond amorcé après les midterms américaines (victoire démocrate actant la fin de l'incertitude électorale, +1,96 % dès le 4 novembre) : banques en tête, valeurs IA plus hésitantes (STMicro). Sert à rassurer un client inquiet sur ses lignes actions, sans sur-interpréter un mouvement hebdomadaire comme un signal durable.", fiable: true },
+      { libelle: "OAT France 10 ans : la prime de risque reste élevée", valeur: "4,93 % (Bund allemand 3,34 %, écart d'environ 159 points de base)", date: "30 octobre 2026", source: "culture-financiere.com - récapitulatif macro hebdomadaire", lecture: "Explique pourquoi les nouveaux produits structurés et fonds datés affichent des taux garantis plus attractifs qu'il y a un an - la contrepartie est un risque souverain perçu en hausse (voir ci-dessous, la perspective Fitch).", fiable: true },
+      { libelle: "Fitch abaisse la perspective de la France à négative", valeur: "Note maintenue à A+, perspective passée de stable à négative", date: "30 octobre 2026", source: "culture-financiere.com, à recouper avec le communiqué officiel de Fitch Ratings", lecture: "À mentionner avec prudence en rendez-vous : ce n'est pas une dégradation de note, seulement un avertissement sur la trajectoire budgétaire française - mais c'est cohérent avec la remontée des taux OAT observée au même moment.", fiable: false },
+      { libelle: "BCE : la succession de Christine Lagarde s'accélère", valeur: "Lagarde quittera la présidence par anticipation ; les ministres des Finances de la zone euro examinaient les candidatures le 9 novembre 2026, Klaas Knot et Pablo Hernández de Cos étant cités comme favoris", date: "3 novembre 2026 (réunion du 9 novembre encore sans résultat confirmé à ce jour)", source: "Dépêche d'agence (DH.be)", lecture: "Le successeur devrait être connu dans les prochaines semaines - un facteur d'incertitude réel sur la politique monétaire 2027 à garder en tête, sans en faire un sujet d'inquiétude immédiat pour un client.", fiable: true },
+      { libelle: "Fed : un changement de présidence à ne pas manquer", valeur: "La Fed est présidée par Kevin Warsh depuis le 13 mai 2026 (confirmé par le Sénat américain), Jerome Powell restant gouverneur votant ; la décision de statu quo du 28 octobre (taux à 3,75-4,00 %, deux dissidents) s'est donc tenue sous la présidence Warsh", date: "13 mai 2026 (prise de fonction) - 28 octobre 2026 (dernière décision)", source: "Multiples sources concordantes (presse américaine)", lecture: "Point à connaître avant de parler de politique monétaire américaine avec un client exposé au dollar ou aux marchés US - la présidence de la Fed a changé de main en 2026, ce n'est plus l'ère Powell.", fiable: true },
     ],
   },
   {
     id: "niches", icone: ICONES_VEILLE.niches,
-    titre: "Petites valeurs & thématiques de niche", solution: "Culture de marché - jamais une recommandation",
+    titre: "Pépites à l'horizon", solution: "Culture de marché - jamais une recommandation",
     items: [
       { libelle: "D.A.T.E. (échangeurs thermiques défense/deeptech)", valeur: "IPO sur Euronext Growth le 9 septembre 2026, prix fixe 19,36 € ; CA 2025 : 3,8 M€, portefeuille commercial > 80 M€ sur 2026-2030", date: "9 septembre 2026", source: "TradingSat", lecture: "Micro-cap tout juste introduite, flottant réduit, forte dépendance à quelques contrats défense - volatilité et liquidité limitées. À mentionner à titre de culture de marché uniquement, jamais comme une recommandation d'achat.", fiable: true },
       { libelle: "ST Group (composites aéro/défense/spatial)", valeur: "Première société cotée sur Lise (nouvelle bourse digitale PME), IPO ~2,07 M€ à 18,25 €/action ; CA 2025 : 3 M€ (+19 %)", date: "IPO avril 2026, article mis à jour le 28 octobre 2026", source: "Toutsurmesfinances", lecture: "Marché Lise encore jeune et peu liquide, taille très réduite - purement informatif, pas de conseil d'investissement.", fiable: true },
@@ -4827,12 +4827,21 @@ const ACTUALITE_PARTENAIRES = [
     items: [
       { libelle: "Ardian Infrastructure", valeur: "Acquisition d'Energia Group (utility énergétique irlandaise) pour 2,75 Md€ ; levée de 20 Md$ pour ses stratégies infrastructure européennes", date: "2025-2026", source: "pe-insights.com, informedinfrastructure.com", lecture: "Taille et vitesse de déploiement du plus gros acteur infra français - rassurant sur la liquidité de la classe d'actif.", fiable: true },
       { libelle: "Antin Infrastructure Partners", valeur: "Acquisitions de Vigor Marine Group (février 2026) et de Sapphire Gas Solutions auprès d'Apollo", date: "début 2026", source: "Antin IP, Businesswire", lecture: "Deux opérations rapprochées - montre un rythme d'investissement soutenu sur l'infrastructure énergétique.", fiable: true },
+      { libelle: "EQT Infrastructure : un 6e fonds record, un 7e déjà en levée", valeur: "EQT Infrastructure VI clôturé à 21,5 Md€ (+35 % vs le fonds précédent, ~70 % de souscripteurs historiques) ; EQT Infrastructure VII vise désormais 21 Md€", date: "closing VI en avril 2025, lancement VII annoncé le 31 mai 2026", source: "Communiqués officiels EQT", lecture: "Bon exemple à citer pour illustrer la fidélité des investisseurs institutionnels d'un millésime à l'autre sur l'infrastructure - la taille cible du VII n'est pas garantie tant que le closing final n'est pas annoncé.", fiable: true },
     ],
   },
   {
     categorie: "Dette privée",
     items: [
       { libelle: "Tikehau Capital", valeur: "Closing final du 6e millésime de sa stratégie de direct lending européenne à 5,2 Md€ (hors effet de levier)", date: "24 juillet 2026", source: "Boursedirect, confirmé par plusieurs sources", lecture: "Bon chiffre daté pour illustrer l'appétit institutionnel pour la dette privée européenne en rendez-vous.", fiable: true },
+      { libelle: "Ares Management : taille de marché à connaître (pas une actualité récente)", valeur: "Environ 30 Md€ levés pour sa stratégie de direct lending européen - un record de marché à l'époque", date: "annonce de janvier 2025, encore utile comme repère", source: "GlobalCapital, Businesswire, AlternativesWatch", lecture: "Date volontairement signalée comme ancienne : à citer comme ordre de grandeur du marché de la dette privée, jamais comme une actualité fraîche.", fiable: true },
+    ],
+  },
+  {
+    categorie: "Gestion d'actifs - performance et collecte",
+    items: [
+      { libelle: "Carmignac Patrimoine : performance nette au 30 octobre", valeur: "+7,8 % depuis le 1er janvier (indice de référence +8,2 %), +6,9 % sur 1 an, +35,4 % sur 3 ans", date: "30 octobre 2026", source: "carmignac.com - page officielle des performances", lecture: "Chiffre net de frais, daté à onze jours de la note - utilisable directement en rendez-vous pour situer un fonds patrimonial multi-actifs connu du client.", fiable: true },
+      { libelle: "Edmond de Rothschild AM : 5e année de collecte positive", valeur: "Collecte nette 2025 : 5,4 Md€ (encours total 107 Md€) ; fonds actions \"Big Data\" > 3,2 Md€ ; fonds daté Millesima 2030 : plus de 660 M€ collectés sur 2025 seul", date: "communiqué du 18 février 2026", source: "Communiqué officiel Edmond de Rothschild AM", lecture: "Utile pour montrer qu'un partenaire continue d'attirer des capitaux malgré un contexte de marché incertain - le détail par fonds permet de rebondir si le client détient déjà l'un d'eux.", fiable: true },
     ],
   },
   {
@@ -4845,13 +4854,12 @@ const ACTUALITE_PARTENAIRES = [
   },
 ];
 
-const PARTENAIRES_SANS_ACTU_IDENTIFIEE = [
-  "Carmignac", "Edmond de Rothschild AM", "Rothschild & Co AM", "Lazard Frères Gestion", "La Financière de l'Échiquier",
-  "Andera Partners", "Five Arrows (Rothschild & Co)", "ICG", "Pemberton", "Ares", "Apollo (hors opération Antin ci-dessus)",
-  "Meridiam", "EQT Infrastructure", "La Française REM", "Perial AM", "Norma Capital",
-  "Spirica", "Generali Patrimoine", "Cardif", "Oradea", "Lombard International", "OneLife", "Wealins", "Baloise Lux",
-  "BNP Paribas", "Société Générale", "Natixis", "Goldman Sachs (émetteurs de produits structurés)",
-];
+// Volontairement courte : plutôt que de lister une vingtaine de noms sans rien
+// à en dire, on ne garde ici que les partenaires pour lesquels une actualité
+// chiffrée et solide a été identifiée (ci-dessus) - le reste n'est pas énuméré,
+// par souci de lisibilité et d'honnêteté (mieux vaut ne rien avancer que risquer
+// une approximation sur un partenaire).
+const PARTENAIRES_SANS_ACTU_NOTE = "Les autres partenaires de l'architecture ouverte (gestion privée, infrastructure, dette, assurance-vie luxembourgeoise...) n'ont pas, à ce jour, d'actualité chiffrée récente et vérifiée à ajouter ici.";
 
 const CHECKLIST_RAFRAICHISSEMENT = [
   "CAC 40 et taux (OAT, BCE, Fed) : revérifier le jour-même (source officielle : Banque de France, BCE, Fed).",
@@ -4860,23 +4868,24 @@ const CHECKLIST_RAFRAICHISSEMENT = [
   "Actualité des partenaires et petites valeurs de niche : péremption rapide (semaines) - revérifier avant chaque rendez-vous, pas seulement en début de mois.",
   "Projet de loi de finances 2027 : suivre le calendrier parlementaire (Sénat à partir du 20 novembre 2026) - rien n'est voté, ne jamais présenter une mesure proposée comme acquise.",
   "Seuils fiscaux (PASS, abattements, Dutreil, 150-0 B ter) : revérifier après chaque loi de finances.",
-  "Ne jamais présenter un chiffre marqué « à recouper » sans le recouper avec une source officielle d'abord.",
+  "Ne jamais présenter un chiffre marqué « à vérifier » sans le recouper avec une source officielle d'abord.",
   "Petites valeurs de niche : rappeler systématiquement qu'il s'agit de culture de marché, jamais d'une recommandation d'achat.",
 ];
 
 const VEILLE_NAV = [
-  ...VEILLE_SECTIONS.map(s => ({ id: s.id, label: s.titre.split(" - ")[0].split(" & ")[0] })),
-  { id: "partenaires", label: "Partenaires" },
-  { id: "checklist", label: "Checklist" },
+  ...VEILLE_SECTIONS.map(s => ({ id: s.id, label: s.titre.split(" - ")[0].split(" & ")[0].split(" : ")[0], icone: s.icone })),
+  { id: "partenaires", label: "Partenaires", icone: ICONES_VEILLE.partenaires },
+  { id: "checklist", label: "Checklist", icone: ICONES_VEILLE.checklist },
 ];
 
 panelNote.innerHTML = `
   <div class="card">
-    <h2>Note Grand Large - pense-bête avant rendez-vous</h2>
-    <div class="sub">À quoi ça sert : une vraie note de veille avant un rendez-vous - chiffres de marché, actualité des fonds partenaires, petites valeurs de niche et seuils fiscaux, chacun avec une phrase prête à l'oral et sa source - vérifiés et sourcés manuellement, jamais rafraîchis automatiquement, et jamais une recommandation d'investissement.</div>
-    <div class="maj-tag">Mise à jour : 10 novembre 2026</div>
+    <h2>Vigie Grand Large</h2>
+    <div class="sub">Ce qui bouge sur les marchés, chez vos partenaires et dans la fiscalité patrimoniale - à lire avant un rendez-vous, jamais une recommandation d'investissement. Chaque information est vérifiée et sourcée manuellement, jamais rafraîchie automatiquement.</div>
+    <div class="maj-tag"><strong>Dernière vérification : 10 novembre 2026</strong> · prochaine avant le 17 novembre 2026</div>
+    <div class="veille-legende"><span class="badge-unreliable">À vérifier</span> signale une information non confirmée par une source officielle - à recouper avant de la citer telle quelle en rendez-vous. Les autres informations sont corroborées par au moins une source fiable.</div>
     <nav class="veille-nav">
-      ${VEILLE_NAV.map(n => `<a href="#veille-${n.id}" class="veille-nav-link">${n.label}</a>`).join("")}
+      ${VEILLE_NAV.map(n => `<a href="#veille-${n.id}" class="veille-nav-link">${n.icone}<span>${n.label}</span></a>`).join("")}
     </nav>
     ${VEILLE_SECTIONS.map(section => `
       <div class="veille-section" id="veille-${section.id}">
@@ -4889,10 +4898,13 @@ panelNote.innerHTML = `
         </div>
         ${section.items.map(it => `
           <div class="veille-item">
-            <div class="libelle">${it.libelle}${!it.fiable ? '<span class="badge-unreliable">À recouper</span>' : ""}</div>
+            <div class="veille-item-head">
+              <div class="libelle">${it.libelle}${!it.fiable ? '<span class="badge-unreliable">À vérifier</span>' : ""}</div>
+              <span class="veille-date-badge">${it.date}</span>
+            </div>
             <div class="valeur">${it.valeur}</div>
-            <div class="meta">Source : ${it.source} (${it.date})</div>
-            <div class="lecture">${it.lecture}</div>
+            <div class="pourquoi">${it.lecture}</div>
+            <div class="meta">Source : ${it.source}</div>
           </div>
         `).join("")}
       </div>
@@ -4900,7 +4912,7 @@ panelNote.innerHTML = `
 
     <div class="veille-section" id="veille-partenaires">
       <div class="veille-section-header">
-        <span class="veille-icone"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="4.5" cy="4.5" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="11.5" cy="4.5" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="11.5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M5.8 5.9 7 9.9M10.2 5.9 9 9.9" stroke="currentColor" stroke-width="1.1"/></svg></span>
+        <span class="veille-icone">${ICONES_VEILLE.partenaires}</span>
         <div>
           <h4>Actualité des partenaires (architecture ouverte)</h4>
           <div class="veille-solution">Ce qui bouge chez les sociétés de gestion partenaires - pas juste la liste des noms.</div>
@@ -4911,20 +4923,23 @@ panelNote.innerHTML = `
           <div style="font-weight:600; font-size:13px; margin-bottom:6px;">${groupe.categorie}</div>
           ${groupe.items.map(it => `
             <div class="veille-item">
-              <div class="libelle">${it.libelle}${!it.fiable ? '<span class="badge-unreliable">À recouper</span>' : ""}</div>
+              <div class="veille-item-head">
+                <div class="libelle">${it.libelle}${!it.fiable ? '<span class="badge-unreliable">À vérifier</span>' : ""}</div>
+                <span class="veille-date-badge">${it.date}</span>
+              </div>
               <div class="valeur">${it.valeur}</div>
-              <div class="meta">Source : ${it.source} (${it.date})</div>
-              <div class="lecture">${it.lecture}</div>
+              <div class="pourquoi">${it.lecture}</div>
+              <div class="meta">Source : ${it.source}</div>
             </div>
           `).join("")}
         </div>
       `).join("")}
-      <div class="caption-secondaire">Pas d'actualité notable identifiée récemment pour ces autres partenaires de l'architecture ouverte : ${PARTENAIRES_SANS_ACTU_IDENTIFIEE.join(", ")}.</div>
+      <div class="caption-secondaire">${PARTENAIRES_SANS_ACTU_NOTE}</div>
     </div>
 
     <div class="veille-section" id="veille-checklist">
       <div class="veille-section-header">
-        <span class="veille-icone"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2.5" y="2" width="11" height="12" rx="0.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 5.5h6M5 8h6M5 10.5h4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg></span>
+        <span class="veille-icone">${ICONES_VEILLE.checklist}</span>
         <div><h4>Checklist de rafraîchissement avant utilisation</h4></div>
       </div>
       <ul class="checklist">${CHECKLIST_RAFRAICHISSEMENT.map(c => `<li>${c}</li>`).join("")}</ul>
@@ -5828,7 +5843,7 @@ function calculerEtAfficherSynthese() {
     <button type="button" class="synth-link" data-target="note">
       <div class="synth-link-icone">${ICONES_MODULES.note}</div>
       <div class="synth-link-text">
-        <div class="synth-link-label">Note Grand Large</div>
+        <div class="synth-link-label">Vigie Grand Large</div>
         <div class="synth-link-desc">Veille marchés et produits</div>
       </div>
       <span class="synth-link-arrow">→</span>
