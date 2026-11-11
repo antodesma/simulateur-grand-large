@@ -4,14 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Simulateur Grand Large</title>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png" sizes="192x192">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#03001c">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Grand Large">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Display&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -956,7 +949,7 @@
   svg [data-tip]:hover, svg [data-tip].hovered { opacity: 0.78; }
   .print-header { display: none; }
   @media print {
-    nav.tabs, .hero, footer.credit, .action-toolbar, .app-navbar, .sheet-overlay, .install-banner, .ex-row, .chat-input-row, button.clear-btn, .chat-log { display: none !important; }
+    nav.tabs, .hero, footer.credit, .action-toolbar, .app-navbar, .sheet-overlay, .ex-row, .chat-input-row, button.clear-btn, .chat-log { display: none !important; }
     .print-header {
       display: block;
       font-family: "Libre Caslon Display", Georgia, serif;
@@ -1346,34 +1339,16 @@
     50% { box-shadow: 0 10px 26px rgba(10,14,26,0.3), 0 0 0 9px rgba(201,162,77,0.18); }
   }
   body.mode-presentation #btn-visite-fab, body.mode-visite #btn-visite-fab { display: none; }
-  @media (max-width: 560px) {
-    #btn-visite-fab { right: 14px; bottom: 14px; padding: 11px 14px 11px 12px; font-size: 12.5px; }
+  @media (max-width: 680px) {
+    /* Sur mobile, la zone bottom-right est déjà occupée (de bas en haut) par la barre
+       d'appli, le bouton "retour en haut" et la mini-barre jump/thème : on empile le
+       bouton de visite guidée au-dessus de cette pile plutôt que de la recouvrir. */
+    #btn-visite-fab { right: 14px; bottom: calc(180px + env(safe-area-inset-bottom)); padding: 11px 14px 11px 12px; font-size: 12.5px; }
   }
   /* Tailles tactiles : boutons et zones interactives confortables au doigt (>=44px) */
   .toggle-group button, .radio-group label, button.ex-btn, button.clear-btn, button.send-btn,
   nav.tabs button, .sheet-panel button.sheet-item, input[type="number"], input[type="text"][inputmode="numeric"] { min-height: 44px; }
   input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; }
-  .install-banner {
-    display: none;
-    position: fixed;
-    left: max(14px, env(safe-area-inset-left));
-    right: max(14px, env(safe-area-inset-right));
-    bottom: 14px;
-    z-index: 20;
-    background: var(--navy);
-    color: var(--creme);
-    border-radius: 10px;
-    padding: 12px 14px;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.25);
-    font-size: 12.5px;
-    align-items: center;
-    gap: 10px;
-  }
-  .install-banner.visible { display: flex; }
-  .install-banner span.txt { flex: 1; line-height: 1.4; }
-  .install-banner button { font: inherit; font-weight: 600; font-size: 12px; border: 1px solid rgba(247,245,239,0.5); border-radius: 8px; background: none; color: var(--creme); padding: 7px 11px; cursor: pointer; }
-  .install-banner button:hover { background: rgba(247,245,239,0.12); }
-  .install-banner .close-x { border: none; padding: 4px 6px; font-size: 15px; line-height: 1; }
 </style>
 </head>
 <body>
@@ -1552,16 +1527,10 @@
 <button type="button" id="btn-visite-fab" aria-label="Lancer la visite guidée">
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5l1.65 4.1 4.35.6-3.2 3 .85 4.3L8 11.4l-3.65 2.1.85-4.3-3.2-3 4.35-.6z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>
   <span>Visite guidée</span>
-  <span class="fab-close" id="btn-visite-fab-close" role="button" aria-label="Ne plus afficher">
+  <span class="fab-close" id="btn-visite-fab-close" role="button" aria-label="Arrêter l'animation">
     <svg width="9" height="9" viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M1.5 1.5l8 8M9.5 1.5l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
   </span>
 </button>
-
-<div class="install-banner" id="install-banner">
-  <span class="txt" id="install-banner-txt">Installer ce simulateur comme une application sur cet appareil.</span>
-  <button type="button" id="install-banner-action">Installer</button>
-  <button type="button" class="close-x" id="install-banner-close" title="Fermer" aria-label="Fermer">×</button>
-</div>
 
 <main id="main"></main>
 
@@ -2712,6 +2681,7 @@ function showPanel(id, opts = {}) {
   if (!opts.fromHash) {
     history.replaceState(null, "", "#" + id);
   }
+  if (typeof majFabVisite === "function") majFabVisite();
 }
 
 renderTabs();
@@ -2753,67 +2723,6 @@ window.addEventListener("beforeprint", () => {
   };
 })();
 
-/* ---- Installation comme application (PWA) ---- */
-(function () {
-  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-  if (isStandalone) return;
-
-  let dismissed = false;
-  try { dismissed = sessionStorage.getItem("glp-install-dismissed") === "1"; } catch (e) {}
-  if (dismissed) return;
-
-  const banner = document.getElementById("install-banner");
-  const txt = document.getElementById("install-banner-txt");
-  const actionBtn = document.getElementById("install-banner-action");
-  const closeBtn = document.getElementById("install-banner-close");
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  const isMobile = isIOS || /android/i.test(navigator.userAgent);
-
-  function hide() {
-    banner.classList.remove("visible");
-    try { sessionStorage.setItem("glp-install-dismissed", "1"); } catch (e) {}
-  }
-  closeBtn.onclick = hide;
-
-  let deferredPrompt = null;
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    txt.textContent = "Installer ce simulateur comme une application sur cet appareil.";
-    actionBtn.style.display = "";
-    banner.classList.add("visible");
-  });
-  actionBtn.onclick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    hide();
-  };
-  window.addEventListener("appinstalled", hide);
-
-  if (isIOS) {
-    txt.textContent = "Pour l'installer en icône : bouton Partager, puis \"Sur l'écran d'accueil\".";
-    actionBtn.style.display = "none";
-    banner.classList.add("visible");
-  } else if (isMobile && !deferredPrompt) {
-    // Android hors Chrome (ou prompt pas encore déclenché) : on laisse une chance au vrai prompt natif
-    // avant d'afficher un message générique, pour éviter un doublon.
-    setTimeout(() => {
-      if (!deferredPrompt && !isStandalone) {
-        txt.textContent = "Installer ce simulateur : menu du navigateur > \"Ajouter à l'écran d'accueil\".";
-        actionBtn.style.display = "none";
-        banner.classList.add("visible");
-      }
-    }, 2500);
-  }
-})();
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
-  });
-}
 
 /* ---- Infobulles sur les graphiques (délégation d'événements, data-tip="...") ---- */
 (function () {
@@ -5819,6 +5728,7 @@ const VISITE_ETAPES = [
   { id: "trajectoire", cible: null, titre: "Détention directe ou holding ?", texte: "Ce module compare les deux options sur plusieurs années, pas seulement sur un instant donné - l'écart se construit avec le temps." },
   { id: "trajectoire", cible: "#input-traj-profit", titre: "Le profit annuel", texte: "Indiquez le profit annuel dégagé par l'activité, par exemple 80 000 €." },
   { id: "trajectoire", cible: "#input-traj-horizon", titre: "La durée de projection", texte: "Choisissez le nombre d'années sur lesquelles comparer : plus l'horizon est long, plus l'écart entre détention directe et holding se creuse." },
+  { id: "trajectoire", cible: "#toggle-panier, #chart-panier-donut", titre: "Le profil de risque du placement", texte: "Choisissez un panier - Prudent, Équilibré, Dynamique ou Sur mesure : la composition retenue change le rendement et la volatilité utilisés dans la projection." },
   { id: "trajectoire", cible: "#chart-traj, #kpis-traj", titre: "Comparez les deux trajectoires", texte: "Le graphique superpose l'évolution des deux options année après année ; les cartes résument l'écart obtenu au terme choisi." },
 
   { id: "demembrement", cible: null, titre: "Transmettre en pleine propriété, ou en démembrer la propriété ?", texte: "Séparer usufruit et nue-propriété permet souvent de transmettre en payant moins de droits - ce module chiffre précisément l'économie obtenue." },
@@ -5852,6 +5762,9 @@ const VISITE_ETAPES = [
 
   { id: "note", cible: "#veille-marches", titre: "Cap au Large", texte: "Une veille marchés et partenaires vérifiée à la main chaque semaine - jamais un conseil, juste de quoi garder un coup d'avance." },
 ];
+// Les 8 modules fiscaux/patrimoniaux "comptent" dans la numérotation (Module X/8) -
+// la synthèse d'ouverture et Cap au Large en clôture n'en font pas partie.
+const VISITE_MODULES_PRINCIPAUX = ["remuneration", "trajectoire", "demembrement", "succession", "assurance_vie", "ifi", "sci", "per"];
 let indexVisite = 0;
 
 function positionnerCibleVisite() {
@@ -5877,7 +5790,17 @@ function afficherEtapeVisite() {
   }
   const ctx = CONTEXTE_PAR_ONGLET[etape.id];
   document.getElementById("visite-bar-module").textContent = ctx ? `${ctx.cat} · ${ctx.texte}` : "";
-  document.getElementById("visite-bar-compte").textContent = `Étape ${indexVisite + 1} / ${VISITE_ETAPES.length}`;
+  const moduleIdx = VISITE_MODULES_PRINCIPAUX.indexOf(etape.id);
+  let compteTexte;
+  if (moduleIdx === -1) {
+    compteTexte = etape.id === "synthese" ? "Vue d'ensemble" : "Pour finir";
+  } else {
+    const groupe = VISITE_ETAPES.filter(e => e.id === etape.id);
+    const sousIndex = groupe.indexOf(etape) + 1;
+    compteTexte = `Module ${moduleIdx + 1} / ${VISITE_MODULES_PRINCIPAUX.length}`;
+    if (groupe.length > 1) compteTexte += ` · étape ${sousIndex}/${groupe.length}`;
+  }
+  document.getElementById("visite-bar-compte").textContent = compteTexte;
   document.getElementById("visite-bar-titre").textContent = etape.titre;
   document.getElementById("visite-bar-texte").textContent = etape.texte;
   document.getElementById("btn-visite-prec").disabled = indexVisite === 0;
@@ -5920,23 +5843,31 @@ document.getElementById("btn-visite-prec").onclick = () => {
 };
 document.getElementById("btn-visite-quitter").onclick = quitterVisite;
 
-/* Point d'entrée visible dès l'arrivée sur la synthèse : un bouton flottant qui
-   apparaît après un court délai (plutôt qu'immédiatement, pour ne pas distraire
-   de la première lecture), avec une légère pulsation, et une croix pour le
-   masquer définitivement si on ne veut pas le revoir sur cet appareil. */
-(() => {
-  const FAB_KEY = "glp-visite-fab-masque";
+/* Point d'entrée vers la visite guidée : un bouton flottant sur la synthèse
+   (page d'arrivée), visible dès que possible, avec une légère pulsation les
+   premières secondes pour attirer l'oeil. La croix ne masque que la
+   pulsation (pour ne plus distraire une fois vue) - le bouton lui-même reste
+   toujours accessible sur cette page, jamais masqué définitivement. Limité à
+   la synthèse (plutôt que présent sur tous les onglets) pour ne jamais
+   recouvrir un bouton propre à un module, où qu'on ait scrollé. */
+function majFabVisite() {
   const fab = document.getElementById("btn-visite-fab");
-  if (localStorage.getItem(FAB_KEY) === "1") return;
+  if (!fab) return;
+  const surSynthese = !!document.querySelector("#panel-synthese.active");
+  fab.classList.toggle("visible", surSynthese);
+}
+(() => {
+  const PULSE_KEY = "glp-visite-fab-pulse-vue";
+  const fab = document.getElementById("btn-visite-fab");
+  const dejaVuPulse = (() => { try { return localStorage.getItem(PULSE_KEY) === "1"; } catch (e) { return false; } })();
   setTimeout(() => {
-    if (document.querySelector("#panel-synthese.active") && !document.body.classList.contains("mode-visite")) {
-      fab.classList.add("visible", "pulse");
-    }
-  }, 1600);
+    majFabVisite();
+    if (!dejaVuPulse) fab.classList.add("pulse");
+  }, 400);
   document.getElementById("btn-visite-fab-close").onclick = (e) => {
     e.stopPropagation();
-    fab.classList.remove("visible", "pulse");
-    try { localStorage.setItem(FAB_KEY, "1"); } catch (err) {}
+    fab.classList.remove("pulse");
+    try { localStorage.setItem(PULSE_KEY, "1"); } catch (err) {}
   };
 })();
 
