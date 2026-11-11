@@ -1257,42 +1257,93 @@
   }
   body.mode-presentation .hero, body.mode-presentation nav.tabs, body.mode-presentation .app-navbar, body.mode-presentation .action-toolbar { display: none !important; }
   body.mode-presentation main { padding-top: max(56px, calc(env(safe-area-inset-top) + 46px)); }
+  /* ---- Visite guidée : carte flottante + repère lumineux sur le champ concerné ---- */
   #visite-bar { display: none; }
   body.mode-visite #visite-bar {
     display: flex; justify-content: center;
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 31;
-    padding: 0 14px max(12px, env(safe-area-inset-bottom));
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 310;
+    padding: 0 14px max(16px, env(safe-area-inset-bottom));
+    pointer-events: none;
   }
-  body.mode-visite main { padding-bottom: 90px; }
-  .visite-bar-inner {
-    display: flex; align-items: center; gap: 14px;
-    background: var(--navy); color: var(--creme);
-    border-radius: 30px; padding: 9px 10px 9px 16px;
-    box-shadow: var(--shadow-lift);
-    max-width: 560px; width: 100%;
+  body.mode-visite .hero, body.mode-visite nav.tabs, body.mode-visite .app-navbar, body.mode-visite .action-toolbar { display: none !important; }
+  body.mode-visite main { padding-top: max(56px, calc(env(safe-area-inset-top) + 46px)); }
+  body.mode-visite main { padding-bottom: 230px; }
+  .visite-card {
+    pointer-events: auto;
+    background: var(--surface); color: var(--ink); border: 1px solid var(--border);
+    border-radius: 16px; padding: 18px 20px 16px; box-shadow: 0 16px 40px rgba(10,14,26,0.28);
+    max-width: 420px; width: 100%;
   }
-  :root[data-theme="dark"] .visite-bar-inner { background: var(--surface-2); color: var(--ink); border: 1px solid var(--border); }
-  .visite-bar-mid { flex: 1; min-width: 0; text-align: center; }
-  .visite-bar-compte { font-size: 10.5px; color: var(--or); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-  .visite-bar-titre { font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #btn-visite-prec, #btn-visite-suiv {
-    font: inherit; font-size: 13px; font-weight: 600;
-    display: inline-flex; align-items: center; gap: 5px;
-    background: none; border: 1px solid rgba(247,245,239,0.4); color: inherit;
-    border-radius: 20px; padding: 8px 14px; cursor: pointer; min-height: 38px; flex: none;
-  }
-  :root[data-theme="dark"] #btn-visite-prec, :root[data-theme="dark"] #btn-visite-suiv { border-color: var(--border); }
-  #btn-visite-prec { padding: 8px 10px; }
-  #btn-visite-prec:disabled { opacity: 0.35; cursor: default; }
+  .visite-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
+  .visite-bar-compte { font-size: 10.5px; color: var(--or); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
   #btn-visite-quitter {
-    font: inherit; font-size: 12px; font-weight: 600;
-    background: none; border: none; color: var(--ink-muted); cursor: pointer;
-    text-decoration: underline; flex: none; padding: 8px 2px; min-height: 38px;
+    font: inherit; font-size: 11.5px; font-weight: 600;
+    background: none; border: none; color: var(--ink-muted); cursor: pointer; padding: 4px;
+    display: inline-flex; align-items: center; gap: 4px;
   }
+  #btn-visite-quitter:hover { color: var(--ink); }
+  .visite-bar-titre { font-family: "Fraunces", serif; font-size: 18px; font-weight: 600; margin: 0 0 7px; line-height: 1.25; }
+  .visite-bar-texte { font-size: 13.5px; color: var(--ink-muted); line-height: 1.5; margin: 0 0 15px; }
+  .visite-card-nav { display: flex; align-items: center; gap: 10px; }
+  .visite-dots { display: flex; gap: 4px; flex: 1; }
+  .visite-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--border); flex: none; }
+  .visite-dots span.fait { background: var(--or); }
+  .visite-dots span.courant { background: var(--navy); width: 16px; border-radius: 3px; }
+  :root[data-theme="dark"] .visite-dots span.courant { background: var(--ui-accent); }
+  #btn-visite-prec {
+    font: inherit; font-size: 13px; font-weight: 600;
+    background: none; border: 1px solid var(--border); color: var(--ink);
+    border-radius: 20px; padding: 9px 13px; cursor: pointer; min-height: 38px; flex: none;
+  }
+  #btn-visite-prec:disabled { opacity: 0.35; cursor: default; }
+  #btn-visite-suiv {
+    font: inherit; font-size: 13px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--navy); color: #f2efe6; border: none;
+    border-radius: 20px; padding: 9px 16px; cursor: pointer; min-height: 38px; flex: none;
+  }
+  :root[data-theme="dark"] #btn-visite-suiv { background: var(--ui-accent); }
   @media (max-width: 560px) {
-    .visite-bar-inner { flex-wrap: wrap; justify-content: center; border-radius: 18px; }
-    .visite-bar-mid { flex: 1 1 100%; order: -1; }
-    #btn-visite-quitter { flex: 1 1 100%; text-align: center; }
+    .visite-card { border-radius: 14px 14px 0 0; max-width: none; }
+    body.mode-visite #visite-bar { padding: 0; }
+  }
+  .visite-cible {
+    outline: 3px solid var(--or); outline-offset: 4px; border-radius: 8px;
+    animation: visitePulse 1.7s ease-in-out infinite;
+    scroll-margin: 140px;
+  }
+  @keyframes visitePulse {
+    0%, 100% { outline-color: var(--or); }
+    50% { outline-color: var(--ui-accent); }
+  }
+  /* ---- Bouton flottant "Visite guidée" : point d'entrée visible dès l'arrivée ---- */
+  #btn-visite-fab {
+    position: fixed; right: 20px; bottom: 20px; z-index: 250;
+    display: flex; align-items: center; gap: 9px;
+    background: var(--navy); color: #f2efe6; border: none;
+    border-radius: 30px; padding: 13px 18px 13px 15px; cursor: pointer;
+    font-family: "Poppins", sans-serif; font-size: 13.5px; font-weight: 700;
+    box-shadow: 0 10px 26px rgba(10,14,26,0.3);
+    opacity: 0; transform: translateY(12px); pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  #btn-visite-fab.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  #btn-visite-fab.pulse { animation: visiteFabPulse 2.2s ease-in-out 1s 3; }
+  #btn-visite-fab svg { flex: none; color: var(--or); }
+  #btn-visite-fab .fab-close {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; margin-left: 2px; border-radius: 50%;
+    color: rgba(247,245,239,0.6); flex: none;
+  }
+  #btn-visite-fab .fab-close:hover { color: #f2efe6; }
+  :root[data-theme="dark"] #btn-visite-fab { background: var(--ui-accent); }
+  @keyframes visiteFabPulse {
+    0%, 100% { box-shadow: 0 10px 26px rgba(10,14,26,0.3); }
+    50% { box-shadow: 0 10px 26px rgba(10,14,26,0.3), 0 0 0 9px rgba(201,162,77,0.18); }
+  }
+  body.mode-presentation #btn-visite-fab, body.mode-visite #btn-visite-fab { display: none; }
+  @media (max-width: 560px) {
+    #btn-visite-fab { right: 14px; bottom: 14px; padding: 11px 14px 11px 12px; font-size: 12.5px; }
   }
   /* Tailles tactiles : boutons et zones interactives confortables au doigt (>=44px) */
   .toggle-group button, .radio-group label, button.ex-btn, button.clear-btn, button.send-btn,
@@ -1473,21 +1524,33 @@
 </div>
 
 <div id="visite-bar">
-  <div class="visite-bar-inner">
-    <button type="button" id="btn-visite-prec" aria-label="Carte précédente">
-      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M9.5 3L5 7.5L9.5 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-    <div class="visite-bar-mid">
-      <div class="visite-bar-compte" id="visite-bar-compte"></div>
-      <div class="visite-bar-titre" id="visite-bar-titre"></div>
+  <div class="visite-card">
+    <div class="visite-card-top">
+      <span class="visite-bar-compte" id="visite-bar-compte"></span>
+      <button type="button" id="btn-visite-quitter">Quitter <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M1.5 1.5l8 8M9.5 1.5l-8 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
     </div>
-    <button type="button" id="btn-visite-suiv" aria-label="Carte suivante">
-      Suivant
-      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M5.5 3L10 7.5L5.5 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-    <button type="button" id="btn-visite-quitter">Quitter la visite</button>
+    <h4 class="visite-bar-titre" id="visite-bar-titre"></h4>
+    <p class="visite-bar-texte" id="visite-bar-texte"></p>
+    <div class="visite-card-nav">
+      <button type="button" id="btn-visite-prec" aria-label="Étape précédente">
+        <svg width="14" height="14" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M9.5 3L5 7.5L9.5 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="visite-dots" id="visite-dots"></div>
+      <button type="button" id="btn-visite-suiv" aria-label="Étape suivante">
+        <span id="btn-visite-suiv-label">Suivant</span>
+        <svg width="14" height="14" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M5.5 3L10 7.5L5.5 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
   </div>
 </div>
+
+<button type="button" id="btn-visite-fab" aria-label="Lancer la visite guidée">
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5l1.65 4.1 4.35.6-3.2 3 .85 4.3L8 11.4l-3.65 2.1.85-4.3-3.2-3 4.35-.6z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>
+  <span>Visite guidée</span>
+  <span class="fab-close" id="btn-visite-fab-close" role="button" aria-label="Ne plus afficher">
+    <svg width="9" height="9" viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M1.5 1.5l8 8M9.5 1.5l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  </span>
+</button>
 
 <div class="install-banner" id="install-banner">
   <span class="txt" id="install-banner-txt">Installer ce simulateur comme une application sur cet appareil.</span>
@@ -5738,32 +5801,69 @@ document.getElementById("btn-exit-presentation").onclick = () => {
   document.body.classList.remove("mode-presentation");
 };
 
-/* ---- Visite guidée : parcourir les modules de calcul un par un, en rendez-vous ---- */
-const ETAPES_VISITE = ["remuneration", "trajectoire", "demembrement", "succession", "assurance_vie", "ifi", "sci", "per"];
+/* ---- Visite guidée : parcourt les modules un par un, avec à chaque étape une
+   explication concrète ("entrez tel montant ici") et un repère lumineux sur le
+   champ concerné - plutôt qu'un simple changement d'onglet sans contexte. ---- */
+const VISITE_ETAPES = [
+  { id: "synthese", cible: "#synth-grid", titre: "La vue d'ensemble", texte: "Chaque carte compare deux options chiffrées - par exemple salaire ou dividende. On va parcourir les modules un par un, avec un exemple concret à chaque étape." },
+  { id: "remuneration", cible: "#input-montant", titre: "Entrez une rémunération", texte: "Indiquez une rémunération brute annuelle, par exemple 80 000 € : l'outil calcule aussitôt ce qu'il reste net selon que ce soit versé en salaire ou en dividende, à jour du barème 2026." },
+  { id: "trajectoire", cible: "#input-traj-profit", titre: "Projetez plusieurs années", texte: "Indiquez le profit annuel dégagé par l'activité : l'outil compare détention directe et holding sur la durée choisie, pas seulement sur une année." },
+  { id: "demembrement", cible: "#input-dem-valeur", titre: "Démembrement de propriété", texte: "La valeur du bien et l'âge du donateur suffisent à chiffrer l'économie de droits obtenue en séparant usufruit et nue-propriété." },
+  { id: "succession", cible: "#input-succ-valeur", titre: "Succession", texte: "Entrez la valeur du patrimoine transmis : le nombre d'enfants ajuste automatiquement les abattements applicables à chacun." },
+  { id: "assurance_vie", cible: "#input-av-capital", titre: "Assurance-vie", texte: "Simulez un rachat ou une transmission : les abattements du code général des impôts s'appliquent différemment selon l'âge des versements." },
+  { id: "ifi", cible: "#input-ifi-residence", titre: "Impôt sur la fortune immobilière", texte: "Renseignez la valeur du patrimoine immobilier pour voir s'il franchit le seuil de l'IFI, et l'impôt dû le cas échéant." },
+  { id: "sci", cible: "#input-sci-loyers", titre: "SCI : à l'IR ou à l'IS ?", texte: "Avec les loyers et charges annuels, l'outil compare les deux régimes fiscaux et indique lequel coûte le moins cher sur la durée." },
+  { id: "per", cible: "#input-per-versement", titre: "Plan d'épargne retraite", texte: "Comparez ce qu'un versement rapporte net selon qu'il reste investi jusqu'à la retraite ou qu'il est perçu tout de suite." },
+  { id: "note", cible: "#veille-marches", titre: "Cap au Large", texte: "Une veille marchés et partenaires vérifiée à la main chaque semaine - jamais un conseil, juste de quoi garder un coup d'avance." },
+];
 let indexVisite = 0;
 
-function afficherEtapeVisite() {
-  const id = ETAPES_VISITE[indexVisite];
-  showPanel(id);
-  window.scrollTo(0, 0);
-  const onglet = ONGLETS.find(o => o.id === id);
-  document.getElementById("visite-bar-compte").textContent = `Étape ${indexVisite + 1} / ${ETAPES_VISITE.length}`;
-  document.getElementById("visite-bar-titre").textContent = onglet ? onglet.label : "";
-  document.getElementById("btn-visite-prec").disabled = indexVisite === 0;
-  const estDerniere = indexVisite === ETAPES_VISITE.length - 1;
-  document.getElementById("btn-visite-suiv").innerHTML = estDerniere
-    ? `Terminer`
-    : `Suivant <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M5.5 3L10 7.5L5.5 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+function positionnerCibleVisite() {
+  document.querySelectorAll(".visite-cible").forEach(el => el.classList.remove("visite-cible"));
+  const etape = VISITE_ETAPES[indexVisite];
+  const cible = etape.cible ? document.querySelector(etape.cible) : null;
+  if (cible) {
+    cible.classList.add("visite-cible");
+    cible.scrollIntoView({ block: "center", behavior: "smooth" });
+  } else {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 }
 
-document.getElementById("btn-visite-guidee").onclick = () => {
+function afficherEtapeVisite() {
+  const etape = VISITE_ETAPES[indexVisite];
+  showPanel(etape.id);
+  document.getElementById("visite-bar-compte").textContent = `Étape ${indexVisite + 1} / ${VISITE_ETAPES.length}`;
+  document.getElementById("visite-bar-titre").textContent = etape.titre;
+  document.getElementById("visite-bar-texte").textContent = etape.texte;
+  document.getElementById("btn-visite-prec").disabled = indexVisite === 0;
+  const estDerniere = indexVisite === VISITE_ETAPES.length - 1;
+  document.getElementById("btn-visite-suiv-label").textContent = estDerniere ? "Terminer" : "Suivant";
+  document.getElementById("visite-dots").innerHTML = VISITE_ETAPES.map((_, i) =>
+    `<span class="${i === indexVisite ? "courant" : i < indexVisite ? "fait" : ""}"></span>`
+  ).join("");
+  setTimeout(positionnerCibleVisite, 60);
+}
+
+function demarrerVisite() {
   indexVisite = 0;
-  document.body.classList.add("mode-presentation", "mode-visite");
+  document.body.classList.add("mode-visite");
   afficherEtapeVisite();
+}
+
+function quitterVisite() {
+  document.body.classList.remove("mode-visite");
+  document.querySelectorAll(".visite-cible").forEach(el => el.classList.remove("visite-cible"));
+}
+
+document.getElementById("btn-visite-guidee").onclick = demarrerVisite;
+document.getElementById("btn-visite-fab").onclick = (e) => {
+  if (e.target.closest("#btn-visite-fab-close")) return;
+  demarrerVisite();
 };
 document.getElementById("btn-visite-suiv").onclick = () => {
-  if (indexVisite >= ETAPES_VISITE.length - 1) {
-    document.body.classList.remove("mode-presentation", "mode-visite");
+  if (indexVisite >= VISITE_ETAPES.length - 1) {
+    quitterVisite();
     showPanel("synthese");
     window.scrollTo(0, 0);
     return;
@@ -5776,9 +5876,27 @@ document.getElementById("btn-visite-prec").onclick = () => {
   indexVisite--;
   afficherEtapeVisite();
 };
-document.getElementById("btn-visite-quitter").onclick = () => {
-  document.body.classList.remove("mode-presentation", "mode-visite");
-};
+document.getElementById("btn-visite-quitter").onclick = quitterVisite;
+
+/* Point d'entrée visible dès l'arrivée sur la synthèse : un bouton flottant qui
+   apparaît après un court délai (plutôt qu'immédiatement, pour ne pas distraire
+   de la première lecture), avec une légère pulsation, et une croix pour le
+   masquer définitivement si on ne veut pas le revoir sur cet appareil. */
+(() => {
+  const FAB_KEY = "glp-visite-fab-masque";
+  const fab = document.getElementById("btn-visite-fab");
+  if (localStorage.getItem(FAB_KEY) === "1") return;
+  setTimeout(() => {
+    if (document.querySelector("#panel-synthese.active") && !document.body.classList.contains("mode-visite")) {
+      fab.classList.add("visible", "pulse");
+    }
+  }, 1600);
+  document.getElementById("btn-visite-fab-close").onclick = (e) => {
+    e.stopPropagation();
+    fab.classList.remove("visible", "pulse");
+    try { localStorage.setItem(FAB_KEY, "1"); } catch (err) {}
+  };
+})();
 
 /* ---- Sauvegarde / chargement de scénarios (localStorage, par navigateur) ---- */
 
