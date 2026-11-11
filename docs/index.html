@@ -5719,7 +5719,7 @@ document.getElementById("btn-exit-presentation").onclick = () => {
    explication concrète ("entrez tel montant ici") et un repère lumineux sur le
    champ concerné - plutôt qu'un simple changement d'onglet sans contexte. ---- */
 const VISITE_ETAPES = [
-  { id: "synthese", cible: "#synth-grid", titre: "La vue d'ensemble", texte: "Chaque carte compare deux options chiffrées - par exemple salaire ou dividende. On va parcourir les modules un par un, en remplissant les champs puis en lisant le résultat." },
+  { id: "synthese", cible: "#synth-grid", titre: "La vue d'ensemble", texte: "Chaque carte compare deux options chiffrées - par exemple salaire ou dividende. Un exemple réaliste vient d'être appliqué sur tous les modules, pour que chaque résultat montré soit un vrai chiffre plutôt qu'un 0 € vide. Remplacez-le à tout moment par vos propres montants." },
 
   { id: "remuneration", cible: null, titre: "Salaire ou dividende ?", texte: "Pour un même montant disponible dans l'entreprise, salaire et dividende ne laissent presque jamais le même net en poche. Remplissez les champs ci-dessous pour voir lequel l'emporte." },
   { id: "remuneration", cible: "#input-montant", titre: "Le montant disponible", texte: "Indiquez un montant disponible dans l'entreprise, par exemple 80 000 € : l'outil calcule aussitôt ce qu'il reste net selon que ce soit versé en salaire ou en dividende, à jour du barème 2026." },
@@ -5819,6 +5819,14 @@ function afficherEtapeVisite() {
 
 function demarrerVisite() {
   indexVisite = 0;
+  // Sans données saisies, chaque étape "résultat" n'affiche que des 0 € et un
+  // graphique vide - pas très convaincant pour une démonstration. On applique
+  // donc un profil d'exemple réaliste sur tous les onglets au démarrage de la
+  // visite (sauf si un profil ou des saisies personnelles sont déjà en place),
+  // pour que chaque résultat montré soit un vrai chiffre.
+  if (dernierProfilExempleIdx === -1 && montantDisponible === 0 && typeof appliquerProfilExemple === "function") {
+    appliquerProfilExemple(0);
+  }
   document.body.classList.add("mode-visite");
   afficherEtapeVisite();
 }
