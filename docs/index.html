@@ -5731,33 +5731,40 @@ const VISITE_ETAPES = [
   { id: "trajectoire", cible: "#toggle-panier, #chart-panier-donut", titre: "Le profil de risque du placement", texte: "Choisissez un panier - Prudent, Équilibré, Dynamique ou Sur mesure : la composition retenue change le rendement et la volatilité utilisés dans la projection." },
   { id: "trajectoire", cible: "#chart-traj, #kpis-traj", titre: "Comparez les deux trajectoires", texte: "Le graphique superpose l'évolution des deux options année après année ; les cartes résument l'écart obtenu au terme choisi." },
 
-  { id: "demembrement", cible: null, titre: "Transmettre en pleine propriété, ou en démembrer la propriété ?", texte: "Séparer usufruit et nue-propriété permet souvent de transmettre en payant moins de droits - ce module chiffre précisément l'économie obtenue." },
+  { id: "demembrement", cible: null, titre: "Transmettre en pleine propriété, ou en démembrer la propriété ?", texte: "Ce module couvre deux leviers de transmission bien distincts : le démembrement (usufruit/nue-propriété) pour un bien, et le Pacte Dutreil pour une entreprise." },
   { id: "demembrement", cible: "#input-dem-valeur", titre: "La valeur du bien", texte: "Indiquez la valeur du bien transmis, par exemple 500 000 €." },
   { id: "demembrement", cible: "#input-dem-age", titre: "L'âge du donateur", texte: "Le barème fiscal de l'usufruit dépend de l'âge au moment de la donation : plus il est jeune, plus l'économie de droits est importante." },
   { id: "demembrement", cible: "#kpis-dem, #chart-dem", titre: "L'économie de droits obtenue", texte: "Les cartes et le graphique montrent les droits dus en pleine propriété face à ceux dus en démembrement, et l'économie réalisée." },
+  { id: "demembrement", cible: null, titre: "Transmettre l'entreprise : le Pacte Dutreil", texte: "Plus bas sur cette même page : le Pacte Dutreil exonère 75 % de la valeur d'une entreprise transmise, sous conditions de conservation des titres et de direction effective." },
+  { id: "demembrement", cible: "#input-dut-valeur", titre: "La valeur de l'entreprise", texte: "Indiquez la valeur de l'entreprise transmise, par exemple 2 000 000 €." },
+  { id: "demembrement", cible: "#kpis-dut, #chart-dut", titre: "L'économie grâce au Pacte Dutreil", texte: "Les cartes et le graphique comparent les droits dus avec et sans l'abattement de 75 %, et chiffrent l'économie réalisée." },
 
   { id: "succession", cible: null, titre: "Qui hérite, et combien ça coûte ?", texte: "Ce module chiffre les droits de succession dus dans votre situation réelle, selon la masse successorale et le nombre d'enfants." },
   { id: "succession", cible: "#input-succ-valeur", titre: "La masse successorale", texte: "Indiquez la masse successorale totale, par exemple 1 000 000 €." },
   { id: "succession", cible: "#input-succ-reel-enfants", titre: "Le nombre d'enfants héritiers", texte: "Le nombre d'enfants ajuste automatiquement les abattements applicables à chacun (100 000 € par enfant)." },
   { id: "succession", cible: "#kpis-succ-reel, #chart-succession, #kpis-succession", titre: "Les droits dus par héritier", texte: "Les cartes détaillent les droits dus par le conjoint et par chaque enfant dans votre situation réelle ; le graphique du bas compare, à titre pédagogique, l'effet du seul lien de parenté." },
 
-  { id: "assurance_vie", cible: null, titre: "Assurance-vie : rachat ou transmission", texte: "Ce module simule la fiscalité d'un rachat ou d'une transmission d'assurance-vie, qui dépend fortement de l'âge des versements." },
-  { id: "assurance_vie", cible: "#input-av-capital", titre: "Le capital transmis", texte: "Indiquez le capital transmis au décès, par exemple 300 000 €." },
+  { id: "assurance_vie", cible: null, titre: "Assurance-vie : rachat ou transmission", texte: "Ce module couvre les deux moments clés de l'assurance-vie : un rachat fait du vivant, et la transmission au décès - deux fiscalités très différentes." },
+  { id: "assurance_vie", cible: "#input-av-gains", titre: "Le rachat du vivant", texte: "Seule la part de gains comprise dans le rachat est taxée (le capital versé ne l'est jamais) : indiquez cette part de gains, par exemple 50 000 €, ainsi que l'ancienneté du contrat plus bas." },
+  { id: "assurance_vie", cible: "#kpis-rachat, #chart-rachat", titre: "Le net après rachat", texte: "Les cartes et le graphique montrent le net perçu après impôt et prélèvements sociaux, selon l'ancienneté du contrat et l'abattement applicable." },
+  { id: "assurance_vie", cible: "#input-av-capital", titre: "La transmission au décès", texte: "Indiquez le capital transmis à ce bénéficiaire, par exemple 300 000 €." },
   { id: "assurance_vie", cible: "#input-av-age", titre: "L'âge au moment des versements", texte: "Les abattements diffèrent selon que les versements ont été faits avant ou après 70 ans." },
   { id: "assurance_vie", cible: "#kpis-transmission, #chart-transmission", titre: "La fiscalité à la transmission", texte: "Les cartes et le graphique détaillent la part exonérée et la part taxée selon l'âge des versements." },
 
   { id: "ifi", cible: null, titre: "Impôt sur la fortune immobilière", texte: "Ce module vérifie si un patrimoine immobilier franchit le seuil de l'IFI (1,3 M€), et calcule l'impôt dû le cas échéant." },
   { id: "ifi", cible: "#input-ifi-residence", titre: "La résidence principale", texte: "Indiquez la valeur de la résidence principale (un abattement de 30 % s'applique automatiquement)." },
-  { id: "ifi", cible: "#input-ifi-autres", titre: "Le reste du patrimoine immobilier", texte: "Ajoutez la valeur des autres biens immobiliers, par exemple 800 000 €." },
+  { id: "ifi", cible: "#input-ifi-autres, #input-ifi-dettes", titre: "Le reste du patrimoine, et les dettes", texte: "Ajoutez la valeur des autres biens immobiliers, par exemple 800 000 €, puis les dettes déductibles (crédits en cours) qui réduisent d'autant le patrimoine net taxable." },
   { id: "ifi", cible: "#kpis-ifi, #chart-ifi", titre: "L'impôt dû", texte: "Les cartes indiquent le patrimoine net taxable et l'impôt calculé par tranche ; le graphique illustre le barème progressif appliqué." },
 
   { id: "sci", cible: null, titre: "SCI : à l'impôt sur le revenu, ou à l'impôt sur les sociétés ?", texte: "Les deux régimes taxent très différemment les loyers perçus et la plus-value à la revente - ce module compare les deux sur la durée de détention." },
   { id: "sci", cible: "#input-sci-loyers", titre: "Les loyers annuels", texte: "Indiquez les loyers perçus chaque année, par exemple 36 000 €." },
   { id: "sci", cible: "#input-sci-charges", titre: "Les charges annuelles", texte: "Ajoutez les charges déductibles, par exemple 8 000 € par an." },
+  { id: "sci", cible: "#input-sci-acquisition, #input-sci-cession, #input-sci-duree", titre: "La revente : prix et durée de détention", texte: "Le prix d'acquisition, le prix de cession envisagé et la durée de détention déterminent la plus-value - c'est elle qui est taxée très différemment selon le régime choisi." },
   { id: "sci", cible: "#kpis-sci, #chart-sci", titre: "Le régime le plus avantageux", texte: "Les cartes et le graphique comparent le net obtenu à l'IR et à l'IS sur toute la durée de détention choisie, et indiquent lequel coûte le moins cher." },
 
   { id: "per", cible: null, titre: "Plan d'épargne retraite", texte: "Ce module compare ce qu'un versement sur un PER rapporte net, selon qu'il reste investi jusqu'à la retraite ou qu'il est perçu tout de suite." },
-  { id: "per", cible: "#input-per-versement", titre: "Le montant versé", texte: "Indiquez le montant versé sur le PER, par exemple 10 000 €." },
+  { id: "per", cible: "#input-per-revenu, #input-per-versement", titre: "Le revenu, et le montant versé", texte: "Indiquez le revenu professionnel de l'année (pour vérifier le plafond de déduction) et le montant versé sur le PER, par exemple 10 000 €." },
+  { id: "per", cible: "#input-per-rendement, #input-per-duree", titre: "Le rendement, et la durée avant la sortie", texte: "Le rendement annuel moyen du support et le nombre d'années avant la sortie déterminent ce que la somme investie devient une fois capitalisée." },
   { id: "per", cible: "#kpis-per, #chart-per", titre: "Le gain net à la sortie", texte: "Les cartes et le graphique comparent le net obtenu avec et sans le PER, déduction fiscale à l'entrée comprise." },
 
   { id: "note", cible: "#veille-marches", titre: "Cap au Large", texte: "Une veille marchés et partenaires vérifiée à la main chaque semaine - jamais un conseil, juste de quoi garder un coup d'avance." },
@@ -5842,6 +5849,16 @@ document.getElementById("btn-visite-prec").onclick = () => {
   afficherEtapeVisite();
 };
 document.getElementById("btn-visite-quitter").onclick = quitterVisite;
+
+// Navigation clavier (flèches gauche/droite, Échap) en plus des clics - utile sur
+// desktop, et une garantie supplémentaire si un clic ne passe pas pour une raison
+// ou une autre (zoom, tactile imprécis...).
+document.addEventListener("keydown", (e) => {
+  if (!document.body.classList.contains("mode-visite")) return;
+  if (e.key === "ArrowRight") { e.preventDefault(); document.getElementById("btn-visite-suiv").click(); }
+  else if (e.key === "ArrowLeft") { e.preventDefault(); document.getElementById("btn-visite-prec").click(); }
+  else if (e.key === "Escape") { e.preventDefault(); quitterVisite(); }
+});
 
 /* Point d'entrée vers la visite guidée : un bouton flottant sur la synthèse
    (page d'arrivée), visible dès que possible, avec une légère pulsation les
