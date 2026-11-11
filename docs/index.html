@@ -1291,11 +1291,9 @@
   .visite-bar-titre { font-family: "Fraunces", serif; font-size: 18px; font-weight: 600; margin: 0 0 7px; line-height: 1.25; }
   .visite-bar-texte { font-size: 13.5px; color: var(--ink-muted); line-height: 1.5; margin: 0 0 15px; }
   .visite-card-nav { display: flex; align-items: center; gap: 10px; }
-  .visite-dots { display: flex; gap: 4px; flex: 1; }
-  .visite-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--border); flex: none; }
-  .visite-dots span.fait { background: var(--or); }
-  .visite-dots span.courant { background: var(--navy); width: 16px; border-radius: 3px; }
-  :root[data-theme="dark"] .visite-dots span.courant { background: var(--ui-accent); }
+  .visite-dots { flex: 1; height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; }
+  .visite-dots-fill { height: 100%; border-radius: 2px; background: var(--navy); transition: width 0.25s ease; }
+  :root[data-theme="dark"] .visite-dots-fill { background: var(--ui-accent); }
   #btn-visite-prec {
     font: inherit; font-size: 13px; font-weight: 600;
     background: none; border: 1px solid var(--border); color: var(--ink);
@@ -1542,7 +1540,7 @@
       <button type="button" id="btn-visite-prec" aria-label="Étape précédente">
         <svg width="14" height="14" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M9.5 3L5 7.5L9.5 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <div class="visite-dots" id="visite-dots"></div>
+      <div class="visite-dots"><div class="visite-dots-fill" id="visite-dots-fill"></div></div>
       <button type="button" id="btn-visite-suiv" aria-label="Étape suivante">
         <span id="btn-visite-suiv-label">Suivant</span>
         <svg width="14" height="14" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M5.5 3L10 7.5L5.5 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -5812,15 +5810,46 @@ document.getElementById("btn-exit-presentation").onclick = () => {
    explication concrète ("entrez tel montant ici") et un repère lumineux sur le
    champ concerné - plutôt qu'un simple changement d'onglet sans contexte. ---- */
 const VISITE_ETAPES = [
-  { id: "synthese", cible: "#synth-grid", titre: "La vue d'ensemble", texte: "Chaque carte compare deux options chiffrées - par exemple salaire ou dividende. On va parcourir les modules un par un, avec un exemple concret à chaque étape." },
-  { id: "remuneration", cible: "#input-montant", intro: "Ce module compare, pour un même montant, ce qu'il reste net selon qu'il est versé en salaire ou en dividende.", titre: "Entrez une rémunération", texte: "Indiquez une rémunération brute annuelle, par exemple 80 000 € : l'outil calcule aussitôt ce qu'il reste net selon que ce soit versé en salaire ou en dividende, à jour du barème 2026." },
-  { id: "trajectoire", cible: "#input-traj-profit", intro: "Ce module compare détention directe et holding sur plusieurs années, pas seulement sur un instant donné.", titre: "Projetez plusieurs années", texte: "Indiquez le profit annuel dégagé par l'activité : l'outil compare détention directe et holding sur la durée choisie, pas seulement sur une année." },
-  { id: "demembrement", cible: "#input-dem-valeur", intro: "Transmettre en pleine propriété, ou séparer usufruit et nue-propriété : ce module chiffre l'économie de droits selon l'option choisie.", titre: "Démembrement de propriété", texte: "La valeur du bien et l'âge du donateur suffisent à chiffrer l'économie de droits obtenue en séparant usufruit et nue-propriété." },
-  { id: "succession", cible: "#input-succ-valeur", intro: "Ce module chiffre les droits de succession dus selon la valeur transmise et le nombre d'enfants.", titre: "Succession", texte: "Entrez la valeur du patrimoine transmis : le nombre d'enfants ajuste automatiquement les abattements applicables à chacun." },
-  { id: "assurance_vie", cible: "#input-av-capital", intro: "Ce module simule un rachat ou une transmission d'assurance-vie, dont la fiscalité dépend de l'âge des versements.", titre: "Assurance-vie", texte: "Simulez un rachat ou une transmission : les abattements du code général des impôts s'appliquent différemment selon l'âge des versements." },
-  { id: "ifi", cible: "#input-ifi-residence", intro: "Ce module vérifie si un patrimoine immobilier franchit le seuil de l'impôt sur la fortune immobilière, et calcule l'impôt dû.", titre: "Impôt sur la fortune immobilière", texte: "Renseignez la valeur du patrimoine immobilier pour voir s'il franchit le seuil de l'IFI, et l'impôt dû le cas échéant." },
-  { id: "sci", cible: "#input-sci-loyers", intro: "Détenir via une SCI à l'impôt sur le revenu, ou à l'impôt sur les sociétés : ce module compare les deux régimes sur la durée.", titre: "SCI : à l'IR ou à l'IS ?", texte: "Avec les loyers et charges annuels, l'outil compare les deux régimes fiscaux et indique lequel coûte le moins cher sur la durée." },
-  { id: "per", cible: "#input-per-versement", intro: "Ce module compare ce qu'un versement sur un plan d'épargne retraite rapporte net, selon qu'il est débloqué à la retraite ou perçu tout de suite.", titre: "Plan d'épargne retraite", texte: "Comparez ce qu'un versement rapporte net selon qu'il reste investi jusqu'à la retraite ou qu'il est perçu tout de suite." },
+  { id: "synthese", cible: "#synth-grid", titre: "La vue d'ensemble", texte: "Chaque carte compare deux options chiffrées - par exemple salaire ou dividende. On va parcourir les modules un par un, en remplissant les champs puis en lisant le résultat." },
+
+  { id: "remuneration", cible: null, titre: "Salaire ou dividende ?", texte: "Pour un même montant disponible dans l'entreprise, salaire et dividende ne laissent presque jamais le même net en poche. Remplissez les champs ci-dessous pour voir lequel l'emporte." },
+  { id: "remuneration", cible: "#input-montant", titre: "Le montant disponible", texte: "Indiquez un montant disponible dans l'entreprise, par exemple 80 000 € : l'outil calcule aussitôt ce qu'il reste net selon que ce soit versé en salaire ou en dividende, à jour du barème 2026." },
+  { id: "remuneration", cible: "#kpis-100, #chart-100", titre: "Lisez le résultat", texte: "Les deux cartes et le graphique comparent le net obtenu en salaire et en dividende pour ce montant : l'option la plus avantageuse est mise en avant, avec l'écart chiffré." },
+
+  { id: "trajectoire", cible: null, titre: "Détention directe ou holding ?", texte: "Ce module compare les deux options sur plusieurs années, pas seulement sur un instant donné - l'écart se construit avec le temps." },
+  { id: "trajectoire", cible: "#input-traj-profit", titre: "Le profit annuel", texte: "Indiquez le profit annuel dégagé par l'activité, par exemple 80 000 €." },
+  { id: "trajectoire", cible: "#input-traj-horizon", titre: "La durée de projection", texte: "Choisissez le nombre d'années sur lesquelles comparer : plus l'horizon est long, plus l'écart entre détention directe et holding se creuse." },
+  { id: "trajectoire", cible: "#chart-traj, #kpis-traj", titre: "Comparez les deux trajectoires", texte: "Le graphique superpose l'évolution des deux options année après année ; les cartes résument l'écart obtenu au terme choisi." },
+
+  { id: "demembrement", cible: null, titre: "Transmettre en pleine propriété, ou en démembrer la propriété ?", texte: "Séparer usufruit et nue-propriété permet souvent de transmettre en payant moins de droits - ce module chiffre précisément l'économie obtenue." },
+  { id: "demembrement", cible: "#input-dem-valeur", titre: "La valeur du bien", texte: "Indiquez la valeur du bien transmis, par exemple 500 000 €." },
+  { id: "demembrement", cible: "#input-dem-age", titre: "L'âge du donateur", texte: "Le barème fiscal de l'usufruit dépend de l'âge au moment de la donation : plus il est jeune, plus l'économie de droits est importante." },
+  { id: "demembrement", cible: "#kpis-dem, #chart-dem", titre: "L'économie de droits obtenue", texte: "Les cartes et le graphique montrent les droits dus en pleine propriété face à ceux dus en démembrement, et l'économie réalisée." },
+
+  { id: "succession", cible: null, titre: "Qui hérite, et combien ça coûte ?", texte: "Ce module chiffre les droits de succession dus dans votre situation réelle, selon la masse successorale et le nombre d'enfants." },
+  { id: "succession", cible: "#input-succ-valeur", titre: "La masse successorale", texte: "Indiquez la masse successorale totale, par exemple 1 000 000 €." },
+  { id: "succession", cible: "#input-succ-reel-enfants", titre: "Le nombre d'enfants héritiers", texte: "Le nombre d'enfants ajuste automatiquement les abattements applicables à chacun (100 000 € par enfant)." },
+  { id: "succession", cible: "#kpis-succ-reel, #chart-succession, #kpis-succession", titre: "Les droits dus par héritier", texte: "Les cartes détaillent les droits dus par le conjoint et par chaque enfant dans votre situation réelle ; le graphique du bas compare, à titre pédagogique, l'effet du seul lien de parenté." },
+
+  { id: "assurance_vie", cible: null, titre: "Assurance-vie : rachat ou transmission", texte: "Ce module simule la fiscalité d'un rachat ou d'une transmission d'assurance-vie, qui dépend fortement de l'âge des versements." },
+  { id: "assurance_vie", cible: "#input-av-capital", titre: "Le capital transmis", texte: "Indiquez le capital transmis au décès, par exemple 300 000 €." },
+  { id: "assurance_vie", cible: "#input-av-age", titre: "L'âge au moment des versements", texte: "Les abattements diffèrent selon que les versements ont été faits avant ou après 70 ans." },
+  { id: "assurance_vie", cible: "#kpis-transmission, #chart-transmission", titre: "La fiscalité à la transmission", texte: "Les cartes et le graphique détaillent la part exonérée et la part taxée selon l'âge des versements." },
+
+  { id: "ifi", cible: null, titre: "Impôt sur la fortune immobilière", texte: "Ce module vérifie si un patrimoine immobilier franchit le seuil de l'IFI (1,3 M€), et calcule l'impôt dû le cas échéant." },
+  { id: "ifi", cible: "#input-ifi-residence", titre: "La résidence principale", texte: "Indiquez la valeur de la résidence principale (un abattement de 30 % s'applique automatiquement)." },
+  { id: "ifi", cible: "#input-ifi-autres", titre: "Le reste du patrimoine immobilier", texte: "Ajoutez la valeur des autres biens immobiliers, par exemple 800 000 €." },
+  { id: "ifi", cible: "#kpis-ifi, #chart-ifi", titre: "L'impôt dû", texte: "Les cartes indiquent le patrimoine net taxable et l'impôt calculé par tranche ; le graphique illustre le barème progressif appliqué." },
+
+  { id: "sci", cible: null, titre: "SCI : à l'impôt sur le revenu, ou à l'impôt sur les sociétés ?", texte: "Les deux régimes taxent très différemment les loyers perçus et la plus-value à la revente - ce module compare les deux sur la durée de détention." },
+  { id: "sci", cible: "#input-sci-loyers", titre: "Les loyers annuels", texte: "Indiquez les loyers perçus chaque année, par exemple 36 000 €." },
+  { id: "sci", cible: "#input-sci-charges", titre: "Les charges annuelles", texte: "Ajoutez les charges déductibles, par exemple 8 000 € par an." },
+  { id: "sci", cible: "#kpis-sci, #chart-sci", titre: "Le régime le plus avantageux", texte: "Les cartes et le graphique comparent le net obtenu à l'IR et à l'IS sur toute la durée de détention choisie, et indiquent lequel coûte le moins cher." },
+
+  { id: "per", cible: null, titre: "Plan d'épargne retraite", texte: "Ce module compare ce qu'un versement sur un PER rapporte net, selon qu'il reste investi jusqu'à la retraite ou qu'il est perçu tout de suite." },
+  { id: "per", cible: "#input-per-versement", titre: "Le montant versé", texte: "Indiquez le montant versé sur le PER, par exemple 10 000 €." },
+  { id: "per", cible: "#kpis-per, #chart-per", titre: "Le gain net à la sortie", texte: "Les cartes et le graphique comparent le net obtenu avec et sans le PER, déduction fiscale à l'entrée comprise." },
+
   { id: "note", cible: "#veille-marches", titre: "Cap au Large", texte: "Une veille marchés et partenaires vérifiée à la main chaque semaine - jamais un conseil, juste de quoi garder un coup d'avance." },
 ];
 let indexVisite = 0;
@@ -5828,10 +5857,10 @@ let indexVisite = 0;
 function positionnerCibleVisite() {
   document.querySelectorAll(".visite-cible").forEach(el => el.classList.remove("visite-cible"));
   const etape = VISITE_ETAPES[indexVisite];
-  const cible = etape.cible ? document.querySelector(etape.cible) : null;
-  if (cible) {
-    cible.classList.add("visite-cible");
-    cible.scrollIntoView({ block: "center", behavior: "smooth" });
+  const cibles = etape.cible ? document.querySelectorAll(etape.cible) : [];
+  if (cibles.length) {
+    cibles.forEach(el => el.classList.add("visite-cible"));
+    cibles[0].scrollIntoView({ block: "center", behavior: "smooth" });
   } else {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -5839,32 +5868,27 @@ function positionnerCibleVisite() {
 
 function afficherEtapeVisite() {
   const etape = VISITE_ETAPES[indexVisite];
-  etape._champMontre = false;
-  showPanel(etape.id);
-  window.scrollTo(0, 0);
+  // Change de panneau seulement si l'étape précédente n'était pas déjà sur ce module -
+  // évite de recharger/rescroller inutilement entre deux étapes d'un même module.
+  const etapePrecedente = VISITE_ETAPES[indexVisite - 1];
+  if (!etapePrecedente || etapePrecedente.id !== etape.id) {
+    showPanel(etape.id);
+    window.scrollTo(0, 0);
+  }
   const ctx = CONTEXTE_PAR_ONGLET[etape.id];
   document.getElementById("visite-bar-module").textContent = ctx ? `${ctx.cat} · ${ctx.texte}` : "";
   document.getElementById("visite-bar-compte").textContent = `Étape ${indexVisite + 1} / ${VISITE_ETAPES.length}`;
   document.getElementById("visite-bar-titre").textContent = etape.titre;
-  document.getElementById("visite-bar-texte").textContent = etape.intro || etape.texte;
+  document.getElementById("visite-bar-texte").textContent = etape.texte;
   document.getElementById("btn-visite-prec").disabled = indexVisite === 0;
   const estDerniere = indexVisite === VISITE_ETAPES.length - 1;
-  document.getElementById("btn-visite-suiv-label").textContent = estDerniere ? "Terminer" : (etape.intro ? "Voir le champ" : "Suivant");
-  document.getElementById("visite-dots").innerHTML = VISITE_ETAPES.map((_, i) =>
-    `<span class="${i === indexVisite ? "courant" : i < indexVisite ? "fait" : ""}"></span>`
-  ).join("");
-  // Si l'étape a une intro, on reste d'abord en haut du module (titre visible) :
-  // le passage au champ précis se fait seulement au clic suivant (cf. btn-visite-suiv).
-  if (!etape.intro) {
-    setTimeout(positionnerCibleVisite, 60);
-  } else {
-    document.querySelectorAll(".visite-cible").forEach(el => el.classList.remove("visite-cible"));
-  }
+  document.getElementById("btn-visite-suiv-label").textContent = estDerniere ? "Terminer" : "Suivant";
+  document.getElementById("visite-dots-fill").style.width = `${((indexVisite + 1) / VISITE_ETAPES.length) * 100}%`;
+  setTimeout(positionnerCibleVisite, 60);
 }
 
 function demarrerVisite() {
   indexVisite = 0;
-  VISITE_ETAPES.forEach(e => { e._champMontre = false; });
   document.body.classList.add("mode-visite");
   afficherEtapeVisite();
 }
@@ -5880,17 +5904,6 @@ document.getElementById("btn-visite-fab").onclick = (e) => {
   demarrerVisite();
 };
 document.getElementById("btn-visite-suiv").onclick = () => {
-  const etape = VISITE_ETAPES[indexVisite];
-  // Étape avec intro pas encore montrée : le clic ne fait que révéler le champ,
-  // sans avancer à l'étape suivante (évite de sauter directement dans le vide).
-  if (etape.intro && !etape._champMontre) {
-    etape._champMontre = true;
-    document.getElementById("visite-bar-texte").textContent = etape.texte;
-    document.getElementById("btn-visite-suiv-label").textContent =
-      indexVisite === VISITE_ETAPES.length - 1 ? "Terminer" : "Suivant";
-    positionnerCibleVisite();
-    return;
-  }
   if (indexVisite >= VISITE_ETAPES.length - 1) {
     quitterVisite();
     showPanel("synthese");
