@@ -5817,15 +5817,19 @@ function afficherEtapeVisite() {
   setTimeout(positionnerCibleVisite, 60);
 }
 
+let profilAppliqueParVisite = false;
+
 function demarrerVisite() {
   indexVisite = 0;
   // Sans données saisies, chaque étape "résultat" n'affiche que des 0 € et un
   // graphique vide - pas très convaincant pour une démonstration. On applique
   // donc un profil d'exemple réaliste sur tous les onglets au démarrage de la
   // visite (sauf si un profil ou des saisies personnelles sont déjà en place),
-  // pour que chaque résultat montré soit un vrai chiffre.
+  // pour que chaque résultat montré soit un vrai chiffre. On retient qu'on l'a
+  // fait nous-mêmes, pour pouvoir tout remettre à 0 à la sortie de la visite.
   if (dernierProfilExempleIdx === -1 && montantDisponible === 0 && typeof appliquerProfilExemple === "function") {
     appliquerProfilExemple(0);
+    profilAppliqueParVisite = true;
   }
   document.body.classList.add("mode-visite");
   afficherEtapeVisite();
@@ -5834,6 +5838,19 @@ function demarrerVisite() {
 function quitterVisite() {
   document.body.classList.remove("mode-visite");
   document.querySelectorAll(".visite-cible").forEach(el => el.classList.remove("visite-cible"));
+  // Le profil d'exemple n'a servi qu'à rendre la visite lisible : une fois
+  // sortie, on efface ces données de démonstration pour repartir d'un outil
+  // vierge, plutôt que de laisser le visiteur croire que ce sont ses propres
+  // chiffres. On ne touche à rien si l'utilisateur avait déjà ses propres
+  // saisies ou un profil choisi lui-même avant de lancer la visite.
+  if (profilAppliqueParVisite) {
+    appliquerEtatComplet(ETAT_PAR_DEFAUT);
+    calculerEtAfficherSynthese();
+    dernierProfilExempleIdx = -1;
+    const indicateurProfil = document.getElementById("demo-profil-actif");
+    if (indicateurProfil) indicateurProfil.hidden = true;
+    profilAppliqueParVisite = false;
+  }
 }
 
 document.getElementById("btn-visite-guidee").onclick = demarrerVisite;
