@@ -5930,17 +5930,23 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* Point d'entrée vers la visite guidée : un bouton flottant sur la synthèse
-   (page d'arrivée), visible dès que possible, avec une légère pulsation les
-   premières secondes pour attirer l'oeil. La croix ne masque que la
-   pulsation (pour ne plus distraire une fois vue) - le bouton lui-même reste
-   toujours accessible sur cette page, jamais masqué définitivement. Limité à
-   la synthèse (plutôt que présent sur tous les onglets) pour ne jamais
-   recouvrir un bouton propre à un module, où qu'on ait scrollé. */
+   (page d'arrivée), avec une légère pulsation les premières secondes pour
+   attirer l'oeil. Limité à la synthèse (plutôt que présent sur tous les
+   onglets) pour ne jamais recouvrir un bouton propre à un module, où qu'on
+   ait scrollé. La croix le masque pour le reste de la visite (pas de
+   manière permanente via localStorage, pour ne jamais le faire disparaître
+   d'une session à l'autre) : il reste accessible via "Visite guidée" dans
+   le menu "Plus" si besoin. Sur mobile, on attend en plus que la personne
+   ait un peu fait défiler la page, pour ne pas recouvrir le texte d'accueil
+   dès l'arrivée sur la page (même logique que le bouton "retour en haut"). */
+var fabVisiteFermeParUtilisateur = false;
 function majFabVisite() {
   const fab = document.getElementById("btn-visite-fab");
   if (!fab) return;
+  if (fabVisiteFermeParUtilisateur) { fab.classList.remove("visible"); return; }
   const surSynthese = !!document.querySelector("#panel-synthese.active");
-  fab.classList.toggle("visible", surSynthese);
+  const assezDefile = window.innerWidth > 680 || (window.scrollY || document.documentElement.scrollTop) > 260;
+  fab.classList.toggle("visible", surSynthese && assezDefile);
 }
 (() => {
   const PULSE_KEY = "glp-visite-fab-pulse-vue";
@@ -5950,9 +5956,12 @@ function majFabVisite() {
     majFabVisite();
     if (!dejaVuPulse) fab.classList.add("pulse");
   }, 400);
+  window.addEventListener("scroll", majFabVisite, { passive: true });
   document.getElementById("btn-visite-fab-close").onclick = (e) => {
     e.stopPropagation();
     fab.classList.remove("pulse");
+    fabVisiteFermeParUtilisateur = true;
+    majFabVisite();
     try { localStorage.setItem(PULSE_KEY, "1"); } catch (err) {}
   };
 })();
