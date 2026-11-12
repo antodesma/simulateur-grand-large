@@ -5976,18 +5976,13 @@ function majFabVisite() {
   });
 })();
 
-/* ---- Pop-up "mieux sur ordinateur" sur mobile, une seule fois par navigateur ---- */
+/* ---- Pop-up "mieux sur ordinateur" sur mobile, à chaque ouverture ---- */
 (() => {
-  const CLE_POPUP = "glp-suggestion-desktop-vue";
   const overlay = document.getElementById("desktop-suggest-overlay");
   if (!overlay) return;
-  const dejaVue = (() => { try { return localStorage.getItem(CLE_POPUP) === "1"; } catch (e) { return false; } })();
   const estMobile = window.matchMedia("(max-width: 680px)").matches;
-  if (estMobile && !dejaVue) overlay.hidden = false;
-  const fermer = () => {
-    overlay.hidden = true;
-    try { localStorage.setItem(CLE_POPUP, "1"); } catch (err) {}
-  };
+  if (estMobile) overlay.hidden = false;
+  const fermer = () => { overlay.hidden = true; };
   document.getElementById("btn-desktop-suggest-close").onclick = fermer;
   document.getElementById("btn-desktop-suggest-ok").onclick = fermer;
   overlay.addEventListener("click", (e) => { if (e.target === overlay) fermer(); });
