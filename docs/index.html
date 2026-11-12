@@ -5964,6 +5964,16 @@ function majFabVisite() {
     majFabVisite();
     try { localStorage.setItem(PULSE_KEY, "1"); } catch (err) {}
   };
+  /* Sur mobile, revenir sur l'onglet (ex: après être passé par WhatsApp)
+     restaure souvent la page depuis le cache du navigateur (bfcache) plutôt
+     que de la recharger pour de vrai - sans ça, le bouton resterait masqué
+     "pour toujours" après une seule fermeture, ce qui n'est pas voulu. */
+  window.addEventListener("pageshow", (e) => {
+    if (e.persisted) {
+      fabVisiteFermeParUtilisateur = false;
+      majFabVisite();
+    }
+  });
 })();
 
 /* ---- Pop-up "mieux sur ordinateur" sur mobile, une seule fois par navigateur ---- */
